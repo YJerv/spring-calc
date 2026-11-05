@@ -17,7 +17,7 @@
 <body>
   <header class="app-header">
     <h1>Helical Spring Designer</h1>
-    <p>Compression springs · BS EN 13906-1 · metric</p>
+    <p>Compression springs · BS EN 13906-1 · BS EN 15800 · metric · v1.4</p>
   </header>
 
   <div class="progress" aria-hidden="true">
@@ -119,9 +119,18 @@
         <div class="btn-row no-print">
           <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
         </div>
-        <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole (in the spirit of BS 1726 tables). Set it to zero if the pocket value is already De max.</p>
+        <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already De max. Manufacturing tolerances are to BS EN 15800 (the standard that replaced BS 1726 for cylindrical helical compression spring tolerances).</p>
         <dl class="summary" id="geomSummary"></dl>
 
+        <div class="field">
+          <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
+          <select id="grade">
+            <option value="1">Grade 1 — fine (Q = 0.63)</option>
+            <option value="2" selected>Grade 2 — standard (Q = 1.00)</option>
+            <option value="3">Grade 3 — coarse (Q = 1.60)</option>
+          </select>
+          <span class="hint">Grade 2 applies when the drawing does not state a grade. Grade 1 is only for duties that need it. BS EN 15800, not BS EN 15000.</span>
+        </div>
         <div class="field">
           <label for="ends">Ends</label>
           <select id="ends">
@@ -225,7 +234,7 @@
         <h2>5. Results</h2>
         <div id="resultBanner"></div>
         <h3 style="margin:8px 0 4px;font-size:1rem;">Load–length characteristic</h3>
-        <p class="lead">Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Vertical markers remain at each station. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>
+        <p class="lead">Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>
         <div class="chart-wrap">
           <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
@@ -238,6 +247,28 @@
           </table>
           <p class="lead hint" id="graphLegendNote">Compression is the deflection as a percentage of available travel (L0 − Lc). τk is the Bergsträsser-corrected shear stress.</p>
         </div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1rem;">Manufacturing tolerances (BS EN 15800)</h3>
+        <div class="field">
+          <label for="gradeResult">Quality grade on the drawing</label>
+          <select id="gradeResult">
+            <option value="1">Grade 1 — fine (Q = 0.63)</option>
+            <option value="2" selected>Grade 2 — standard (Q = 1.00)</option>
+            <option value="3">Grade 3 — coarse (Q = 1.60)</option>
+          </select>
+          <span class="hint">Stated on the A3 drawing. When two loads are specified, free length L0 is reference only so the spring is not over-constrained.</span>
+        </div>
+        <div id="tolNote" class="status-banner warning hidden"></div>
+        <div class="table-wrap">
+          <table class="particulars" id="tolerances">
+            <thead>
+              <tr><th>Particular</th><th>Symbol</th><th>Value</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="lead hint" id="tolVerify"></p>
       </div>
       <div class="card">
         <h3 style="margin:0 0 8px;font-size:1rem;">Spring particulars</h3>
@@ -256,13 +287,14 @@
           <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
         <div class="btn-row no-print">
-          <button type="button" class="btn" id="btnPrint">Print / save as PDF</button>
+          <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
+          <button type="button" class="btn secondary" id="btnPrint">Print / save as PDF</button>
           <button type="button" class="btn secondary" id="btnExportTxt">Export particulars</button>
           <button type="button" class="btn secondary" id="btnExportJson">Export JSON</button>
         </div>
         <details class="notes">
           <summary>Method, formulae and limitations</summary>
-          <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire (the successor to BS 1726 for calculation practice). Designer remains responsible for checking the current standard, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>
+          <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire. Manufacturing tolerances follow BS EN 15800 (quality grades 1, 2 and 3), which replaced BS 1726 for cylindrical helical compression spring tolerances. The designer remains responsible for checking the current standards, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>
           <ul>
             <li>Spring index w = D / d</li>
             <li>Bergsträsser factor k = (w + 0.5) / (w − 0.75)</li>
@@ -272,7 +304,8 @@
             <li>Allowable static screening stress τzul = factor × Rm (default factor 0.5)</li>
             <li>Closed and ground ends: nt = n + 2, Lc = nt × d</li>
           </ul>
-          <p>This tool is a design aid. It is not a substitute for BS EN 13906-1, EN 10270 or a drawing office procedure, and it is not affiliated with BSI.</p>
+          <p>Coil-diameter tolerances are taken from EN 15800 Table 3. Force and length tolerances use the grade factor Q, the coil factor kf and the geometry factor aF. Q, kf, the force and length formulae, squareness, parallelism and the scope limits were checked against published clause values. Table 3 and the aF coefficients were transcribed from a public copy of the standard and are flagged in the results because they were not re-read from a licensed PDF.</p>
+          <p>This tool is a design aid. It is not a substitute for BS EN 13906-1, BS EN 15800, EN 10270 or a drawing office procedure, and it is not affiliated with BSI.</p>
         </details>
       </div>
     </section>
@@ -283,8 +316,12 @@
     <button type="button" class="btn" id="btnNext">Next</button>
   </nav>
 
+  <script src="vendor/jspdf.umd.min.js"></script>
   <script src="js/engine.js"></script>
+  <script src="js/en15800.js"></script>
   <script src="js/charts.js"></script>
+  <script src="js/drawing.js"></script>
+  <script src="js/pdf.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

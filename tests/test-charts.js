@@ -146,12 +146,22 @@ html.replace(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)"[^>]*stro
   });
 assert(dashed.length === 4, "Four vertical markers (L1, L2, Ln, Lc); L0 needs none because it sits on the axis",
   "found " + dashed.length);
+const markers = svg._markerGeom || [];
+assert(markers.length === dashed.length, "Marker geometry matches the dotted lines drawn");
 dashed.forEach(function (ln, i) {
+  const m = markers[i];
   assert(Math.abs(ln.x1 - ln.x2) < 1e-6, "Vertical marker " + i + " is vertical");
   assert(Math.abs(ln.y2 - (336 - 78)) < 1e-6, "Vertical marker " + i + " starts at the x axis");
   assert(ln.y1 > plotTop + 1, "Vertical marker " + i + " does not extend above the spring line to the plot top",
     "y1=" + ln.y1 + " plotTop=" + plotTop);
   assert(ln.y1 < ln.y2 - 1, "Vertical marker " + i + " runs upward from the axis and stops at the load point");
+  assert(m && Math.abs(m.yTop - m.ySpring) < 1e-6, "Marker " + (m && m.id) + " top is the spring line");
+  assert(m && Math.abs(ln.y1 - m.ySpring) < 1e-6, "Drawn marker " + (m && m.id) + " stops where it meets the spring line",
+    "y1=" + ln.y1 + " spring=" + (m && m.ySpring));
+  assert(m && Math.abs(m.yLoad - m.ySpring) < 0.05,
+    "Horizontal load line for " + (m && m.id) + " meets the spring line at the marker",
+    "load y=" + (m && m.yLoad) + " spring y=" + (m && m.ySpring));
+  assert(m && m.yTop < m.yAxis - 1 && m.yTop > plotTop, "Marker " + (m && m.id) + " is trimmed between the axis and the spring line");
 });
 const loadedYs = [byId.L1, byId.L2, byId.Ln, byId.Lc].map(function (s) {
   /* yOf(F) = (H-pad.b) - (F/Ftop)*(H-pad.t-pad.b); Ftop = maxF * 1.16 */

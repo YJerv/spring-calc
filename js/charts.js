@@ -123,6 +123,11 @@
     var y0 = yOf(0);
     var xc = xOf(Lc);
     var yc = yOf(design.Fc);
+    function ySpringAt(L) {
+      var denom = L0 - Lc;
+      var t = denom !== 0 ? (L0 - L) / denom : 0;
+      return y0 + t * (yc - y0);
+    }
     parts.push(empty("line", {
       x1: x0, y1: y0, x2: xc, y2: yc,
       stroke: "#0b1f33", "stroke-width": 2
@@ -182,19 +187,32 @@
       }
     });
 
+    var markerGeom = [];
     stations.forEach(function (s) {
       var x = xOf(s.L);
-      var y = yOf(s.F);
-      if (H - pad.b - y > 1) {
+      var yLoad = yOf(s.F);
+      var ySpring = ySpringAt(s.L);
+      var yTop = ySpring;
+      var yAxis = H - pad.b;
+      if (yAxis - yTop > 1) {
         parts.push(empty("line", {
-          x1: x, y1: y, x2: x, y2: H - pad.b,
+          x1: x, y1: yTop, x2: x, y2: yAxis,
           stroke: s.colour, "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0.8
         }));
+        markerGeom.push({
+          id: s.id,
+          x: x,
+          yTop: yTop,
+          ySpring: ySpring,
+          yLoad: yLoad,
+          yAxis: yAxis
+        });
       }
       parts.push(empty("circle", {
-        cx: x, cy: y, r: 4.2, fill: s.colour, stroke: "#fbf8f1", "stroke-width": 1.4
+        cx: x, cy: yLoad, r: 4.2, fill: s.colour, stroke: "#fbf8f1", "stroke-width": 1.4
       }));
     });
+    svg._markerGeom = markerGeom;
 
     var yLabelItems = [{ F: 0, colour: "#1b4f72", id: "F0" }].concat(loaded.map(function (s) {
       return { F: s.F, colour: s.colour, id: s.id };
