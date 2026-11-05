@@ -1,0 +1,43 @@
+{
+  "packageId": "uk.co.yjerv.springcalc",
+  "host": "yjerv.github.io",
+  "name": "Helical Spring Designer",
+  "launcherName": "Spring Designer",
+  "display": "standalone",
+  "themeColor": "#0b1f33",
+  "themeColorDark": "#0b1f33",
+  "navigationColor": "#0b1f33",
+  "navigationColorDark": "#0b1f33",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#f3efe6",
+  "enableNotifications": false,
+  "startUrl": "/spring-calc/",
+  "iconUrl": "https://yjerv.github.io/spring-calc/icons/icon-512.png",
+  "maskableIconUrl": "https://yjerv.github.io/spring-calc/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "upload"
+  },
+  "appVersion": "1.4.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://yjerv.github.io/spring-calc/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://yjerv.github.io/spring-calc/",
+  "minSdkVersion": 24,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": []
+}
