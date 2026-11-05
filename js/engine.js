@@ -544,6 +544,150 @@
     return { bounds: scan.bounds, rows: scan.rows, best: best };
   }
 
+  function geometricOk(ev) {
+    if (!ev || !ev.ok) return false;
+    for (var i = 0; i < ev.reasons.length; i++) {
+      if (ev.reasons[i].indexOf("Corrected stress exceeds") !== 0) return false;
+    }
+    return true;
+  }
+
+  function heatmapBand(pctAllow, isGeomOk) {
+    if (!isGeomOk) return "invalid";
+    var p = Number(pctAllow);
+    if (!isFinite(p)) return "invalid";
+    if (p > 100 + 1e-6) return "over";
+    if (p > 70) return "amber";
+    return "good";
+  }
+
+  function steppedValues(min, max, step) {
+    var out = [];
+    if (!(step > 0) || !(max + 1e-12 >= min)) return out;
+    var i0 = Math.ceil((min - 1e-12) / step);
+    var i1 = Math.floor((max + 1e-12) / step);
+    for (var i = i0; i <= i1; i++) {
+      out.push(Math.round(i * step * 1000) / 1000);
+    }
+    return out;
+  }
+
+  function buildHeatmap(input, options) {
+    options = options || {};
+    var step = options.step == null ? 0.5 : Number(options.step);
+    var DeMax = Number(input.DeMax);
+    var sizes = input.wires || STANDARD_WIRES;
+    var wires = [];
+    var i;
+    for (i = 0; i < sizes.length; i++) {
+      if (sizes[i] < DeMax) wires.push(sizes[i]);
+    }
+    var empty = {
+      step: step,
+      DeMax: DeMax,
+      Dmin: null,
+      Dmax: null,
+      wires: wires,
+      diameters: [],
+      rows: [],
+      maxViable: 0,
+      bestDiameters: []
+    };
+    if (!(DeMax > 0) || !(step > 0) || !wires.length) return empty;
+
+    var dSmallest = wires[0];
+    for (i = 1; i < wires.length; i++) {
+      if (wires[i] < dSmallest) dSmallest = wires[i];
+    }
+    var rawDmin = INDEX_MIN * dSmallest;
+    var rawDmax = DeMax - dSmallest;
+    var diameters = steppedValues(rawDmin, rawDmax, step);
+    empty.Dmin = diameters.length ? diameters[0] : null;
+    empty.Dmax = diameters.length ? diameters[diameters.length - 1] : null;
+    empty.diameters = diameters;
+    if (!diameters.length) return empty;
+
+    var rows = [];
+    var maxViable = 0;
+    for (i = 0; i < diameters.length; i++) {
+      var D = diameters[i];
+      var cells = [];
+      var viableCount = 0;
+      for (var j = 0; j < wires.length; j++) {
+        var d = wires[j];
+        var rm = input.Rm;
+        if (input.useIndicativeRm && input.materialId) {
+          var irm = indicativeRm(input.materialId, d);
+          if (irm) rm = irm;
+        }
+        var ev = evaluateDesign({
+          d: d,
+          D: D,
+          G: input.G,
+          Rm: rm,
+          tauFactor: input.tauFactor,
+          R: input.R,
+          L0: input.L0,
+          L1: input.L1,
+          F1: input.F1,
+          L2: input.L2,
+          F2: input.F2,
+          Fmax: input.Fmax,
+          LmaxLoad: input.LmaxLoad,
+          DeMax: DeMax,
+          ends: input.ends,
+          density: input.density
+        });
+        var geom = geometricOk(ev);
+        var viable = !!(ev.ok && ev.pass);
+        if (viable) viableCount += 1;
+        cells.push({
+          d: d,
+          D: D,
+          viable: viable,
+          geometricOk: geom,
+          pctAllow: ev.pctAllow,
+          tauK: ev.tauK,
+          n: ev.n,
+          w: ev.w,
+          Lc: ev.Lc,
+          De: ev.De,
+          status: ev.status,
+          reasons: ev.reasons,
+          warnings: ev.warnings,
+          band: heatmapBand(ev.pctAllow, geom)
+        });
+      }
+      if (viableCount > maxViable) maxViable = viableCount;
+      rows.push({
+        D: D,
+        cells: cells,
+        viableCount: viableCount,
+        isBest: false
+      });
+    }
+
+    var bestDiameters = [];
+    for (i = 0; i < rows.length; i++) {
+      if (maxViable > 0 && rows[i].viableCount === maxViable) {
+        rows[i].isBest = true;
+        bestDiameters.push(rows[i].D);
+      }
+    }
+
+    return {
+      step: step,
+      DeMax: DeMax,
+      Dmin: diameters[0],
+      Dmax: diameters[diameters.length - 1],
+      wires: wires,
+      diameters: diameters,
+      rows: rows,
+      maxViable: maxViable,
+      bestDiameters: bestDiameters
+    };
+  }
+
   function fmt(x, digits) {
     if (x == null || x === "" || !isFinite(Number(x))) return "—";
     var n = Number(x);
@@ -579,6 +723,10 @@
     listWires: listWires,
     scanDiameters: scanDiameters,
     autoOptimise: autoOptimise,
+    geometricOk: geometricOk,
+    heatmapBand: heatmapBand,
+    steppedValues: steppedValues,
+    buildHeatmap: buildHeatmap,
     fmt: fmt,
     lerpTable: lerpTable
   };

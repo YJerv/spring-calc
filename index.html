@@ -174,8 +174,22 @@
     <section id="step-3" class="step" data-step="3">
       <div class="card">
         <h2>3. Standard wire diameters</h2>
-        <p class="lead">Each size is evaluated at the largest mean diameter that still fits the pocket: D = De max − d. Corrected stress τk uses the Bergsträsser factor from BS EN 13906-1.</p>
+        <p class="lead">The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>
         <dl class="summary" id="wireIntro"></dl>
+        <div id="heatmapPanel" class="heatmap-panel">
+          <p class="heatmap-best" id="heatmapBest"></p>
+          <ul class="heatmap-legend" id="heatmapLegend" aria-label="Heat map legend">
+            <li><span class="swatch good" aria-hidden="true"></span> Well within (τk ≤ 70 % of allowable)</li>
+            <li><span class="swatch amber" aria-hidden="true"></span> Approaching or at the limit (70–100 %)</li>
+            <li><span class="swatch over" aria-hidden="true"></span> Over allowable (τk &gt; 100 %)</li>
+            <li><span class="swatch invalid" aria-hidden="true"></span> Invalid (pocket, index 4–16, solid length or coil count)</li>
+          </ul>
+          <div class="heatmap-wrap">
+            <div class="heatmap-scroll" id="heatmapScroll" tabindex="0"></div>
+          </div>
+          <p class="lead hint">Swipe the map sideways to see every standard wire. Highlighted rows give the most viable wire options.</p>
+        </div>
+        <p class="lead">Each size is also listed below, evaluated at the largest mean diameter that still fits the pocket: D = De max − d. Corrected stress τk uses the Bergsträsser factor from BS EN 13906-1.</p>
         <div class="wire-toolbar">
           <label><input type="checkbox" id="passOnly" checked> Show passing sizes only</label>
           <span id="wireCount"></span>

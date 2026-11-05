@@ -369,3 +369,186 @@ input[type="range"] {
 #graphLegend { margin-top: 8px; }
 #graphLegend th:nth-child(1),
 #graphLegend td:nth-child(1) { font-weight: 700; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.heatmap-panel { margin: 0 0 14px; }
+.heatmap-best {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  background: #eef3f8;
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--navy);
+}
+.heatmap-legend {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.heatmap-legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.3;
+}
+.heatmap-legend .swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex: 0 0 14px;
+  margin-top: 1px;
+  border: 1px solid rgba(11, 31, 51, 0.12);
+}
+.heatmap-legend .swatch.good { background: #1b7f4e; }
+.heatmap-legend .swatch.amber { background: #d97706; }
+.heatmap-legend .swatch.over { background: #b42318; }
+.heatmap-legend .swatch.invalid { background: #c8c2b8; }
+
+.heatmap-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.heatmap-scroll {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 400px;
+  max-width: 100%;
+}
+.heatmap {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  margin: 0;
+  min-width: 100%;
+}
+.heatmap caption { caption-side: bottom; }
+.heatmap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--navy);
+  color: #f7f1e4;
+  font-weight: 600;
+  padding: 4px 0;
+  height: 52px;
+  min-width: 32px;
+  vertical-align: bottom;
+}
+.heatmap thead th span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+}
+.heatmap thead th.sticky-col,
+.heatmap thead th.sticky-end {
+  writing-mode: horizontal-tb;
+  transform: none;
+  height: 52px;
+  vertical-align: middle;
+  padding: 4px 6px;
+}
+.heatmap .sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  text-align: right;
+  min-width: 56px;
+  padding: 0 6px;
+  font-weight: 700;
+  color: var(--navy);
+  white-space: nowrap;
+}
+.heatmap .sticky-end {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #fff;
+  text-align: center;
+  min-width: 44px;
+  padding: 0 6px;
+  font-weight: 750;
+  color: var(--navy);
+}
+.heatmap thead th.sticky-col,
+.heatmap thead th.sticky-end {
+  z-index: 4;
+  background: var(--navy);
+  color: #f7f1e4;
+  text-align: center;
+}
+.heatmap tbody th.sticky-col { background: #fbf8f1; }
+.heatmap tbody td.sticky-end { background: #fbf8f1; }
+.heatmap tbody th,
+.heatmap tbody td {
+  padding: 0;
+  vertical-align: middle;
+}
+.heatmap tr.best th.sticky-col,
+.heatmap tr.best td.sticky-end {
+  background: #f7edd4;
+}
+.heatmap tr.best td { background: #f7edd4; }
+.heatmap .best-mark {
+  color: var(--gold);
+  font-size: 0.7rem;
+}
+.hm-cell {
+  appearance: none;
+  display: block;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #c8c2b8;
+}
+.hm-cell.good { background: #1b7f4e; }
+.hm-cell.amber { background: #d97706; }
+.hm-cell.over { background: #b42318; }
+.hm-cell.invalid { background: #c8c2b8; }
+.hm-cell.selected {
+  outline: 2px solid #f7f1e4;
+  outline-offset: -2px;
+  box-shadow: 0 0 0 2px var(--navy);
+  position: relative;
+  z-index: 1;
+}
+.hm-cell:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+@media (max-width: 420px) {
+  .heatmap-legend { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .heatmap-scroll { max-height: none; overflow: visible; }
+}

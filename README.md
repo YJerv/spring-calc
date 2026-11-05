@@ -2,7 +2,7 @@
 
 A mobile-friendly progressive web app for sizing cylindrical helical **compression** springs, using the calculation method of **BS EN 13906-1** (the successor to BS 1726 for this purpose). Metric units throughout. British English.
 
-This is a first version intended for phone use and, later, wrapping for Google Play (Trusted Web Activity or Capacitor). It is a design aid, not a certified calculation pack and not a substitute for the published British Standards.
+This is a first version intended for phone use and, later, wrapping for Google Play (Trusted Web Activity or Capacitor). It is a design aid, not a certified calculation pack and not a substitute for the published British Standards. Version 1.1 adds a coil-diameter versus wire heat map so you can see which mean diameter offers the most standard wire options.
 
 ## Folder
 
@@ -34,8 +34,8 @@ There is no build step. The same `js/engine.js` file is loaded by the browser an
 
 1. **Loads** — Mode A: two lengths (mm) and two loads (N). Mode B: one load, one length and rate R (N/mm). The app derives R and free length L0.
 2. **Geometry** — pocket (hole) maximum diameter, diametral clearance, ends, material G and Rm.
-3. **Wire** — standard sizes from the EN 10270 / ISO preferred series (0.20 mm to 12 mm). Each row is evaluated at maximum mean diameter `D = De max − d` and shows corrected stress, percentage of allowable, active coils, solid length, and a pass/fail colour.
-4. **Coil diameter** — slider plus auto-optimise for index 4–16, pocket fit, stress, solid length and a sensible coil count.
+3. **Wire** — a heat map of mean coil diameter `D` (0.5 mm steps up to the pocket limit) against the EN 10270 / ISO standard wire series (0.20 mm to 12 mm). Each cell is coloured by corrected stress τk as a percentage of allowable (green / amber / red) and greyed out when the design fails a pocket, index, solid-length or coil-count check. Each row counts the viable wire sizes and the diameter with the most options is highlighted; tapping a cell selects that `D` and `d` for the later steps. The same sizes are also listed below, evaluated at maximum mean diameter `D = De max − d`, with corrected stress, percentage of allowable, active coils, solid length, and a pass/fail colour.
+4. **Coil diameter** — slider plus auto-optimise for index 4–16, pocket fit, stress, solid length and a sensible coil count. A diameter chosen on the heat map is carried through as the starting point.
 5. **Results** — load–length graph (L0, L1, L2, Ln, Lc with loads and deflection %), particulars table, scaled SVG side view. Print / PDF and text or JSON export.
 
 A **Load worked example** button fills:
@@ -107,6 +107,7 @@ Phone-sized captures (390 × 844 logical pixels, 2× pixel density) live in `scr
 - `01-loads.png` — step 1 with the worked example
 - `02-geometry.png` — pocket and material
 - `03-wires.png` — standard wire list with corrected stress
+- `07-heatmap.png` — coil diameter versus wire heat map (worked example)
 - `04-optimise.png` — coil-diameter optimisation
 - `05-results.png` — full-page results
 - `05-results-viewport.png` — results screen at phone viewport (graph and start of the key)

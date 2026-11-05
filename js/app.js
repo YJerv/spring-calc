@@ -10,8 +10,10 @@
     mode: "A",
     loads: null,
     selectedWire: null,
+    preferredD: null,
     design: null,
-    scan: null
+    scan: null,
+    heatmap: null
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -179,7 +181,10 @@
     }
     $("btnBack").disabled = step === 1;
     $("btnNext").textContent = step === 5 ? "Start again" : (step === 4 ? "Show results" : "Next");
-    if (step === 3) renderWires();
+    if (step === 3) {
+      renderHeatmap();
+      renderWires();
+    }
     if (step === 4) setupOptimise();
     if (step === 5) renderResults();
     window.scrollTo(0, 0);
@@ -206,6 +211,107 @@
       useIndicativeRm: g.useIndicativeRm,
       materialId: g.materialId
     };
+  }
+
+  function formatList(items) {
+    if (!items.length) return "";
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return items[0] + " and " + items[1];
+    return items.slice(0, -1).join(", ") + " and " + items[items.length - 1];
+  }
+
+  function describeBestDiameters(hm) {
+    if (!hm || !hm.maxViable) {
+      return "No combination of mean diameter and standard wire passes every screening check. Try easing the pocket, load or allowable stress.";
+    }
+    var labels = hm.bestDiameters.map(function (D) { return E.fmt(D, 1); });
+    var n = hm.maxViable;
+    var sizes = n === 1 ? "1 viable wire size" : n + " viable wire sizes";
+    var verb = hm.bestDiameters.length === 1 ? "gives" : "give";
+    return "Most wire options: D = " + formatList(labels) + " mm " + verb + " " + sizes + ".";
+  }
+
+  function cellLabel(cell) {
+    var d = E.fmt(cell.d, 2);
+    var D = E.fmt(cell.D, 1);
+    if (cell.band === "invalid") {
+      var why = (cell.reasons && cell.reasons[0]) || "fails a geometry or coil-count check";
+      return "Wire " + d + " mm at D " + D + " mm: invalid — " + why;
+    }
+    var stress = "τk " + E.fmt(cell.pctAllow, 1) + " % of allowable";
+    if (cell.band === "over") return "Wire " + d + " mm at D " + D + " mm: " + stress + " (over)";
+    if (cell.viable) return "Wire " + d + " mm at D " + D + " mm: " + stress + (cell.status === "warning" ? " (pass with warning)" : " (viable)");
+    return "Wire " + d + " mm at D " + D + " mm: " + stress;
+  }
+
+  function renderHeatmap() {
+    var mount = $("heatmapScroll");
+    var bestBox = $("heatmapBest");
+    if (!mount) return;
+    var input = wireInputBase();
+    var hm = E.buildHeatmap(input, { step: 0.5 });
+    state.heatmap = hm;
+    if (bestBox) bestBox.textContent = describeBestDiameters(hm);
+    if (!hm.rows.length) {
+      mount.innerHTML = "<p class=\"lead\">The heat map needs a pocket diameter and load case before it can be drawn.</p>";
+      return;
+    }
+    var selectedD = state.preferredD;
+    var selectedWire = state.selectedWire;
+    var head = "<th class=\"sticky-col\">D, mm</th>" +
+      hm.wires.map(function (d) {
+        return "<th scope=\"col\"><span>" + E.fmt(d, d >= 1 ? 2 : 2) + "</span></th>";
+      }).join("") +
+      "<th class=\"sticky-end\">Options</th>";
+    var displayRows = hm.rows.slice().reverse();
+    var body = displayRows.map(function (row) {
+      var best = row.isBest ? " best" : "";
+      var cells = row.cells.map(function (cell) {
+        var sel = (selectedWire != null && selectedD != null &&
+          Math.abs(selectedWire - cell.d) < 1e-9 &&
+          Math.abs(selectedD - cell.D) < 1e-9) ? " selected" : "";
+        return "<td><button type=\"button\" class=\"hm-cell " + cell.band + sel +
+          "\" data-wire=\"" + cell.d + "\" data-coil=\"" + cell.D +
+          "\" title=\"" + cellLabel(cell).replace(/"/g, "&quot;") +
+          "\" aria-label=\"" + cellLabel(cell).replace(/"/g, "&quot;") +
+          "\"></button></td>";
+      }).join("");
+      return "<tr class=\"" + best.trim() + "\">" +
+        "<th class=\"sticky-col\" scope=\"row\">" + E.fmt(row.D, 1) +
+        (row.isBest ? " <span class=\"best-mark\" title=\"Most wire options\">★</span>" : "") +
+        "</th>" + cells +
+        "<td class=\"sticky-end count\">" + row.viableCount + "</td></tr>";
+    }).join("");
+    mount.innerHTML =
+      "<table class=\"heatmap\" id=\"heatmapTable\">" +
+      "<caption class=\"sr-only\">Mean coil diameter versus standard wire diameter</caption>" +
+      "<thead><tr>" + head + "</tr></thead>" +
+      "<tbody>" + body + "</tbody></table>";
+    var focus = mount.querySelector(".hm-cell.selected") ||
+      mount.querySelector("tr.best .hm-cell.good, tr.best .hm-cell.amber") ||
+      mount.querySelector("tr.best");
+    if (focus) {
+      var focusBox = focus.getBoundingClientRect();
+      var view = mount.getBoundingClientRect();
+      if (view.height && view.width) {
+        mount.scrollTop += (focusBox.top + focusBox.bottom) / 2 - (view.top + view.bottom) / 2;
+        mount.scrollLeft += (focusBox.left + focusBox.right) / 2 - (view.left + view.right) / 2;
+      }
+    }
+  }
+
+  function selectHeatmapCell(d, D) {
+    state.selectedWire = Number(d);
+    state.preferredD = Number(D);
+    var g = geometry();
+    if (g.useIndicativeRm) {
+      var irm = E.indicativeRm(g.materialId, state.selectedWire);
+      if (irm) setVal("Rm", Math.round(irm));
+    }
+    showErr("err3", []);
+    renderHeatmap();
+    renderWires();
+    persist();
   }
 
   function renderWires() {
@@ -248,6 +354,7 @@
       if (irm) setVal("Rm", Math.round(irm));
     }
     renderWires();
+    renderHeatmap();
     persist();
   }
 
@@ -264,7 +371,10 @@
     slider.min = scan.bounds.Dmin.toFixed(3);
     slider.max = scan.bounds.Dmax.toFixed(3);
     slider.step = "0.01";
-    var startD = state.design && state.design.d === input.d ? state.design.D : scan.bounds.Dmax;
+    var startD;
+    if (state.preferredD != null) startD = state.preferredD;
+    else if (state.design && state.design.d === input.d) startD = state.design.D;
+    else startD = scan.bounds.Dmax;
     startD = Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, startD));
     slider.value = startD;
     C.renderTradeoff($("tradeoffSvg"), scan.rows, startD);
@@ -444,6 +554,10 @@
     setVal("Rm", 1800);
     setVal("tauFactor", 0.5);
     $("useIndicativeRm").checked = false;
+    state.selectedWire = null;
+    state.preferredD = null;
+    state.design = null;
+    state.heatmap = null;
     refreshLoadSummary();
     refreshGeomSummary();
   }
@@ -462,6 +576,7 @@
           tauFactor: val("tauFactor"),
           useIndicativeRm: $("useIndicativeRm").checked,
           selectedWire: state.selectedWire,
+          preferredD: state.preferredD,
           D: state.design ? state.design.D : null
         }
       };
@@ -478,6 +593,7 @@
       Object.keys(v).forEach(function (k) {
         if (k === "useIndicativeRm") $("useIndicativeRm").checked = !!v[k];
         else if (k === "selectedWire") state.selectedWire = v[k];
+        else if (k === "preferredD") state.preferredD = v[k] == null || v[k] === "" ? null : Number(v[k]);
         else if (k === "D") { /* applied after evaluate */ }
         else if ($(k)) setVal(k, v[k]);
       });
@@ -491,6 +607,11 @@
       if (v.Rm) setVal("Rm", v.Rm);
       syncModeUI();
       refreshGeomSummary();
+      if (v.preferredD != null && v.preferredD !== "") {
+        state.preferredD = Number(v.preferredD);
+      } else if (v.D != null && v.D !== "") {
+        state.preferredD = Number(v.D);
+      }
       if (v.selectedWire && v.D) {
         state.selectedWire = Number(v.selectedWire);
         if (state.loads && geometry().DeMax > 0) {
@@ -537,6 +658,10 @@
     $("wireList").addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-d]");
       if (btn) selectWire(btn.getAttribute("data-d"));
+    });
+    $("heatmapScroll").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-wire][data-coil]");
+      if (btn) selectHeatmapCell(btn.getAttribute("data-wire"), btn.getAttribute("data-coil"));
     });
     $("Dslider").addEventListener("input", function (ev) {
       updateOptimise(ev.target.value);

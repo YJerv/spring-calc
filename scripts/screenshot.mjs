@@ -53,6 +53,33 @@ await page.waitForTimeout(200);
 await shot("02-geometry.png");
 
 await page.click("#btnNext");
+await page.waitForSelector("#heatmapTable");
+await page.waitForTimeout(300);
+await page.evaluate(() => {
+  const scroller = document.getElementById("heatmapScroll");
+  const cell = scroller && scroller.querySelector('.hm-cell[data-wire="2"]');
+  const row = scroller && scroller.querySelector(".heatmap tr.best");
+  const target = cell || row;
+  if (scroller && target) {
+    const focusBox = target.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    scroller.scrollTop += (focusBox.top + focusBox.bottom) / 2 - (view.top + view.bottom) / 2;
+    scroller.scrollLeft += (focusBox.left + focusBox.right) / 2 - (view.left + view.right) / 2;
+  }
+});
+await page.waitForTimeout(200);
+await page.addStyleTag({
+  content: ".app-header, .progress, .step-nav { visibility: hidden !important; }"
+});
+const heatmapPanel = page.locator("#heatmapPanel");
+await heatmapPanel.screenshot({ path: path.join(outDir, "07-heatmap.png") });
+console.log("wrote", path.join(outDir, "07-heatmap.png"));
+await page.evaluate(() => {
+  document.querySelectorAll("style").forEach((s) => {
+    if (s.textContent && s.textContent.indexOf(".app-header, .progress, .step-nav") !== -1) s.remove();
+  });
+});
+
 await page.waitForSelector(".wire-card");
 const wire = page.locator('.wire-card[data-d="2"]');
 if (await wire.count()) {

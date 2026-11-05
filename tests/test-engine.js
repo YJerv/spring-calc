@@ -201,6 +201,96 @@ assertClose(E.wahlK(10), (39 / 36) + 0.0615, "Wahl k at w = 10 (reference only)"
 assertClose(E.bergstraesserK(10), 10.5 / 9.25, "Bergsträsser used for design τk");
 assert(E.bergstraesserK(10) !== E.wahlK(10), "Bergsträsser and Wahl are distinct");
 
+console.log("\nHeat map grid and viable counts");
+const hmInput = {
+  DeMax: 18.5,
+  G: 81500,
+  Rm: 1800,
+  tauFactor: 0.5,
+  R: loads.R,
+  L0: loads.L0,
+  L1: loads.L1,
+  F1: loads.F1,
+  L2: loads.L2,
+  F2: loads.F2,
+  Fmax: loads.Fmax,
+  LmaxLoad: loads.LmaxLoad,
+  ends: "closed_ground"
+};
+const hm = E.buildHeatmap(hmInput, { step: 0.5 });
+assert(hm.step === 0.5, "Heat map uses 0.5 mm steps");
+assert(hm.wires.indexOf(2) >= 0, "Heat map includes 2.00 mm wire");
+assert(hm.wires.every(function (d) { return d < 18.5; }), "Heat map omits wires thicker than De max");
+assert(hm.diameters.length > 4, "Heat map has a range of mean diameters");
+assertClose(hm.diameters[1] - hm.diameters[0], 0.5, "Mean diameters step by 0.5 mm");
+assert(hm.Dmin >= 4 * hm.wires[0] - 1e-9, "D axis starts at a sensible minimum (w ≥ 4 on the finest wire)");
+assert(hm.Dmax <= 18.5 - hm.wires[0] + 1e-9, "D axis stops at D max from the pocket");
+assert(hm.diameters.indexOf(16.5) >= 0, "Worked-example D = 16.5 mm is on the grid");
+
+function hmCell(grid, D, d) {
+  const row = grid.rows.find(function (r) { return Math.abs(r.D - D) < 1e-9; });
+  if (!row) return null;
+  return row.cells.find(function (c) { return Math.abs(c.d - d) < 1e-9; }) || null;
+}
+
+const cellEx = hmCell(hm, 16.5, 2);
+assert(!!cellEx, "Finds the worked-example cell D = 16.5 mm, d = 2 mm");
+assert(cellEx.viable && cellEx.geometricOk, "Worked-example cell is viable");
+assertClose(cellEx.pctAllow, ev.pctAllow, "Heat-map stress matches evaluateDesign", 1e-6);
+assert(cellEx.band === "amber" || cellEx.band === "good", "Worked-example cell is coloured by stress, not grey");
+
+const cellThin = hmCell(hm, 16.5, 0.5);
+assert(!!cellThin, "Includes a fine-wire cell at D = 16.5 mm");
+assert(!cellThin.geometricOk && !cellThin.viable, "Fine wire at large D fails the index check");
+assert(cellThin.band === "invalid", "Index failure is greyed out");
+
+const cellPocket = hmCell(hm, 16.5, 3);
+assert(!!cellPocket, "Includes 3.00 mm at D = 16.5 mm");
+assert(!cellPocket.geometricOk && cellPocket.band === "invalid", "De above the pocket is greyed out");
+
+const cellIndex = hmCell(hm, 6, 2);
+assert(!!cellIndex, "Includes D = 6.0 mm, d = 2 mm");
+assert(!cellIndex.geometricOk && cellIndex.band === "invalid", "Index below 4 is greyed out");
+
+const cellOver = hmCell(hm, 16.5, 1.8);
+assert(!!cellOver, "Includes D = 16.5 mm, d = 1.8 mm");
+assert(cellOver.geometricOk, "1.8 mm at D = 16.5 mm is geometrically valid");
+assert(!cellOver.viable, "1.8 mm at D = 16.5 mm exceeds allowable stress");
+assert(cellOver.band === "over", "Stress above allowable is coloured red, not grey");
+assert(cellOver.pctAllow > 100, "Over-stress cell has τk above 100 % of allowable");
+
+hm.rows.forEach(function (row) {
+  const counted = row.cells.filter(function (c) { return c.viable; }).length;
+  assert(row.viableCount === counted, "Viable count for D = " + row.D + " matches passing cells");
+});
+
+const countedMax = Math.max.apply(null, hm.rows.map(function (r) { return r.viableCount; }));
+assert(hm.maxViable === countedMax, "maxViable is the largest per-row count");
+assert(hm.bestDiameters.length >= 1, "At least one coil diameter is marked as having the most options");
+assert(hm.bestDiameters.every(function (D) {
+  const row = hm.rows.find(function (r) { return Math.abs(r.D - D) < 1e-9; });
+  return row && row.isBest && row.viableCount === hm.maxViable;
+}), "Highlighted diameters are exactly those with the maximum viable count");
+assert(hm.rows.filter(function (r) { return r.isBest; }).length === hm.bestDiameters.length,
+  "isBest flags match bestDiameters");
+
+assert(E.heatmapBand(50, true) === "good", "τk at 50 % of allowable is green (well within)");
+assert(E.heatmapBand(85, true) === "amber", "τk at 85 % of allowable is amber");
+assert(E.heatmapBand(100, true) === "amber", "τk at 100 % of allowable is amber (at the limit)");
+assert(E.heatmapBand(120, true) === "over", "τk at 120 % of allowable is red (over)");
+assert(E.heatmapBand(40, false) === "invalid", "Geometrically invalid cells are grey regardless of stress");
+assert(E.heatmapBand(NaN, true) === "invalid", "Non-finite stress on an otherwise open cell is treated as invalid");
+
+const emptyHm = E.buildHeatmap({ DeMax: 0, R: 5, L0: 60, G: 81500, Rm: 1800 }, { step: 0.5 });
+assert(emptyHm.rows.length === 0 && emptyHm.maxViable === 0, "Empty or invalid input yields an empty grid");
+
+const customHm = E.buildHeatmap(Object.assign({}, hmInput, { wires: [2, 1.8, 2.2] }), { step: 0.5 });
+assert(customHm.wires.length === 3, "Custom wire list is honoured");
+assert(customHm.wires.indexOf(1) === -1, "Custom list does not inject extra standard sizes");
+
+console.log("    Heat map D range " + hm.Dmin + "–" + hm.Dmax + " mm in " + hm.diameters.length + " steps");
+console.log("    Most options: D = " + hm.bestDiameters.join(", ") + " mm with " + hm.maxViable + " viable wire sizes");
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");
