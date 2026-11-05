@@ -445,11 +445,47 @@
     return "<tr><td>" + name + "</td><td class=\"sym\">" + sym + "</td><td>" + value + "</td></tr>";
   }
 
+  function currentGrade() {
+    var g = Number(val("grade"));
+    if (g !== 1 && g !== 2 && g !== 3) g = 2;
+    return g;
+  }
+
+  function setGrade(g) {
+    g = Number(g);
+    if (g !== 1 && g !== 2 && g !== 3) g = 2;
+    setVal("grade", String(g));
+    setVal("gradeResult", String(g));
+    return g;
+  }
+
+  function renderToleranceTable(model) {
+    var body = $("tolerances").querySelector("tbody");
+    body.innerHTML = model.table1.rows.map(function (r) {
+      return row(r.particular, r.symbol, r.value);
+    }).join("");
+    var note = $("tolNote");
+    if (model.tolerances.notes.length) {
+      note.classList.remove("hidden");
+      note.innerHTML = model.tolerances.notes.join("<br>");
+    } else {
+      note.classList.add("hidden");
+      note.innerHTML = "";
+    }
+    $("tolVerify").textContent = model.verificationNote;
+  }
+
   function renderResults() {
     var ev = state.design;
     if (!ev) return;
     ev.wind = val("wind");
     ev.materialName = E.materialById(val("material")).shortName;
+    var model = SpringDrawing.build(ev, {
+      grade: currentGrade(),
+      clearance: geometry().clearance
+    });
+    state.drawing = model;
+    renderToleranceTable(model);
     var banner = $("resultBanner");
     banner.className = "status-banner " + ev.status;
     banner.innerHTML = "<strong>" + ev.status.toUpperCase() + "</strong> — " +
@@ -543,6 +579,7 @@
     setVal("clearance", 1.5);
     setVal("ends", "closed_ground");
     setVal("wind", "right");
+    setGrade(2);
     setVal("material", "10270-1-DH");
     onMaterialChange();
     setVal("G", 81500);
@@ -566,7 +603,7 @@
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
           Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
           pocket: val("pocket"), clearance: val("clearance"),
-          ends: val("ends"), wind: val("wind"),
+          ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
           tauFactor: val("tauFactor"),
           useIndicativeRm: $("useIndicativeRm").checked,
@@ -598,6 +635,7 @@
         if (radio) radio.checked = true;
       }
       if (v.material) $("material").value = v.material;
+      if (v.grade) setGrade(v.grade);
       if (v.G) setVal("G", v.G);
       if (v.Rm) setVal("Rm", v.Rm);
       syncModeUI();
@@ -662,7 +700,24 @@
       updateOptimise(ev.target.value);
     });
     $("btnOptimise").addEventListener("click", autoOptimise);
+    function onGradeInput(id) {
+      setGrade(val(id));
+      if (state.step === 5 && state.design) renderResults();
+      persist();
+    }
+    $("grade").addEventListener("change", function () { onGradeInput("grade"); });
+    $("gradeResult").addEventListener("change", function () { onGradeInput("gradeResult"); });
     $("btnPrint").addEventListener("click", function () { window.print(); });
+    $("btnExportA3").addEventListener("click", function () {
+      if (!state.design || typeof SpringPdf === "undefined") return;
+      state.design.wind = val("wind");
+      state.design.materialName = E.materialById(val("material")).shortName;
+      SpringPdf.save(state.design, {
+        grade: currentGrade(),
+        clearance: geometry().clearance,
+        filename: "helical-compression-spring-a3.pdf"
+      });
+    });
     $("btnExportTxt").addEventListener("click", function () {
       download("spring-particulars.txt", particularsText(), "text/plain");
     });

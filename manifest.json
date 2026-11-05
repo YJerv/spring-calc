@@ -1,7 +1,7 @@
 {
   "name": "Helical Spring Designer",
   "short_name": "Spring Designer",
-  "description": "BS EN 13906-1 helical compression spring calculator",
+  "description": "BS EN 13906-1 helical compression spring calculator with BS EN 15800 tolerances",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
