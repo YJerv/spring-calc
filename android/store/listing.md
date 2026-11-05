@@ -8,7 +8,7 @@ Default language: **English (United Kingdom)**.
 
 Category to choose: **Tools**.
 
-Contact email: use the address you want buyers to see. The privacy policy points at that Play listing address. Do not invent one in the app.
+Contact on the listing is an email buyers can use. The account is declared non-trader, so the public listing is an email and a country. Do not enter a street address, a home address, or a phone number in the store listing, the short description, the full description, or the privacy policy. The privacy policy points at that Play listing email. Do not invent an email in the app.
 
 Privacy policy URL, once this branch is on `main` and Pages has rebuilt:
 

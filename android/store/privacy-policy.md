@@ -14,7 +14,7 @@ This policy covers the calculator at https://yjerv.github.io/spring-calc/ and th
 
 ## Who publishes it
 
-The app is published by YJerv. The contact address is the developer email on the Google Play listing. There is no separate account system.
+The app is published by YJerv, as an individual hobby developer. Contact is the developer email on the Google Play listing. This page does not publish a postal address. There is no separate account system.
 
 ## What happens to the numbers you type
 

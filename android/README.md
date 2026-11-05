@@ -36,7 +36,7 @@ The same id is in `twa-manifest.json`, `app/build.gradle`, `AndroidManifest.xml`
 3. Create a signing key and keep it off git.
 4. Build the release App Bundle (`.aab`).
 5. Publish `assetlinks.json` on the **user** GitHub Pages site, not only in this repo.
-6. Create the app as **Paid**, price the United Kingdom at **£4.99**.
+6. Create the app as **Paid**, price the United Kingdom at **£4.99**, and declare the developer account **non-trader** (individual hobby developer). The public listing shows an email and a country. It does not show a home address.
 7. Add yourself as a licence tester and install from an internal test track.
 
 Store text is in [`store/listing.md`](store/listing.md). The privacy policy to host is [`/privacy.html`](../privacy.html), and the same words are in [`store/privacy-policy.md`](store/privacy-policy.md).
@@ -47,14 +47,14 @@ Google charges a one-time **US$25** registration fee. It is not £4.99, and it i
 
 1. Sign in with the Google account that should own the app.
 2. Open https://play.google.com/console/signup and finish registration.
-3. Complete identity verification. For a UK account this can take a few days. Use your own legal name and address. Do not put them in this repo.
+3. Complete identity verification. For a UK account this can take a few days. Google asks for your legal name and address in that private check. Do not copy them into this repo, the store listing, or the privacy page.
 4. You cannot upload an App Bundle until the account is approved.
 
 To **sell** the app you also need a payments profile, separate from the US$25 fee. Play Console path:
 
 **Manage account → Play apps settings → Monetisation settings → Payments profile**
 
-(The US English console says “Monetization”.) Create the profile with your own legal name, a real street address (not a PO box) and the bank account that should receive sales. The country on that profile is fixed afterwards. Google takes a service fee on each sale. The rate is shown in Play Console. It is not set in this project.
+(The US English console says “Monetization”.) Google asks there for the legal name, a street address and the bank account that should receive sales. A PO box is not accepted. The country on that profile is fixed afterwards. That address stays inside the payments profile so Google can pay you. It is not a store-listing field. Do not type it into the listing, the privacy policy, or any file in this repository. Google takes a service fee on each sale. The rate is shown in Play Console. It is not set in this project.
 
 ## 2. JDK, Bubblewrap and the Android SDK
 
@@ -238,6 +238,29 @@ Price, after the payments profile exists:
 Paid apps are not offered in every country. That is Play’s rule. Leaving a country without a price means buyers there cannot install it.
 
 Do not add an in-app product. `features.playBilling` in `twa-manifest.json` stays off.
+
+### Non-trader for now
+
+Launch as a paid app at £4.99 and declare **non-trader**. You are an individual hobby developer. Buyers should see a contact email and a country. They should not see a home address.
+
+The declaration is on the developer account, and only the account owner can submit it:
+
+1. The Play Console home page may show **Declare your trader status**. Start there if it does.
+2. Otherwise open **Manage account → Account details → About you**.
+3. Under **Trader status**, choose **Declare your trader status**. The top of the same page may say **Declare status**.
+4. Select **This is a non-trader account**. That is the option for a personal hobby, or other publishing that is not for a trade, business, craft or profession. Leave **This is a trader account** unselected.
+5. Continue to **Declaration and consent**, tick the box, choose **Save**, then **Confirm**.
+6. **About you** should then show **Non-trader** under **Trader status**.
+
+If Play also asks on the app, open Helical Spring Designer and go to **Monitor and improve → Policy and programmes → App content** (US consoles say “programs”). Confirm that the account’s non-trader status applies to this app. Do not enter a postal address or a phone number. A terms-of-service URL is optional for a non-trader. Leave it empty unless the page you link also contains no home address.
+
+For a non-trader, Play describes the UK and EEA listing as an email address and a country, not a street address or a phone number. The public developer name can stay **YJerv**. After the listing is visible, open it the way a buyer would and check that no street address is shown.
+
+An older Play help page still says a paid account displays the address from the payments profile. If that address has appeared on the listing, leave it out of this repo and out of the privacy page. The public address to use later is a business address, via the change below, not the home address copied into our pages.
+
+You can change the declaration later, on the same screen: **Manage account → Account details → About you → Trader status**. Choose **This is a trader account** when you are publishing for a trade or business. A trader listing shows a name, address, phone number and email. Supply a business address you are willing to show, such as a registered office, not your home address. You do not need a new Play developer account to make that change.
+
+Google lists a paid app as one sign that an account may be a trader, and they may later ask you to update the declaration. The status recorded for this launch is still non-trader.
 
 ### Upload
 
