@@ -54,6 +54,8 @@ body {
   font-size: 0.75rem;
   opacity: 0.78;
 }
+.app-header .header-links { margin-top: 8px; }
+.app-header .header-links a { color: var(--gold-soft); }
 
 .progress {
   display: flex;
