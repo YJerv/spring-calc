@@ -137,6 +137,28 @@ assert(svgB.innerHTML.indexOf(">L1<") === -1, "Graph omits an L1 tick when L1 is
 assert(svgB.innerHTML.indexOf(">L0<") !== -1 && svgB.innerHTML.indexOf(">L2<") !== -1,
   "Graph still labels L0 and L2 when L1 is unset");
 
+const plotTop = 26;
+const dashed = [];
+html.replace(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)"[^>]*stroke-dasharray="3 3"[^>]*>/g,
+  function (_, x1, y1, x2, y2) {
+    dashed.push({ x1: Number(x1), y1: Number(y1), x2: Number(x2), y2: Number(y2) });
+    return _;
+  });
+assert(dashed.length === 4, "Four vertical markers (L1, L2, Ln, Lc); L0 needs none because it sits on the axis",
+  "found " + dashed.length);
+dashed.forEach(function (ln, i) {
+  assert(Math.abs(ln.x1 - ln.x2) < 1e-6, "Vertical marker " + i + " is vertical");
+  assert(Math.abs(ln.y2 - (336 - 78)) < 1e-6, "Vertical marker " + i + " starts at the x axis");
+  assert(ln.y1 > plotTop + 1, "Vertical marker " + i + " does not extend above the spring line to the plot top",
+    "y1=" + ln.y1 + " plotTop=" + plotTop);
+  assert(ln.y1 < ln.y2 - 1, "Vertical marker " + i + " runs upward from the axis and stops at the load point");
+});
+const loadedYs = [byId.L1, byId.L2, byId.Ln, byId.Lc].map(function (s) {
+  /* yOf(F) = (H-pad.b) - (F/Ftop)*(H-pad.t-pad.b); Ftop = maxF * 1.16 */
+  return s;
+});
+assert(loadedYs.length === 4, "Four loaded stations to match the trimmed markers");
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

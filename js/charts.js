@@ -185,10 +185,12 @@
     stations.forEach(function (s) {
       var x = xOf(s.L);
       var y = yOf(s.F);
-      parts.push(empty("line", {
-        x1: x, y1: pad.t, x2: x, y2: H - pad.b,
-        stroke: s.colour, "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0.8
-      }));
+      if (H - pad.b - y > 1) {
+        parts.push(empty("line", {
+          x1: x, y1: y, x2: x, y2: H - pad.b,
+          stroke: s.colour, "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0.8
+        }));
+      }
       parts.push(empty("circle", {
         cx: x, cy: y, r: 4.2, fill: s.colour, stroke: "#fbf8f1", "stroke-width": 1.4
       }));

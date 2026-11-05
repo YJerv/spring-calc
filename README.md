@@ -113,6 +113,7 @@ Phone-sized captures (390 × 844 logical pixels, 2× pixel density) live in `scr
 - `05-results-viewport.png` — results screen at phone viewport (graph and start of the key)
 - `05a-graph.png` — load–length graph
 - `08-graph-v12.png` — load–length graph with axis ticks and horizontal compression/stress labels (v1.2)
+- `09-graph-v13.png` — load–length graph with vertical markers trimmed to the spring line (v1.3)
 - `05b-graph-key.png` — lengths, loads and deflection percentages
 - `05c-particulars.png` — spring particulars table
 - `06-diagram.png` — scaled side-view diagram at free length
