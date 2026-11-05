@@ -36,7 +36,7 @@ There is no build step. The same `js/engine.js` file is loaded by the browser an
 2. **Geometry** — pocket (hole) maximum diameter, diametral clearance, ends, material G and Rm.
 3. **Wire** — a heat map of mean coil diameter `D` (0.5 mm steps up to the pocket limit) against the EN 10270 / ISO standard wire series (0.20 mm to 12 mm). Each cell is coloured by corrected stress τk as a percentage of allowable (green / amber / red) and greyed out when the design fails a pocket, index, solid-length or coil-count check. Each row counts the viable wire sizes and the diameter with the most options is highlighted; tapping a cell selects that `D` and `d` for the later steps. The same sizes are also listed below, evaluated at maximum mean diameter `D = De max − d`, with corrected stress, percentage of allowable, active coils, solid length, and a pass/fail colour.
 4. **Coil diameter** — slider plus auto-optimise for index 4–16, pocket fit, stress, solid length and a sensible coil count. A diameter chosen on the heat map is carried through as the starting point.
-5. **Results** — load–length graph (L0, L1, L2, Ln, Lc with loads and deflection %), particulars table, scaled SVG side view. Print / PDF and text or JSON export.
+5. **Results** — load–length graph (length ticks under the axis; horizontal load lines labelled with compression as a percentage of available travel L0 − Lc and corrected stress τk), particulars table, scaled SVG side view. Print / PDF and text or JSON export.
 
 A **Load worked example** button fills:
 
@@ -112,6 +112,7 @@ Phone-sized captures (390 × 844 logical pixels, 2× pixel density) live in `scr
 - `05-results.png` — full-page results
 - `05-results-viewport.png` — results screen at phone viewport (graph and start of the key)
 - `05a-graph.png` — load–length graph
+- `08-graph-v12.png` — load–length graph with axis ticks and horizontal compression/stress labels (v1.2)
 - `05b-graph-key.png` — lengths, loads and deflection percentages
 - `05c-particulars.png` — spring particulars table
 - `06-diagram.png` — scaled side-view diagram at free length

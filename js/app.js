@@ -430,20 +430,15 @@
 
   function renderGraphLegend(ev) {
     var body = $("graphLegend").querySelector("tbody");
-    function lr(sym, L, F, extra) {
-      if (L == null || F == null) return "";
-      var p = travelPct(ev, L);
-      return "<tr><td>" + sym + (extra ? " <span class=\"hint\">" + extra + "</span>" : "") +
-        "</td><td>" + E.fmt(L, 2) + " mm</td><td>" + E.fmt(F, 1) + " N</td><td>" +
-        (p == null ? "—" : E.fmt(p, 1) + " %") + "</td></tr>";
-    }
-    body.innerHTML = [
-      lr("L0", ev.L0, 0, "free"),
-      ev.L1 != null ? lr("L1", ev.L1, ev.F1, "") : "",
-      ev.L2 != null ? lr("L2", ev.L2, ev.F2, "max. working") : "",
-      lr("Ln", ev.Ln, ev.Fn, "85 % travel"),
-      lr("Lc", ev.Lc, ev.Fc, "solid")
-    ].join("");
+    var extras = { L0: "free", L1: "", L2: "max. working", Ln: "85 % travel", Lc: "solid" };
+    var stations = C.loadGraphStations(ev);
+    body.innerHTML = stations.map(function (s) {
+      var extra = extras[s.id] || "";
+      return "<tr><td>" + s.id + (extra ? " <span class=\"hint\">" + extra + "</span>" : "") +
+        "</td><td>" + E.fmt(s.L, 2) + " mm</td><td>" + E.fmt(s.F, 1) + " N</td><td>" +
+        (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %") + "</td><td>" +
+        (s.tauK == null ? "—" : E.fmt(s.tauK, 0) + " N/mm²") + "</td></tr>";
+    }).join("");
   }
 
   function row(name, sym, value) {

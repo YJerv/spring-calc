@@ -225,17 +225,18 @@
         <h2>5. Results</h2>
         <div id="resultBanner"></div>
         <h3 style="margin:8px 0 4px;font-size:1rem;">Load–length characteristic</h3>
-        <p class="lead">Markers show L0, L1, L2, Ln and Lc with load and deflection as a percentage of available travel (L0 − Lc). Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>
+        <p class="lead">Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Vertical markers remain at each station. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>
         <div class="chart-wrap">
           <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
         <div class="table-wrap">
           <table class="particulars" id="graphLegend">
             <thead>
-              <tr><th>Station</th><th>Length</th><th>Load</th><th>Travel</th></tr>
+              <tr><th>Station</th><th>Length</th><th>Load</th><th>Compression</th><th>τk</th></tr>
             </thead>
             <tbody></tbody>
           </table>
+          <p class="lead hint" id="graphLegendNote">Compression is the deflection as a percentage of available travel (L0 − Lc). τk is the Bergsträsser-corrected shear stress.</p>
         </div>
       </div>
       <div class="card">

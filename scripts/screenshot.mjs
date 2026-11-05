@@ -121,6 +121,7 @@ async function shotEl(sel, name) {
 }
 
 await shotEl("#graphSvg", "05a-graph.png");
+await shotEl("#graphSvg", "08-graph-v12.png");
 await shotEl("#graphLegend", "05b-graph-key.png");
 await shotEl("#particulars", "05c-particulars.png");
 await shotEl("#springSvg", "06-diagram.png");

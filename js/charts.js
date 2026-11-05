@@ -34,16 +34,62 @@
       .replace(/>/g, "&gt;");
   }
 
+  function travelPercent(design, L) {
+    if (L == null || !isFinite(L) || !(design.sc > 0)) return null;
+    return (100 * (design.L0 - L)) / design.sc;
+  }
+
+  function stressAtLoad(design, F) {
+    if (F == null || !isFinite(F)) return null;
+    if (!(F > 0)) return 0;
+    if (design.Fmax > 0 && isFinite(design.tauK)) return design.tauK * (F / design.Fmax);
+    return null;
+  }
+
+  function loadGraphStations(design) {
+    var stations = [
+      { id: "L0", L: design.L0, F: 0, colour: "#1b4f72" }
+    ];
+    if (design.L1 != null && design.F1 != null) {
+      stations.push({ id: "L1", L: design.L1, F: design.F1, colour: "#2e7d4f" });
+    }
+    if (design.L2 != null && design.F2 != null) {
+      stations.push({ id: "L2", L: design.L2, F: design.F2, colour: "#8a4b08" });
+    }
+    if (design.Ln != null && design.Fn != null) {
+      stations.push({ id: "Ln", L: design.Ln, F: design.Fn, colour: "#6b4c9a" });
+    }
+    if (design.Lc != null && design.Fc != null) {
+      stations.push({ id: "Lc", L: design.Lc, F: design.Fc, colour: "#8b1e1e" });
+    }
+    stations.forEach(function (s) {
+      s.travelPct = travelPercent(design, s.L);
+      s.tauK = stressAtLoad(design, s.F);
+    });
+    return stations.filter(function (s) {
+      return s.L != null && s.F != null && isFinite(s.L) && isFinite(s.F);
+    });
+  }
+
+  function approxTextWidth(str, fontSize) {
+    return String(str).length * fontSize * 0.58;
+  }
+
   function renderLoadGraph(svg, design) {
     var W = 390;
-    var H = 300;
-    var pad = { l: 50, r: 18, t: 36, b: 50 };
+    var H = 336;
+    var pad = { l: 58, r: 14, t: 26, b: 78 };
     var L0 = design.L0;
     var Lc = design.Lc;
     var span = Math.max(L0 - Lc, 1);
     var Lleft = L0 + 0.06 * span;
     var Lright = Lc - 0.08 * span;
-    var Ftop = Math.max(design.Fc, design.Fmax, design.Fn || 0) * 1.18 || 1;
+    var stations = loadGraphStations(design);
+    var Ftop = 1;
+    stations.forEach(function (s) {
+      if (s.F > Ftop) Ftop = s.F;
+    });
+    Ftop = Ftop * 1.16 || 1;
 
     function xOf(L) {
       return pad.l + ((Lleft - L) / (Lleft - Lright)) * (W - pad.l - pad.r);
@@ -55,24 +101,6 @@
     var parts = [];
     parts.push(empty("rect", { x: 0, y: 0, width: W, height: H, fill: "#fbf8f1" }));
 
-    var grid = [];
-    for (var i = 0; i <= 5; i++) {
-      var Fg = (Ftop * i) / 5;
-      var yg = yOf(Fg);
-      grid.push(empty("line", {
-        x1: pad.l, y1: yg, x2: W - pad.r, y2: yg,
-        stroke: "#e4ddd0", "stroke-width": 1
-      }));
-      parts.push(el("text", {
-        x: pad.l - 6, y: yg + 3,
-        "text-anchor": "end",
-        "font-size": 9,
-        fill: "#5c564c",
-        "font-family": "ui-sans-serif, system-ui, sans-serif"
-      }, [txt(E.fmt(Fg, Fg >= 100 ? 0 : 1))]));
-    }
-    parts = parts.concat(grid);
-
     parts.push(empty("line", {
       x1: pad.l, y1: pad.t, x2: pad.l, y2: H - pad.b,
       stroke: "#0b1f33", "stroke-width": 1.2
@@ -82,11 +110,11 @@
       stroke: "#0b1f33", "stroke-width": 1.2
     }));
     parts.push(el("text", {
-      x: 14, y: 18, fill: "#0b1f33", "font-size": 11,
+      x: 12, y: 16, fill: "#0b1f33", "font-size": 11,
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Load F (N)"]));
     parts.push(el("text", {
-      x: W / 2, y: H - 12, fill: "#0b1f33", "font-size": 11,
+      x: pad.l + (W - pad.l - pad.r) / 2, y: H - 8, fill: "#0b1f33", "font-size": 10,
       "text-anchor": "middle",
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Length L (mm)  →  shorter"]));
@@ -100,47 +128,119 @@
       stroke: "#0b1f33", "stroke-width": 2
     }));
 
-    function mark(L, F, label, sub, colour, above) {
-      if (L == null || F == null || !isFinite(L) || !isFinite(F)) return;
-      var x = xOf(L);
-      var y = yOf(F);
-      parts.push(empty("line", {
-        x1: x, y1: pad.t, x2: x, y2: H - pad.b,
-        stroke: colour, "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0.85
-      }));
-      parts.push(empty("circle", {
-        cx: x, cy: y, r: 4.2, fill: colour, stroke: "#fbf8f1", "stroke-width": 1.4
-      }));
-      var ty = above ? y - 14 : y + 16;
-      if (ty < 16) ty = y + 16;
-      if (ty > H - pad.b - 8) ty = y - 14;
-      parts.push(el("text", {
-        x: x, y: ty, "text-anchor": "middle", fill: colour,
-        "font-size": 9, "font-weight": 700,
+    function haloText(attrs, children) {
+      attrs = Object.assign({
+        stroke: "#fbf8f1",
+        "stroke-width": 3,
+        "paint-order": "stroke",
         "font-family": "ui-sans-serif, system-ui, sans-serif"
-      }, [txt(label)]));
-      if (sub) {
-        parts.push(el("text", {
-          x: x, y: ty + (ty < y ? -11 : 11), "text-anchor": "middle", fill: "#5c564c",
-          "font-size": 8,
-          "font-family": "ui-sans-serif, system-ui, sans-serif"
-        }, [txt(sub)]));
-      }
+      }, attrs);
+      return el("text", attrs, children);
     }
 
-    mark(L0, 0, "L0", null, "#1b4f72", true);
-    if (design.L1 != null && design.F1 != null) {
-      mark(design.L1, design.F1, "L1", null, "#2e7d4f", false);
-    }
-    if (design.L2 != null && design.F2 != null) {
-      mark(design.L2, design.F2, "L2", null, "#8a4b08", true);
-    }
-    mark(design.Ln, design.Fn, "Ln", null, "#6b4c9a", true);
-    mark(Lc, design.Fc, "Lc", null, "#8b1e1e", false);
+    var loaded = stations.filter(function (s) { return s.id !== "L0"; })
+      .slice()
+      .sort(function (a, b) { return a.F - b.F; });
+
+    loaded.forEach(function (s, i) {
+      var x = xOf(s.L);
+      var y = yOf(s.F);
+      var yPrev = i === 0 ? yOf(0) : yOf(loaded[i - 1].F);
+      var yNext = i === loaded.length - 1 ? pad.t : yOf(loaded[i + 1].F);
+      var spaceAbove = y - yNext;
+      var spaceBelow = yPrev - y;
+      var above = spaceAbove >= spaceBelow;
+
+      parts.push(empty("line", {
+        x1: pad.l, y1: y, x2: x, y2: y,
+        stroke: s.colour, "stroke-width": 1.15, opacity: 0.95
+      }));
+
+      var line1 = (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %");
+      var line2 = s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " N/mm²";
+      var tw = Math.max(approxTextWidth(line1, 8), approxTextWidth(line2, 8));
+      var gap = x - pad.l;
+      var tx;
+      if (gap >= tw + 18) {
+        tx = pad.l + gap / 2;
+      } else {
+        tx = x + 8 + tw / 2;
+        if (tx + tw / 2 > W - 6) tx = W - 6 - tw / 2;
+        if (tx - tw / 2 < pad.l + 4) tx = pad.l + 4 + tw / 2;
+      }
+      var y1 = above ? y - 15 : y + 12;
+      var y2 = above ? y - 6 : y + 21;
+      parts.push(haloText({
+        x: tx, y: y1, "text-anchor": "middle", fill: s.colour,
+        "font-size": 8, "font-weight": 700
+      }, [txt(line1)]));
+      if (line2) {
+        parts.push(haloText({
+          x: tx, y: y2, "text-anchor": "middle", fill: s.colour,
+          "font-size": 8, "font-weight": 650
+        }, [txt(line2)]));
+      }
+    });
+
+    stations.forEach(function (s) {
+      var x = xOf(s.L);
+      var y = yOf(s.F);
+      parts.push(empty("line", {
+        x1: x, y1: pad.t, x2: x, y2: H - pad.b,
+        stroke: s.colour, "stroke-width": 1, "stroke-dasharray": "3 3", opacity: 0.8
+      }));
+      parts.push(empty("circle", {
+        cx: x, cy: y, r: 4.2, fill: s.colour, stroke: "#fbf8f1", "stroke-width": 1.4
+      }));
+    });
+
+    var yLabelItems = [{ F: 0, colour: "#1b4f72", id: "F0" }].concat(loaded.map(function (s) {
+      return { F: s.F, colour: s.colour, id: s.id };
+    }));
+    yLabelItems.sort(function (a, b) { return a.F - b.F; });
+    var lastY = Infinity;
+    yLabelItems.forEach(function (item) {
+      var y = yOf(item.F);
+      if (lastY - y < 11) y = lastY - 11;
+      lastY = y;
+      var label = E.fmt(item.F, item.F >= 100 ? 0 : 1);
+      parts.push(el("text", {
+        x: pad.l - 7, y: y + 3,
+        "text-anchor": "end",
+        "font-size": 9,
+        fill: item.colour,
+        "font-weight": 650,
+        "font-family": "ui-sans-serif, system-ui, sans-serif"
+      }, [txt(label)]));
+    });
+
+    var xSorted = stations.slice().sort(function (a, b) { return b.L - a.L; });
+    xSorted.forEach(function (s, i) {
+      var x = xOf(s.L);
+      var row = i % 2;
+      var ySym = H - pad.b + 13 + row * 22;
+      var yVal = ySym + 10;
+      var xAnchor = x;
+      if (i === 0 && x < pad.l + 16) xAnchor = pad.l;
+      if (i === xSorted.length - 1 && x > W - pad.r - 16) xAnchor = W - pad.r;
+      var anchor = (i === 0 && xAnchor === pad.l) ? "start"
+        : (i === xSorted.length - 1 && xAnchor === W - pad.r) ? "end"
+        : "middle";
+      parts.push(el("text", {
+        x: xAnchor, y: ySym, "text-anchor": anchor, fill: s.colour,
+        "font-size": 9, "font-weight": 700,
+        "font-family": "ui-sans-serif, system-ui, sans-serif"
+      }, [txt(s.id)]));
+      parts.push(el("text", {
+        x: xAnchor, y: yVal, "text-anchor": anchor, fill: "#5c564c",
+        "font-size": 8,
+        "font-family": "ui-sans-serif, system-ui, sans-serif"
+      }, [txt(E.fmt(s.L, 1) + " mm")]));
+    });
 
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", "Load against length for the designed spring");
+    svg.setAttribute("aria-label", "Load against length for the designed spring, with compression and corrected stress at each station");
     svg.innerHTML = parts.join("");
   }
 
@@ -375,7 +475,10 @@
   root.SpringCharts = {
     renderLoadGraph: renderLoadGraph,
     renderTradeoff: renderTradeoff,
-    renderSpringDiagram: renderSpringDiagram
+    renderSpringDiagram: renderSpringDiagram,
+    loadGraphStations: loadGraphStations,
+    travelPercent: travelPercent,
+    stressAtLoad: stressAtLoad
   };
   if (typeof module === "object" && module.exports) {
     module.exports = root.SpringCharts;

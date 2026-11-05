@@ -1,10 +1,10 @@
 {
   "name": "helical-spring-designer",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "BS EN 13906-1 helical compression spring calculator (PWA)",
   "scripts": {
-    "test": "node tests/test-engine.js",
+    "test": "node tests/test-engine.js && node tests/test-charts.js",
     "start": "python3 -m http.server 8765"
   }
 }
