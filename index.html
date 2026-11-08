@@ -3,6 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script>
+    (function () {
+      var choice = "system";
+      try {
+        var stored = localStorage.getItem("spring-calc-theme");
+        if (stored === "light" || stored === "dark" || stored === "system") choice = stored;
+      } catch (err) { /* keep system */ }
+      var dark = choice === "dark" || (choice !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.setAttribute("data-theme", choice);
+      document.documentElement.setAttribute("data-resolved", dark ? "dark" : "light");
+    })();
+  </script>
   <meta name="theme-color" content="#0b1f33">
   <meta name="description" content="Helical compression spring designer using the BS EN 13906-1 calculation method.">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,8 +28,15 @@
 </head>
 <body>
   <header class="app-header">
-    <h1>Helical Spring Designer</h1>
-    <p>Compression springs · BS EN 13906-1 · BS EN 15800 · metric · v1.4</p>
+    <div class="app-header-text">
+      <h1>Helical Spring Designer</h1>
+      <p>Compression springs · BS EN 13906-1 · BS EN 15800 · metric · v1.4</p>
+    </div>
+    <button type="button" class="settings-gear" id="btnSettings" aria-haspopup="dialog" aria-controls="settingsDialog" aria-expanded="false" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.59.22-1.14.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.49.4 1.04.72 1.63.94l.36 2.54c.05.24.26.42.49.42h3.84c.24 0 .44-.18.5-.42l.36-2.54c.59-.22 1.14-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+      </svg>
+    </button>
   </header>
 
   <div class="progress" aria-hidden="true">
@@ -224,7 +243,7 @@
         <div class="chart-wrap">
           <svg id="tradeoffSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <p class="lead hint">Amber curve: corrected stress as a percentage of allowable. Navy curve: solid length Lc. The red dashed line is L2 — Lc must stay below it.</p>
+        <p class="lead hint">Stress is the curve labelled “Stress % of allowable”. Solid length is the curve labelled “Solid length Lc”. The dashed line labelled L2 is the shorter working length; solid length must stay below it. Colour supports the labels and is not the only cue.</p>
         <div class="error" id="err4"></div>
       </div>
     </section>
@@ -316,6 +335,38 @@
     <button type="button" class="btn" id="btnNext">Next</button>
   </nav>
 
+  <div id="settingsDialog" class="settings-backdrop" hidden>
+    <div class="settings-panel" id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-head">
+        <h2 id="settingsTitle">Settings</h2>
+        <button type="button" class="btn secondary" id="btnSettingsClose">Close</button>
+      </div>
+      <fieldset class="settings-fieldset">
+        <legend>Appearance</legend>
+        <p class="theme-help" id="themeHelp">System follows the colour setting on this phone or browser, and it updates if that setting changes. Light and Dark stay on this device until you choose System again. Two phones can therefore look different until a choice is saved on each one.</p>
+        <div class="theme-options" role="radiogroup" aria-label="Colour theme" aria-describedby="themeHelp">
+          <label class="theme-option">
+            <input type="radio" name="themeChoice" value="system">
+            <span><strong>System</strong><small>Match this phone or browser</small></span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="themeChoice" value="light">
+            <span><strong>Light</strong><small>Paper background, dark text</small></span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="themeChoice" value="dark">
+            <span><strong>Dark</strong><small>Dark background, light text</small></span>
+          </label>
+        </div>
+      </fieldset>
+      <section class="settings-later" aria-label="Further settings">
+        <h3>Further settings</h3>
+        <p>Further settings will be added here. This screen does not change the calculation or the drawing.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="js/theme.js"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/en15800.js"></script>

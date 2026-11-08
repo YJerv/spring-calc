@@ -659,8 +659,100 @@
     } catch (err) { /* ignore */ }
   }
 
+  function setupSettings() {
+    if (typeof SpringTheme === "undefined") return;
+    var theme = SpringTheme.attach(document, window);
+    var backdrop = $("settingsDialog");
+    var panel = $("settingsPanel");
+    var openBtn = $("btnSettings");
+    var closeBtn = $("btnSettingsClose");
+    if (!backdrop || !panel || !openBtn || !closeBtn) return;
+    var lastFocus = null;
+
+    function syncRadios() {
+      var choice = theme.getChoice();
+      document.querySelectorAll('input[name="themeChoice"]').forEach(function (r) {
+        r.checked = r.value === choice;
+      });
+    }
+
+    function isShown(el) {
+      return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    function focusable() {
+      return Array.prototype.slice.call(panel.querySelectorAll(
+        "button, [href], input, select, textarea"
+      )).filter(function (el) {
+        return !el.disabled && isShown(el);
+      });
+    }
+
+    function setPageInert(on) {
+      document.querySelectorAll(".app-header, .progress, main, .step-nav").forEach(function (n) {
+        if (on) n.setAttribute("inert", "");
+        else n.removeAttribute("inert");
+      });
+    }
+
+    function openSettings() {
+      lastFocus = document.activeElement;
+      backdrop.hidden = false;
+      openBtn.setAttribute("aria-expanded", "true");
+      document.body.classList.add("settings-open");
+      setPageInert(true);
+      syncRadios();
+      var checked = panel.querySelector('input[name="themeChoice"]:checked');
+      var radios = panel.querySelectorAll('input[name="themeChoice"]');
+      (checked || radios[0] || closeBtn).focus();
+    }
+
+    function closeSettings() {
+      if (backdrop.hidden) return;
+      backdrop.hidden = true;
+      openBtn.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("settings-open");
+      setPageInert(false);
+      if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+      else openBtn.focus();
+    }
+
+    openBtn.addEventListener("click", openSettings);
+    closeBtn.addEventListener("click", closeSettings);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeSettings();
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (backdrop.hidden) return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        closeSettings();
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    });
+    document.querySelectorAll('input[name="themeChoice"]').forEach(function (r) {
+      r.addEventListener("change", function () {
+        if (r.checked) theme.setChoice(r.value);
+      });
+    });
+    syncRadios();
+  }
+
   function init() {
     populateMaterials();
+    setupSettings();
     document.querySelectorAll("input[name=mode]").forEach(function (r) {
       r.addEventListener("change", syncModeUI);
     });
