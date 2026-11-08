@@ -99,7 +99,7 @@ What is in force:
 - Candidates use those limits. An outer limit still caps De. An inner limit rejects a candidate whose Di is below the rod. Neither limit searches inside the existing index range 4 to 16 and does not propose an optimal diameter.
 - A rod minimum greater than or equal to the pocket maximum is rejected before the search, and the typed values are not changed.
 - No allowance is added for the spring growing under compression. That allowance is not defined.
-- The pocket fields have left page 2, so that page is no longer titled as the pocket page. Ends, grade and wind are still on it. The wire page is still the next page and its content is unchanged. The drawing tables are unchanged, so the later De/Di display rule is not applied here.
+- The pocket fields have left page 2. SC-006 then moved ends, grade and wind off that page as well. The wire page content is unchanged. The drawing tables are unchanged, so the later De/Di display rule is not applied here.
 
 Open review point, not a final decision:
 
@@ -107,11 +107,26 @@ Open review point, not a final decision:
 
 Checks: `tests/test-constraints.js`, 21 assertions. Engine, feasibility, chart, drawing, theme and PDF release tests still pass.
 
+## SC-006 — Material-only second page — built, placement of the moved fields open
+
+Attempt 1. It has not failed.
+
+What is in force:
+
+- Page 2 shows the material, G, Rm, the allowable stress factor and the indicative Rm option. It does not ask for a pocket, an inside diameter, ends, a quality grade or a wind direction.
+- The wire page is still page 3. Its heading, heat map, legend, wire list and the sentence about D = De max − d are unchanged.
+- Ends, manufacturing grade and wind are on the first page, with the diameter limits and before the loads. Ends stay available to Calculate because solid length depends on them. Grade remains linked to the same control on the results page. Wind remains available for the drawing.
+
+Open, not decided in the change log:
+
+- The log says the second page is material only and the third page stays as it is. It does not say where ends, grade and wind should go. They are on the first page so the wire page does not change. That place can be moved.
+
+Checks: `tests/test-pages.js`, 27 assertions, and the full `npm test` suite. Browser checks opened the material page and the wire page in light and dark, on a desktop window and a phone window.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-006 | Not started | Page 2 still also has ends, grade and wind; confirm when SC-006 is done |
 | SC-007 | Not started | Concept A asset is not applied yet |
 | SC-008 | Not started | No Digital Asset Links change and no signing fingerprint |
 | SC-009 | Not started | |

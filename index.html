@@ -93,6 +93,36 @@
           <p id="constraintNote" class="lead"></p>
         </fieldset>
 
+        <fieldset class="constraints">
+          <legend>Ends, grade and wind</legend>
+          <p class="hint lead">These are not material properties, so they are not on the material page, and they are not on the wire page. Ends affect solid length, so they are set before Calculate. This place on the first page is not a final decision.</p>
+          <div class="field">
+            <label for="ends">Ends</label>
+            <select id="ends">
+              <option value="closed_ground" selected>Closed and ground</option>
+              <option value="closed">Closed, not ground</option>
+              <option value="open_ground">Open and ground</option>
+              <option value="open">Open, not ground</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
+            <select id="grade">
+              <option value="1">Grade 1 — fine (Q = 0.63)</option>
+              <option value="2" selected>Grade 2 — standard (Q = 1.00)</option>
+              <option value="3">Grade 3 — coarse (Q = 1.60)</option>
+            </select>
+            <span class="hint">Grade 2 applies when the drawing does not state a grade. Grade 1 is only for duties that need it. BS EN 15800, not BS EN 15000. The same choice is repeated on the results page.</span>
+          </div>
+          <div class="field">
+            <label for="wind">Wound direction</label>
+            <select id="wind">
+              <option value="right" selected>Right-hand</option>
+              <option value="left">Left-hand</option>
+            </select>
+          </div>
+        </fieldset>
+
         <div id="modeAFields">
           <div class="grid-2">
             <div class="field">
@@ -152,34 +182,8 @@
     <section id="step-2" class="step" data-step="2">
       <div class="card">
         <h2>2. Material</h2>
-        <p class="lead">Diameter limits are on the first page. This page keeps the material, ends and manufacturing grade. The wire page after this one is unchanged.</p>
+        <p class="lead">Choose the material and the stiffness and strength used for the search.</p>
         <dl class="summary" id="geomSummary"></dl>
-
-        <div class="field">
-          <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
-          <select id="grade">
-            <option value="1">Grade 1 — fine (Q = 0.63)</option>
-            <option value="2" selected>Grade 2 — standard (Q = 1.00)</option>
-            <option value="3">Grade 3 — coarse (Q = 1.60)</option>
-          </select>
-          <span class="hint">Grade 2 applies when the drawing does not state a grade. Grade 1 is only for duties that need it. BS EN 15800, not BS EN 15000.</span>
-        </div>
-        <div class="field">
-          <label for="ends">Ends</label>
-          <select id="ends">
-            <option value="closed_ground" selected>Closed and ground</option>
-            <option value="closed">Closed, not ground</option>
-            <option value="open_ground">Open and ground</option>
-            <option value="open">Open, not ground</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="wind">Wound direction</label>
-          <select id="wind">
-            <option value="right" selected>Right-hand</option>
-            <option value="left">Left-hand</option>
-          </select>
-        </div>
 
         <div class="field">
           <label for="material">Material</label>

@@ -130,12 +130,7 @@
     var conflict = E.constraintConflict(g.pocket, g.innerMin);
     if (note) note.textContent = conflict || "";
     var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
-    var outerText = g.pocket == null ? "No outer limit" :
-      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " mm  (pocket − clearance)" : "Not positive");
-    var innerText = g.innerMin == null ? "No inner limit" : E.fmt(g.innerMin, 3) + " mm";
     box.innerHTML =
-      "<dt>Maximum outside diameter De max</dt><dd>" + outerText + "</dd>" +
-      "<dt>Minimum inside diameter</dt><dd>" + innerText + "</dd>" +
       "<dt>Allowable corrected stress (screening)</dt><dd>" +
       (tauAllow ? E.fmt(tauAllow, 0) + " N/mm²  (" + E.fmt(g.tauFactor, 2) + " × Rm)" : "—") + "</dd>";
   }
