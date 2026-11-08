@@ -1047,6 +1047,8 @@
       SpringPdf.save(state.design, {
         grade: currentGrade(),
         clearance: geometry().clearance,
+        outerLimit: geometry().pocket != null,
+        innerLimit: geometry().innerMin != null,
         requestedName: naming.paid ? val("exportName") : "",
         entitlement: entitlement
       });

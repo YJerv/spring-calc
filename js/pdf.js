@@ -96,17 +96,20 @@
     var half = (De * scale) / 2;
     var stroke = Math.max(0.25, d * scale * 0.85);
 
-    doc.setDrawColor(11, 31, 51);
+    var ground = String(v.ends || "").indexOf("ground") >= 0;
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.35);
-    doc.line(cx - half, yTop, cx + half, yTop);
-    doc.line(cx - half, yTop + drawnH, cx + half, yTop + drawnH);
+    if (ground) {
+      doc.line(cx - half - 1.5, yTop, cx + half + 1.5, yTop);
+      doc.line(cx - half - 1.5, yTop + drawnH, cx + half + 1.5, yTop + drawnH);
+    }
 
     var turns = Math.max(nt, 2);
     var steps = Math.max(48, Math.round(turns * 20));
     var dead = Math.max(nt - n, 0);
     function yAtTurn(t) {
       if (dead >= 1.5) {
-        var endRise = d;
+        var endRise = d * 0.55;
         var midRise = Math.max(L0 - 2 * endRise, 0);
         if (t <= 1) return t * endRise;
         if (t >= nt - 1) return endRise + midRise + (t - (nt - 1)) * endRise;
@@ -119,7 +122,7 @@
     var back = [];
     function flush(buf, grey) {
       if (buf.length < 2) return;
-      doc.setDrawColor(grey ? 150 : 11, grey ? 158 : 31, grey ? 170 : 51);
+      doc.setDrawColor(grey ? 150 : 0, grey ? 150 : 0, grey ? 150 : 0);
       doc.setLineWidth(stroke);
       doc.setLineCap("round");
       doc.setLineJoin("round");
@@ -145,36 +148,70 @@
     flush(back, true);
     flush(front, false);
 
-    doc.setDrawColor(107, 76, 154);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
-    var dimX = cx - half - 14;
+    var dimX = cx - half - 12;
     dimArrow(doc, dimX, yTop, dimX, yTop + drawnH);
-    doc.line(cx - half, yTop, dimX - 2, yTop);
-    doc.line(cx - half, yTop + drawnH, dimX - 2, yTop + drawnH);
+    doc.line(cx - half, yTop, dimX - 1.5, yTop);
+    doc.line(cx - half, yTop + drawnH, dimX - 1.5, yTop + drawnH);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(107, 76, 154);
-    doc.text("L0 = " + trimNum(L0) + " mm", dimX - 3.2, yTop + drawnH / 2, { angle: 90, align: "center" });
+    doc.setTextColor(0, 0, 0);
+    doc.text("L0 = " + trimNum(L0) + " mm", dimX - 2.6, yTop + drawnH / 2, { angle: 90, align: "center" });
 
-    var yDe = yTop + drawnH + 8;
-    doc.setDrawColor(27, 79, 114);
-    doc.setTextColor(27, 79, 114);
+    var yDe = yTop + drawnH + 7;
     dimArrow(doc, cx - half, yDe, cx + half, yDe);
-    doc.line(cx - half, yTop + drawnH, cx - half, yDe + 1.5);
-    doc.line(cx + half, yTop + drawnH, cx + half, yDe + 1.5);
+    doc.line(cx - half, yTop + drawnH, cx - half, yDe + 1.2);
+    doc.line(cx + half, yTop + drawnH, cx + half, yDe + 1.2);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("De = " + trimNum(De) + " mm", cx, yDe + 4.2, { align: "center" });
+    doc.text("De = " + trimNum(De) + " mm", cx, yDe + 3.8, { align: "center" });
 
-    doc.setTextColor(11, 31, 51);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text("d = " + trimNum(d) + " mm", cx + half + 4, yTop + 4);
-    doc.text(model.hand + "  ·  " + model.ends, v.x + 4, v.y + v.h - 2);
+    doc.text("d = " + trimNum(d) + " mm", cx + half + 3, yTop + 4);
+    doc.text(model.hand + "  ·  " + model.ends, v.x + 2, v.y + v.h - 2);
 
     doc.setFontSize(7);
-    doc.setTextColor(92, 86, 76);
-    doc.text("Side view at free length", v.x + 4, v.y + 4);
+    doc.text("Side view at free length", v.x + 2, v.y + 3.5);
+  }
+
+  function drawEndView(doc, model) {
+    var box = model.layout.end;
+    var v = model.view;
+    var cx = box.x + box.w / 2;
+    var cy = box.y + box.h / 2 + 2;
+    var maxR = Math.min(box.w, box.h) / 2 - 6;
+    var endScale = Math.min(model.scale, maxR / Math.max(v.D * 0.5, 0.1));
+    var r = v.D * 0.5 * endScale;
+    var stroke = Math.max(0.35, Math.min(1.1, v.d * endScale * 0.28));
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(stroke);
+    doc.setLineCap("round");
+    doc.setLineJoin("round");
+    var steps = 72;
+    var pts = [];
+    var i;
+    for (i = 0; i <= steps; i++) {
+      var u = i / steps;
+      var ang = -0.9 + u * 1.45 * 2 * Math.PI;
+      var rad = r * (0.38 + 0.62 * u);
+      pts.push([cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)]);
+    }
+    for (i = 1; i < pts.length; i++) {
+      doc.line(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+    }
+    var tip = pts[pts.length - 1];
+    var prev = pts[pts.length - 2];
+    var dx = tip[0] - prev[0];
+    var dy = tip[1] - prev[1];
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    doc.setLineWidth(Math.max(0.45, stroke * 0.55));
+    doc.line(tip[0] - dy / len * 3.2, tip[1] + dx / len * 3.2, tip[0] + dy / len * 3.2, tip[1] - dx / len * 3.2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+    doc.text("End view", box.x, box.y + 3.2);
   }
 
   function trimNum(x) {
@@ -188,13 +225,19 @@
     var titleH = 6.2;
     var headH = 5.2;
     var n = rows.length;
-    var rowH = Math.min(4.55, (maxH - titleH - headH - 1) / Math.max(n, 1));
-    if (rowH < 3.15) rowH = 3.15;
-    var col0 = Math.min(62, w * 0.38);
-    var col1 = 18;
-    doc.setFillColor(11, 31, 51);
-    doc.rect(x, y, w, titleH, "F");
-    doc.setTextColor(247, 241, 228);
+    var col0 = Math.min(78, w * 0.46);
+    var col1 = 16;
+    var maxW = w - col0 - col1 - 2.4;
+    var lineH = 2.7;
+    var heights = [];
+    var i;
+    for (i = 0; i < n; i++) {
+      var wrapped = redactValues ? [""] : doc.splitTextToSize(String(rows[i].value), maxW);
+      if (!wrapped.length) wrapped = [""];
+      heights.push(Math.max(4.2, wrapped.length * lineH + 1.3));
+      rows[i].wrapped = wrapped;
+    }
+    doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.text(title, x + 1.4, y + 4.2);
@@ -204,38 +247,26 @@
       doc.text(banner, x + w - 1.4, y + 4.2, { align: "right" });
     }
     var hy = y + titleH;
-    doc.setFillColor(22, 50, 79);
-    doc.rect(x, hy, w, headH, "F");
     doc.setFontSize(6.5);
-    doc.setTextColor(247, 241, 228);
     doc.text("Particular", x + 1.2, hy + 3.6);
     doc.text("Sym.", x + col0 + 1, hy + 3.6);
     doc.text("Value", x + col0 + col1 + 1, hy + 3.6);
     var bodyY = hy + headH;
     doc.setFont("helvetica", "normal");
-    for (var i = 0; i < n; i++) {
-      var ry = bodyY + i * rowH;
-      if (i % 2 === 0) {
-        doc.setFillColor(243, 238, 228);
-        doc.rect(x, ry, w, rowH, "F");
-      }
-      doc.setTextColor(26, 24, 20);
-      doc.setFontSize(rowH < 3.6 ? 5.6 : 6.2);
-      var baseline = ry + rowH - 1.05;
+    var cursor = bodyY;
+    for (i = 0; i < n; i++) {
+      var rowH = heights[i];
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(6.2);
+      var baseline = cursor + 3.3;
       doc.text(String(rows[i].particular), x + 1.2, baseline);
-      doc.setTextColor(92, 86, 76);
       doc.text(String(rows[i].symbol), x + col0 + 1, baseline);
-      if (!redactValues) {
-        doc.setTextColor(26, 24, 20);
-        var value = String(rows[i].value);
-        var maxW = w - col0 - col1 - 2.4;
-        var lines = doc.splitTextToSize(value, maxW);
-        doc.text(lines[0], x + col0 + col1 + 1, baseline);
-      }
+      if (!redactValues) doc.text(rows[i].wrapped, x + col0 + col1 + 1, baseline);
+      cursor += rowH;
     }
-    var bodyH = n * rowH;
-    doc.setDrawColor(11, 31, 51);
-    doc.setLineWidth(0.2);
+    var bodyH = cursor - bodyY;
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.25);
     doc.rect(x, y, w, titleH + headH + bodyH);
     doc.line(x + col0, hy, x + col0, bodyY + bodyH);
     doc.line(x + col0 + col1, hy, x + col0 + col1, bodyY + bodyH);
@@ -243,15 +274,15 @@
   }
 
   function drawTitleBlock(doc, model) {
-    var x = 248;
-    var w = 162;
-    var bottom = 287;
-    var h = 68;
-    var y = bottom - h;
-    doc.setDrawColor(11, 31, 51);
+    var box = model.layout.title;
+    var x = box.x;
+    var w = box.w;
+    var h = box.h;
+    var y = box.y;
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.4);
     doc.rect(x, y, w, h);
-    var rows = [10, 8, 8, 16, 8, 18];
+    var rows = [7.2, 6.2, 6.2, 11.2, 6.2, 13];
     var yy = y;
     for (var i = 0; i < rows.length - 1; i++) {
       yy += rows[i];
@@ -260,20 +291,20 @@
     }
     doc.line(x + w / 2, y + rows[0], x + w / 2, y + rows[0] + rows[1] + rows[2] + rows[3]);
 
-    doc.setTextColor(11, 31, 51);
+    doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(model.title.toUpperCase(), x + w / 2, y + 6.6, { align: "center" });
+    doc.text(model.title.toUpperCase(), x + w / 2, y + 5.2, { align: "center" });
 
     function field(label, value, fx, fy, fw) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(5.5);
       doc.setTextColor(92, 86, 76);
-      doc.text(label, fx + 1.4, fy + 3.1);
+      doc.text(label, fx + 1.2, fy + 2.3);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.setTextColor(11, 31, 51);
-      doc.text(String(value), fx + 1.4, fy + 7.2);
+      doc.setTextColor(0, 0, 0);
+      doc.text(String(value), fx + 1.2, fy + 5.4);
       return fw;
     }
 
@@ -287,29 +318,27 @@
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
     doc.setTextColor(92, 86, 76);
-    doc.text("PROJECTION", x + 1.4, y3 + 3.1);
-    drawThirdAngle(doc, x + 4, y3 + 9.2);
+    doc.text("PROJECTION", x + 1.2, y3 + 2.3);
+    drawThirdAngle(doc, x + 4, y3 + 7.4);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.5);
-    doc.setTextColor(11, 31, 51);
-    doc.text("THIRD ANGLE", x + 22, y3 + 8.4);
+    doc.setTextColor(0, 0, 0);
+    doc.text("THIRD ANGLE", x + 22, y3 + 6.6);
     field("QUALITY", "BS EN 15800 GR " + model.grade + "  (Q = " + Number(model.Q).toFixed(2) + ")", x + w / 2, y3, w / 2);
     var y4 = y3 + rows[3];
     field("MATERIAL", model.material, x, y4, w);
     var y5 = y4 + rows[4];
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
-    doc.setTextColor(92, 86, 76);
-    doc.text("GENERAL NOTE", x + 1.4, y5 + 3.2);
+    doc.setTextColor(0, 0, 0);
+    doc.text("GENERAL NOTE", x + 1.2, y5 + 2.4);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6.4);
-    doc.setTextColor(11, 31, 51);
     var noteLines = doc.splitTextToSize(model.generalNote, w - 3);
-    doc.text(noteLines, x + 1.4, y5 + 7.4);
+    doc.text(noteLines, x + 1.2, y5 + 5.6);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
-    doc.setTextColor(92, 86, 76);
-    doc.text("Spring Designer " + (model.version || "v1.4") + "  ·  design to BS EN 13906-1", x + 1.4, y5 + 15.2);
+    doc.text("Spring Designer " + (model.version || "v1.4") + "  ·  design to BS EN 13906-1", x + 1.2, y5 + 10.4);
   }
 
   function releaseOf(options) {
@@ -388,43 +417,41 @@
       creator: "Helical Spring Designer v1.4"
     });
 
-    doc.setDrawColor(11, 31, 51);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.6);
     doc.rect(10, 10, 400, 277);
     doc.setLineWidth(0.15);
     doc.rect(12, 12, 396, 273);
 
     drawHelix(doc, model);
+    drawEndView(doc, model);
 
-    doc.setTextColor(11, 31, 51);
-    doc.setFont("helvetica", "italic");
+    var place = model.layout;
+    var t1 = drawTable(
+      doc, place.table.x, place.table.y, place.table.w, 120,
+      model.table1.title, "MANUFACTURER", model.table1.rows, redactValues
+    );
+    var t2y = place.table.y + t1 + place.table.gap;
+    var t2 = drawTable(
+      doc, place.table.x, t2y, place.table.w, 140,
+      model.table2.title, model.table2.mark, model.table2.rows, redactValues
+    );
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
-    var note = doc.splitTextToSize(
-      "1  " + model.generalNote + "   2  Tolerances on De, Di and D are the same AD from BS EN 15800 Table 3; control one coil diameter.   3  Coil hand " +
-      model.hand + ", default right-hand when not stated.",
-      228
-    );
-    doc.text(note, 16, 174);
-
-    drawTable(doc, 16, 182, 228, 100, model.table1.title, "MANUFACTURER", model.table1.rows, redactValues);
-    var table2Height = drawTable(
-      doc,
-      250,
-      16,
-      156,
-      190,
-      model.table2.title,
-      model.table2.mark,
-      model.table2.rows,
-      redactValues
-    );
+    doc.setTextColor(0, 0, 0);
+    var disclaimer = doc.splitTextToSize("Note  " + model.verificationNote, place.table.w);
+    var noteY = t2y + t2 + 3.2;
+    doc.text(disclaimer, place.table.x, noteY);
+    place.drawn = {
+      table1: { x: place.table.x, y: place.table.y, w: place.table.w, h: t1 },
+      table2: { x: place.table.x, y: t2y, w: place.table.w, h: t2 },
+      disclaimer: { x: place.table.x, y: noteY, w: place.table.w, h: disclaimer.length * 3.1 }
+    };
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5);
-    doc.setTextColor(92, 86, 76);
-    var foot = doc.splitTextToSize(model.verificationNote, 156);
-    var footY = 16 + table2Height + 3.2;
-    if (footY < 214) doc.text(foot.slice(0, 3), 250, footY);
+    doc.setFontSize(6.5);
+    var noteLines = model.notes.map(function (item) { return item.n + "  " + item.text; });
+    doc.text(noteLines, place.notes.x, place.notes.y + 3.2);
 
     drawTitleBlock(doc, model);
     if (redactValues) {

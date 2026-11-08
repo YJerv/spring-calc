@@ -206,9 +206,50 @@ A paid name exists only in the Node test harness (`SPRING_CALC_TEST_ENTITLEMENT=
 
 Checks: `tests/test-filename.js`, 16 assertions, and the full `npm test` suite. The results page was opened in light and dark, on a desktop window and a phone-sized window.
 
+## SC-012 — A3 drawing layout — built in this branch
+
+Attempt 1. It has not failed. The sheet is still one A3 landscape PDF. The on-screen calculator is unchanged.
+
+What the latest written layout does here:
+
+- Tables and the spring are black and white. Table 1 is top left and Table 2 is directly under it, same left edge and width, with a small gap. Both are sized to their text.
+- The main spring is vertical on the right, with the end view to its right. There is no second small side sketch. The view dimensions remain L0, De and d, which are the three on the marked-up source. No other view dimensions were added.
+- Closed and ground ends: the side view has low-pitch end turns and a flat line at each end, perpendicular to the axis. The end view is a spiral that opens from the inside to the outside, with a short flat at the tip. It is not a closed ring.
+- Notes 1 to 3, the three notes already on the sheet, sit immediately above the title block. The title block is shorter than before. The type sizes of its title and values are unchanged. The export filename is not written into it.
+- The standards paragraph sits under Table 2 as a note, at the same size as the other notes.
+- Table 1 keeps wire diameter, coils, loads at L1 and L2, hand, ends, grade, squareness and parallelism. Lengths at F1 and F2 moved onto it. Mean coil diameter, free length, load at Ln, material and tensile strength moved to Table 2. Coil-diameter tolerance and scope were deleted from Table 1. Recommended shortest length Ln was deleted and was not moved. Deflection to solid, deflection at Ln, corrected stress at L0, pocket clearance, wire length, mass and the indicative free-length tolerance were deleted from Table 2.
+- A set outer limit puts De on Table 1 and Di on Table 2. A set inner limit does the opposite. Both blank puts De on Table 1 and Di on Table 2.
+- The unpaid export still omits every table value and keeps the row and column labels, with the exact line “Upgrade to release drawing table” and the preview warning. The paid sheet, full values and no watermark, is still only the Node test fixture.
+
+Flagged, not decided:
+
+- “% of available travel” remains on deflection at F1 and F2. The model marks that note provisional. Only Ln was asked to be deleted.
+- When both an outer and an inner limit are set, the source does not say which single diameter Table 1 should keep. Both stay on Table 1, and the model says that choice is not specified.
+
+Checks: drawing tests 90, PDF release 205, and the rest of `npm test`. The unpaid and paid test-fixture PDFs and their page images are `sc012_unpaid_a3.pdf`, `sc012_unpaid_a3-1.png`, `sc012_paid_a3_TEST_FIXTURE_ONLY.pdf` and `sc012_paid_a3_TEST_FIXTURE_ONLY-1.png`. The paid file is a test fixture, not a purchase. The app still opens in a light desktop window and a dark phone window.
+
+## Final inventory for this branch
+
+These words describe this branch. They do not change the live WIP Results colours. Nothing here is merged, deployed, or uploaded.
+
+| Item | Branch result | Open point |
+| --- | --- | --- |
+| SC-001 | Green | Phone appearance difference was not reproduced beyond the saved theme |
+| SC-002 | Partial | Price, Play Billing, verification, restore and refunds are not configured. The paid PDF is a test fixture only |
+| SC-003 | Green | |
+| SC-004 | Partial | No validated extra clearance beyond L2 greater than solid length. The 70–80% sentence is a guide, not a fail |
+| SC-005 | Partial | Where the limit boxes sit is not a final decision |
+| SC-006 | Partial | Where ends, grade and wind sit is not a final decision |
+| SC-007 | Partial | Web icon is in. Android launcher integration is pending outside this repository |
+| SC-008 | Blocked | Root host and Play app-signing SHA-256 are not available. No statement file was added. The guard is not an association |
+| SC-009 | Partial | Further information buttons, beyond the six agreed topics, are not decided |
+| SC-010 | Cancelled | Not implemented |
+| SC-011 | Blocked | Optimisation objective and search limits are not agreed. No diameter is proposed |
+| SC-012 | Green, with two flags | Travel-percent wording, and which diameter to keep when both limits are set |
+| SC-013 | Partial | The page stays unpaid. A paid name is test-fixture only. Whether that name enters the title block is not decided |
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
 | SC-010 | Cancelled | Not implemented |
-| SC-012 | Not started | Deferred until the earlier items; vertical layout not begun |
