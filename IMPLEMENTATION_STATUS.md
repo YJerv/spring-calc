@@ -156,13 +156,32 @@ What was checked on 8 November 2026, without changing Play Console or deploying:
 
 The statement that would be published later, once the fingerprint is copied from Play Console App integrity / App signing, is one Android app target for `uk.co.yjerv.springcalc` with relation `delegate_permission/common.handle_all_urls` and that fingerprint. No placeholder fingerprint is stored.
 
-Checks: `tests/test-assetlinks.js` (3 assertions) plus the full `npm test` suite. The calculator still opens in a light desktop window and a dark phone-sized window. Those checks do not verify the Play association.
+`tests/test-assetlinks.js` (3 assertions) only checks that this repo still has no statement file and no fingerprint. It is not a Digital Asset Links association, and it does not show that the installed app opens full screen. The calculator still opens in a light desktop window and a dark phone-sized window. That is a page check only.
+
+## SC-009 — Contextual help — built in this branch
+
+Attempt 1. It has not failed. Entered values are not cleared when a help window opens or closes. Calculate warnings stay on the page.
+
+What was agreed, and what this branch does:
+
+- A small circled “i” opens a short window. Close, Escape, and a click on the dimmed page close it. Focus moves to Close and returns to the button that opened the window. Tab stays inside the window.
+- Question 1, beside “Working loads and lengths”: a diagram of the two input methods and the symbols L1, L2, F1, F2, rate and solid length. L1 and L2 are operating lengths set by the application. F1 and F2 are operating loads and are not necessarily a dead weight. The coil count is calculated. The window also explains both points carried across from the feasibility row: L2 must be longer than that candidate’s solid length, and no extra clearance is added because none is validated; the 70% / 80% travel sentence is a workshop guide, not a rejection rule and not a validated limit.
+- Question 2, beside “Diameter limits”: an end-view diagram of the pocket, the diametral clearance and the inside diameter. A blank box means no limit. Growth under compression is stated as not defined. A blank pocket does not propose a diameter.
+- Quality grades 1, 2 and 3, in original words, referring to BS EN 15800 by name. The text says it is not a copy of that standard. Grade warnings stay on the results page.
+- Four end sketches: closed and ground, closed not ground, open and ground, open not ground.
+- Material presets: what the letters are, and a plain advantage and drawback for each, including rust, lower stiffness, and the certificate for Custom. EN 10270 is named, not quoted.
+- The stress window separates the Bergsträsser correction the app calculates from the allowable factor in the box (the page starts at 0.5; the box accepts 0.2 to 0.8 as a control range, not a certified limit).
+
+Open, not decided:
+
+- Which further inputs get a button. This build does not add one for wound direction, G, Rm, each load box on its own, the wire page, the optimise page, or the results page. The grade control on the results page is the same choice; it does not have a second button.
+
+Checks: `tests/test-help.js`, 83 assertions, and the full `npm test` suite. In the browser, Enter opens the duty window, Escape closes it and restores focus, typed values and the Calculate result stay, and the same checks were repeated on a phone-sized window in light and dark.
 
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-009 | Not started | |
 | SC-010 | Cancelled | Not implemented |
 | SC-011 | Not started | Objective not agreed; will not be guessed |
 | SC-013 | Not started | |

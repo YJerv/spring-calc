@@ -50,7 +50,10 @@
   <main>
     <section id="step-1" class="step active" data-step="1">
       <div class="card">
-        <h2>1. Working loads and lengths</h2>
+        <div class="with-info">
+          <h2>1. Working loads and lengths</h2>
+          <button type="button" class="info-btn no-print" data-help="duty" aria-label="Information: working loads and lengths" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
         <p class="lead">Set the duty either as two load–length points, or as one point plus the required spring rate.</p>
 
         <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
@@ -67,7 +70,7 @@
         </div>
 
         <fieldset class="constraints">
-          <legend>Diameter limits</legend>
+          <legend class="with-info"><span>Diameter limits</span><button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></legend>
           <p class="hint lead">Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit. These limits sit here, after the input method and before the loads, so the next page can stay free of diameters and the wire page can stay where it is. That place is not a final decision.</p>
           <div class="grid-2">
             <div class="field">
@@ -97,7 +100,10 @@
           <legend>Ends, grade and wind</legend>
           <p class="hint lead">These are not material properties, so they are not on the material page, and they are not on the wire page. Ends affect solid length, so they are set before Calculate. This place on the first page is not a final decision.</p>
           <div class="field">
-            <label for="ends">Ends</label>
+            <div class="with-info">
+              <label for="ends">Ends</label>
+              <button type="button" class="info-btn no-print" data-help="ends" aria-label="Information: end geometry" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+            </div>
             <select id="ends">
               <option value="closed_ground" selected>Closed and ground</option>
               <option value="closed">Closed, not ground</option>
@@ -106,7 +112,10 @@
             </select>
           </div>
           <div class="field">
-            <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
+            <div class="with-info">
+              <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
+              <button type="button" class="info-btn no-print" data-help="grades" aria-label="Information: quality grades" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+            </div>
             <select id="grade">
               <option value="1">Grade 1 — fine (Q = 0.63)</option>
               <option value="2" selected>Grade 2 — standard (Q = 1.00)</option>
@@ -181,7 +190,10 @@
 
     <section id="step-2" class="step" data-step="2">
       <div class="card">
-        <h2>2. Material</h2>
+        <div class="with-info">
+          <h2>2. Material</h2>
+          <button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
         <p class="lead">Choose the material and the stiffness and strength used for the search.</p>
         <dl class="summary" id="geomSummary"></dl>
 
@@ -201,7 +213,10 @@
             <div class="unit-row"><input id="Rm" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N/mm²</span></div>
           </div>
           <div class="field">
-            <label for="tauFactor">Allowable stress factor</label>
+            <div class="with-info">
+              <label for="tauFactor">Allowable stress factor</label>
+              <button type="button" class="info-btn no-print" data-help="stress" aria-label="Information: stress factor" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+            </div>
             <div class="unit-row"><input id="tauFactor" type="number" inputmode="decimal" step="0.01" min="0.2" max="0.8" value="0.5"><span class="unit">× Rm</span></div>
           </div>
           <div class="field">
@@ -382,7 +397,19 @@
     </div>
   </div>
 
+  <div id="helpDialog" class="settings-backdrop" hidden>
+    <div class="settings-panel help-panel" id="helpPanel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="settings-head">
+        <h2 id="helpTitle">Help</h2>
+        <button type="button" class="btn secondary" id="btnHelpClose">Close</button>
+      </div>
+      <div id="helpBody" class="help-body"></div>
+      <p class="help-keep" id="helpKeep">Opening or closing this window does not change what you have typed. Warnings on the page stay on the page.</p>
+    </div>
+  </div>
+
   <script src="js/theme.js"></script>
+  <script src="js/help.js"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/en15800.js"></script>

@@ -823,8 +823,11 @@
       if (backdrop.hidden) return;
       backdrop.hidden = true;
       openBtn.setAttribute("aria-expanded", "false");
-      document.body.classList.remove("settings-open");
-      setPageInert(false);
+      var helpOpen = $("helpDialog") && !$("helpDialog").hidden;
+      if (!helpOpen) {
+        document.body.classList.remove("settings-open");
+        setPageInert(false);
+      }
       if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
       else openBtn.focus();
     }
@@ -862,9 +865,93 @@
     syncRadios();
   }
 
+  function setupHelp() {
+    if (typeof SpringHelp === "undefined") return;
+    var backdrop = $("helpDialog");
+    var panel = $("helpPanel");
+    var closeBtn = $("btnHelpClose");
+    if (!backdrop || !panel || !closeBtn) return;
+    var opener = null;
+
+    function isShown(el) {
+      return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    function focusable() {
+      return Array.prototype.slice.call(panel.querySelectorAll(
+        "button, [href], input, select, textarea"
+      )).filter(function (el) {
+        return !el.disabled && isShown(el);
+      });
+    }
+
+    function setPageInert(on) {
+      document.querySelectorAll(".app-header, .progress, main, .step-nav").forEach(function (n) {
+        if (on) n.setAttribute("inert", "");
+        else n.removeAttribute("inert");
+      });
+    }
+
+    function openHelp(btn) {
+      if ($("settingsDialog") && !$("settingsDialog").hidden) return;
+      var topic = SpringHelp.topic(btn.getAttribute("data-help"));
+      if (!topic) return;
+      if (opener) opener.setAttribute("aria-expanded", "false");
+      opener = btn;
+      $("helpTitle").textContent = topic.title;
+      $("helpBody").innerHTML = topic.body;
+      backdrop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      document.body.classList.add("settings-open");
+      setPageInert(true);
+      closeBtn.focus();
+    }
+
+    function closeHelp() {
+      if (backdrop.hidden) return;
+      backdrop.hidden = true;
+      if (opener) opener.setAttribute("aria-expanded", "false");
+      var settingsOpen = $("settingsDialog") && !$("settingsDialog").hidden;
+      if (!settingsOpen) {
+        document.body.classList.remove("settings-open");
+        setPageInert(false);
+      }
+      if (opener && typeof opener.focus === "function") opener.focus();
+    }
+
+    document.querySelectorAll(".info-btn[data-help]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openHelp(btn); });
+    });
+    closeBtn.addEventListener("click", closeHelp);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeHelp();
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (backdrop.hidden) return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        closeHelp();
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
   function init() {
     populateMaterials();
     setupSettings();
+    setupHelp();
     document.querySelectorAll("input[name=mode]").forEach(function (r) {
       r.addEventListener("change", syncModeUI);
     });
