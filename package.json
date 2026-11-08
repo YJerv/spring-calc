@@ -4,7 +4,7 @@
   "version": "1.4.0",
   "description": "BS EN 13906-1 helical compression spring calculator with BS EN 15800 tolerances (PWA)",
   "scripts": {
-    "test": "node tests/test-engine.js && node tests/test-charts.js && node tests/test-en15800.js && node tests/test-drawing.js && node tests/test-theme.js && node tests/test-pdf-release.js && node tests/test-feasibility.js && node tests/test-constraints.js && node tests/test-pages.js && node tests/test-icon.js && node tests/test-assetlinks.js && node tests/test-help.js && node tests/test-optimal.js",
+    "test": "node tests/test-engine.js && node tests/test-charts.js && node tests/test-en15800.js && node tests/test-drawing.js && node tests/test-theme.js && node tests/test-pdf-release.js && node tests/test-feasibility.js && node tests/test-constraints.js && node tests/test-pages.js && node tests/test-icon.js && node tests/test-assetlinks.js && node tests/test-help.js && node tests/test-optimal.js && node tests/test-filename.js",
     "start": "python3 -m http.server 8765"
   }
 }

@@ -198,10 +198,17 @@ Open:
 
 Checks: `tests/test-optimal.js`, 20 assertions, and the full `npm test` suite. Browser: blank pocket on a desktop window in light and dark, and blank pocket with an inner limit of 12 mm on a phone-sized window in light and dark. The pocket stayed empty.
 
+## SC-013 — Paid PDF filename — built for the paid test path; the page stays unpaid
+
+Attempt 1. It has not failed. The page cannot unlock a paid drawing, so the filename box is disabled and the file that will be saved is shown first: `helical-compression-spring-a3.pdf`. Typing into that box, even if it is forced on, does not change the unpaid name.
+
+A paid name exists only in the Node test harness (`SPRING_CALC_TEST_ENTITLEMENT=1` and the test fixture). Invalid filename characters, path separators and reserved device names are replaced. The result is shown as the filename the save would use. The drawing number stays the separate `HC-` field. The typed name is not written into the title block, because that has not been decided. Price, Play Billing and verification are still not configured.
+
+Checks: `tests/test-filename.js`, 16 assertions, and the full `npm test` suite. The results page was opened in light and dark, on a desktop window and a phone-sized window.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
 | SC-010 | Cancelled | Not implemented |
-| SC-013 | Not started | |
 | SC-012 | Not started | Deferred until the earlier items; vertical layout not begun |

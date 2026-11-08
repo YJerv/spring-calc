@@ -319,6 +319,40 @@
     return "unpaid";
   }
 
+  var DEFAULT_PDF_NAME = "helical-compression-spring-a3.pdf";
+  var RESERVED_PDF_NAMES = {
+    CON: true, PRN: true, AUX: true, NUL: true,
+    COM1: true, COM2: true, COM3: true, COM4: true, COM5: true, COM6: true, COM7: true, COM8: true, COM9: true,
+    LPT1: true, LPT2: true, LPT3: true, LPT4: true, LPT5: true, LPT6: true, LPT7: true, LPT8: true, LPT9: true
+  };
+
+  function safePdfFilename(requested) {
+    var raw = String(requested == null ? "" : requested);
+    var cleaned = raw.replace(/[\\/]/g, "-").replace(/[<>:"|?*\u0000-\u001f]/g, "-");
+    cleaned = cleaned.replace(/^\s+|\s+$/g, "").replace(/[. ]+$/g, "");
+    cleaned = cleaned.replace(/-+/g, "-").replace(/^-+/, "");
+    if (/\.pdf$/i.test(cleaned)) cleaned = cleaned.slice(0, -4).replace(/[. ]+$/g, "");
+    if (!cleaned || cleaned === "." || cleaned === "..") return DEFAULT_PDF_NAME;
+    if (cleaned.length > 120) cleaned = cleaned.slice(0, 120).replace(/[. -]+$/g, "");
+    if (!cleaned) return DEFAULT_PDF_NAME;
+    var upper = cleaned.toUpperCase();
+    var head = upper.split(".")[0];
+    if (RESERVED_PDF_NAMES[upper] || RESERVED_PDF_NAMES[head]) cleaned += "-file";
+    return cleaned + ".pdf";
+  }
+
+  function exportFilename(options) {
+    if (releaseOf(options) !== "paid") {
+      return { filename: DEFAULT_PDF_NAME, paid: false, named: false };
+    }
+    var filename = safePdfFilename(options && options.requestedName);
+    return {
+      filename: filename,
+      paid: true,
+      named: filename !== DEFAULT_PDF_NAME
+    };
+  }
+
   function drawPreviewWarning(doc) {
     var warning = (Entitlement && Entitlement.PREVIEW_WARNING) ||
       "Preview — incomplete; not for manufacture";
@@ -402,21 +436,32 @@
 
   function toUint8Array(design, options) {
     var built = build(design, options);
+    var naming = exportFilename(options);
     var buf = built.doc.output("arraybuffer");
-    return { bytes: new Uint8Array(buf), model: built.model, doc: built.doc, release: built.release };
+    return {
+      bytes: new Uint8Array(buf),
+      model: built.model,
+      doc: built.doc,
+      release: built.release,
+      filename: naming.filename,
+      paid: naming.paid
+    };
   }
 
   function save(design, options) {
     var built = build(design, options);
-    var name = (options && options.filename) || "helical-compression-spring-a3.pdf";
-    built.doc.save(name);
-    return built.model;
+    var naming = exportFilename(options);
+    built.doc.save(naming.filename);
+    return { model: built.model, filename: naming.filename, paid: naming.paid, release: built.release };
   }
 
   return {
     build: build,
     toUint8Array: toUint8Array,
     save: save,
+    exportFilename: exportFilename,
+    safePdfFilename: safePdfFilename,
+    DEFAULT_PDF_NAME: DEFAULT_PDF_NAME,
     drawThirdAngle: drawThirdAngle,
     toPdfText: pdfText,
     releaseOf: releaseOf

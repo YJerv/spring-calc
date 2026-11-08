@@ -338,6 +338,12 @@
         <div class="chart-wrap">
           <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
+        <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
+        <div class="field no-print">
+          <label for="exportName">PDF filename</label>
+          <input id="exportName" type="text" disabled autocomplete="off" aria-describedby="exportNameHint">
+          <span class="hint" id="exportNameHint">A paid drawing can be given a filename. This page cannot unlock one, so this box is not used. The drawing number stays separate, and this name is not written into the title block.</span>
+        </div>
         <div class="btn-row no-print">
           <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
         </div>

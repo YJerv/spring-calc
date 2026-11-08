@@ -1020,17 +1020,35 @@
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
     $("gradeResult").addEventListener("change", function () { onGradeInput("gradeResult"); });
+    function refreshExportName() {
+      if (!$("exportFilename") || typeof SpringPdf === "undefined" || typeof SpringEntitlement === "undefined") return;
+      var naming = SpringPdf.exportFilename({
+        requestedName: val("exportName"),
+        entitlement: SpringEntitlement.productionEntitlement()
+      });
+      $("exportFilename").textContent = "This file will be saved as " + naming.filename + ".";
+    }
+    $("exportName").addEventListener("input", refreshExportName);
+    refreshExportName();
     $("btnExportA3").addEventListener("click", function () {
       if (!state.design || typeof SpringPdf === "undefined") return;
       state.design.wind = val("wind");
       state.design.materialName = E.materialById(val("material")).shortName;
+      var entitlement = (typeof SpringEntitlement !== "undefined")
+        ? SpringEntitlement.productionEntitlement()
+        : undefined;
+      var naming = SpringPdf.exportFilename({
+        requestedName: val("exportName"),
+        entitlement: entitlement
+      });
+      if ($("exportFilename")) {
+        $("exportFilename").textContent = "This file will be saved as " + naming.filename + ".";
+      }
       SpringPdf.save(state.design, {
         grade: currentGrade(),
         clearance: geometry().clearance,
-        filename: "helical-compression-spring-a3.pdf",
-        entitlement: (typeof SpringEntitlement !== "undefined")
-          ? SpringEntitlement.productionEntitlement()
-          : undefined
+        requestedName: naming.paid ? val("exportName") : "",
+        entitlement: entitlement
       });
     });
     $("btnBack").addEventListener("click", function () {
