@@ -178,11 +178,30 @@ Open, not decided:
 
 Checks: `tests/test-help.js`, 83 assertions, and the full `npm test` suite. In the browser, Enter opens the duty window, Escape closes it and restores focus, typed values and the Calculate result stay, and the same checks were repeated on a phone-sized window in light and dark.
 
+## SC-011 — Blank pocket diameter — not implemented; objective not agreed
+
+Attempt 1. It has not failed, and it did not choose a diameter. The Decision approves the idea and says the optimisation objective and the search limits are still to be agreed before implementation. The notes record Yuan’s intent and do not approve a particular objective. Lowest stress, smallest size, least material and best fatigue margin are listed there and not chosen. No search bound was added.
+
+What Calculate does when the pocket is blank:
+
+- It does not fill in a diameter, and it does not change the typed loads or the inner limit.
+- It says no diameter is proposed, names the four unchosen examples, and says an inside-diameter limit is still applied when one is entered.
+- The existing search still runs, including the existing index range. That range is not adopted as the missing SC-011 search limit.
+- A pocket that is filled in does not show this note. A rod that is not smaller than the pocket is still rejected before the search.
+- The wire list still tries each wire at D = 16d when there is no pocket. That is the existing check, not an optimal diameter.
+
+Open:
+
+- The objective.
+- The search limits.
+- The wording of “why this diameter” and the override, which have nothing to attach to until a diameter is actually proposed.
+
+Checks: `tests/test-optimal.js`, 20 assertions, and the full `npm test` suite. Browser: blank pocket on a desktop window in light and dark, and blank pocket with an inner limit of 12 mm on a phone-sized window in light and dark. The pocket stayed empty.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
 | SC-010 | Cancelled | Not implemented |
-| SC-011 | Not started | Objective not agreed; will not be guessed |
 | SC-013 | Not started | |
 | SC-012 | Not started | Deferred until the earlier items; vertical layout not begun |

@@ -197,6 +197,9 @@
     if (report.passingAboveExistingTravelWarning) {
       html += "<p class=\"lead\">Warning, not a failure: at least one passing candidate uses more than 85% of available travel. That is the calculator’s existing warning.</p>";
     }
+    if (report.diameterProposal && report.diameterProposal.proposed === false) {
+      html += "<p class=\"lead\">" + esc(report.diameterProposal.statement) + "</p>";
+    }
     box.innerHTML = html;
   }
 

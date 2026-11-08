@@ -797,6 +797,31 @@
     });
   }
 
+  var DIAMETER_PROPOSAL = {
+    implemented: false,
+    objective: null,
+    proposedDiameter: null,
+    searchLimitsAgreed: false,
+    statement: "No diameter is proposed. A blank pocket does not choose one, because the optimisation objective and the search limits are not agreed. The examples listed and not chosen are lowest stress, smallest size, least material and best fatigue margin. An inside-diameter limit is still applied when one is entered. Type a pocket diameter to set an outside limit. Nothing was filled in."
+  };
+
+  function diameterProposalFor(input) {
+    if (!outerIsBlank(input && input.DeMax)) return null;
+    return {
+      proposed: false,
+      proposedDiameter: null,
+      objective: null,
+      searchLimitsAgreed: false,
+      implemented: false,
+      statement: DIAMETER_PROPOSAL.statement
+    };
+  }
+
+  function finishFeasibility(input, report) {
+    report.diameterProposal = diameterProposalFor(input);
+    return report;
+  }
+
   function assessFeasibility(input, options) {
     options = options || {};
     var steps = options.steps == null ? 12 : options.steps;
@@ -806,7 +831,7 @@
       input.innerMin
     );
     if (conflict) {
-      return {
+      return finishFeasibility(input, {
         ready: false,
         blocked: "conflict",
         message: conflict,
@@ -818,11 +843,11 @@
         suggestions: [],
         showTravelGuide: false,
         passingNearSolid: false
-      };
+      });
     }
     var outerInvalid = !outerIsBlank(input.DeMax) && !(Number(input.DeMax) > 0);
     if (outerInvalid || !(Number(input.G) > 0) || !(Number(input.Rm) > 0)) {
-      return {
+      return finishFeasibility(input, {
         ready: false,
         blocked: "pocket-or-material",
         passing: 0,
@@ -833,10 +858,10 @@
         suggestions: [],
         showTravelGuide: false,
         passingNearSolid: false
-      };
+      });
     }
     if (!(Number(input.R) > 0) || !(Number(input.L0) > 0) || !(Number(input.LmaxLoad) > 0)) {
-      return {
+      return finishFeasibility(input, {
         ready: false,
         blocked: "loads",
         passing: 0,
@@ -847,7 +872,7 @@
         suggestions: [],
         showTravelGuide: false,
         passingNearSolid: false
-      };
+      });
     }
     var rows = collectCandidates(input, steps);
     var passing = [];
@@ -881,7 +906,7 @@
     if (!options.skipSuggestions && report.passing === 0) {
       report.suggestions = suggestFeasibleChanges(input, report, { steps: steps });
     }
-    return report;
+    return finishFeasibility(input, report);
   }
 
   function probeSuggestion(input, derived, steps, id, text) {
@@ -1024,6 +1049,7 @@
     buildHeatmap: buildHeatmap,
     SOLID_RULE: SOLID_RULE,
     TRAVEL_GUIDE: TRAVEL_GUIDE,
+    DIAMETER_PROPOSAL: DIAMETER_PROPOSAL,
     assessFeasibility: assessFeasibility,
     fmt: fmt,
     lerpTable: lerpTable
