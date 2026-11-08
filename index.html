@@ -66,6 +66,33 @@
           </label>
         </div>
 
+        <fieldset class="constraints">
+          <legend>Diameter limits</legend>
+          <p class="hint lead">Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit. These limits sit here, after the input method and before the loads, so the next page can stay free of diameters and the wire page can stay where it is. That place is not a final decision.</p>
+          <div class="grid-2">
+            <div class="field">
+              <label for="pocket">Spring pocket, maximum diameter</label>
+              <div class="unit-row"><input id="pocket" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+              <span class="hint">Blank means no outer limit.</span>
+            </div>
+            <div class="field">
+              <label for="clearance">Diametral clearance</label>
+              <div class="unit-row"><input id="clearance" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+              <span class="hint">Used only when a pocket is entered.</span>
+            </div>
+            <div class="field">
+              <label for="innerMin">Minimum inside diameter</label>
+              <div class="unit-row"><input id="innerMin" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+              <span class="hint">For a rod or component through the spring. Blank means no inner limit.</span>
+            </div>
+          </div>
+          <div class="btn-row no-print">
+            <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
+          </div>
+          <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already the maximum outside diameter. No extra allowance is added for the diameter growing under compression; that allowance is not defined.</p>
+          <p id="constraintNote" class="lead"></p>
+        </fieldset>
+
         <div id="modeAFields">
           <div class="grid-2">
             <div class="field">
@@ -124,23 +151,8 @@
 
     <section id="step-2" class="step" data-step="2">
       <div class="card">
-        <h2>2. Pocket and material</h2>
-        <p class="lead">The pocket (hole) limits the outside diameter. Mean coil diameter then follows as D = De − d once a wire is chosen.</p>
-
-        <div class="grid-2">
-          <div class="field">
-            <label for="pocket">Spring pocket, maximum diameter</label>
-            <div class="unit-row"><input id="pocket" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-          </div>
-          <div class="field">
-            <label for="clearance">Diametral clearance</label>
-            <div class="unit-row"><input id="clearance" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-          </div>
-        </div>
-        <div class="btn-row no-print">
-          <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
-        </div>
-        <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already De max. Manufacturing tolerances are to BS EN 15800 (the standard that replaced BS 1726 for cylindrical helical compression spring tolerances).</p>
+        <h2>2. Material</h2>
+        <p class="lead">Diameter limits are on the first page. This page keeps the material, ends and manufacturing grade. The wire page after this one is unchanged.</p>
         <dl class="summary" id="geomSummary"></dl>
 
         <div class="field">

@@ -327,6 +327,16 @@ input:focus, select:focus {
 }
 .error.show { display: block; }
 
+.constraints {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 0 0 14px;
+  padding: 12px;
+}
+.constraints legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
 .calc-result { margin: 8px 0 4px; }
 .calc-result p { margin: 8px 0 0; }
 .calc-result ul { margin: 8px 0 0; padding-left: 1.15rem; }

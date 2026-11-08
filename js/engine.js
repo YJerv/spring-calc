@@ -306,10 +306,29 @@
     return Math.round(value / step) * step;
   }
 
-  function diameterBounds(d, DeMax) {
-    var DFitMax = DeMax - d;
+  function outerIsBlank(value) {
+    return value == null || value === "";
+  }
+
+  function constraintConflict(pocket, innerMin) {
+    if (outerIsBlank(pocket) || outerIsBlank(innerMin)) return null;
+    var outer = Number(pocket);
+    var inner = Number(innerMin);
+    if (!(outer > 0) || !(inner > 0)) return null;
+    if (inner >= outer - 1e-12) {
+      return "The minimum inside diameter is not smaller than the pocket maximum, so the rod cannot fit in the hole.";
+    }
+    return null;
+  }
+
+  function diameterBounds(d, DeMax, innerMin) {
+    var blank = outerIsBlank(DeMax);
     var DwMin = INDEX_MIN * d;
     var DwMax = INDEX_MAX * d;
+    if (!outerIsBlank(innerMin) && Number(innerMin) > 0) {
+      DwMin = Math.max(DwMin, Number(innerMin) + d);
+    }
+    var DFitMax = blank ? DwMax : Number(DeMax) - d;
     var Dmin = DwMin;
     var Dmax = Math.min(DFitMax, DwMax);
     return {
@@ -334,7 +353,8 @@
     var F2 = input.F2 == null || input.F2 === "" ? null : Number(input.F2);
     var Fmax = Number(input.Fmax != null ? input.Fmax : (F2 != null ? F2 : F1));
     var LmaxLoad = input.LmaxLoad != null ? Number(input.LmaxLoad) : (L2 != null ? L2 : L1);
-    var DeMax = Number(input.DeMax);
+    var DeMax = outerIsBlank(input.DeMax) ? null : Number(input.DeMax);
+    var innerMin = outerIsBlank(input.innerMin) ? null : Number(input.innerMin);
     var ends = input.ends || "closed_ground";
     var e = ENDS[ends] || ENDS.closed_ground;
     var reasons = [];
@@ -380,7 +400,10 @@
 
     if (!(w + 1e-9 >= INDEX_MIN)) reasons.push("Spring index w = D/d is below 4 (difficult to coil; high stress concentration).");
     if (!(w - 1e-9 <= INDEX_MAX)) reasons.push("Spring index w = D/d is above 16 (flimsy and prone to tangle).");
-    if (De - 1e-6 > DeMax) reasons.push("Outside diameter exceeds the pocket (De max).");
+    if (DeMax != null && De - 1e-6 > DeMax) reasons.push("Outside diameter exceeds the pocket (De max).");
+    if (innerMin != null && innerMin > 0 && !(Di + 1e-9 >= innerMin)) {
+      reasons.push("Inside diameter is below the minimum for the rod or component.");
+    }
     if (!(Di > 0)) reasons.push("Inside diameter is not positive.");
     if (!(n + 1e-9 >= N_MIN)) reasons.push("Fewer than two active coils.");
     if (n > N_MAX) reasons.push("More than 30 active coils (consider a larger mean diameter).");
@@ -481,13 +504,16 @@
   }
 
   function listWires(input) {
-    var DeMax = Number(input.DeMax);
+    var blank = outerIsBlank(input.DeMax);
+    var DeMax = blank ? null : Number(input.DeMax);
     var sizes = input.wires || STANDARD_WIRES;
     var rows = [];
     for (var i = 0; i < sizes.length; i++) {
       var d = sizes[i];
-      if (d >= DeMax) continue;
-      var D = DeMax - d;
+      if (!blank && !(d < DeMax)) continue;
+      var bounds = diameterBounds(d, blank ? null : DeMax, input.innerMin);
+      var D = bounds.Dmax > 0 ? bounds.Dmax : bounds.Dmin;
+      if (!(D > 0)) continue;
       var rm = input.Rm;
       if (input.useIndicativeRm && input.materialId) {
         var irm = indicativeRm(input.materialId, d);
@@ -507,7 +533,8 @@
         F2: input.F2,
         Fmax: input.Fmax,
         LmaxLoad: input.LmaxLoad,
-        DeMax: DeMax,
+        DeMax: blank ? null : DeMax,
+        innerMin: input.innerMin,
         ends: input.ends,
         density: input.density
       });
@@ -520,7 +547,7 @@
 
   function scanDiameters(input, steps) {
     steps = steps == null ? 40 : steps;
-    var bounds = diameterBounds(input.d, input.DeMax);
+    var bounds = diameterBounds(input.d, input.DeMax, input.innerMin);
     if (!bounds.valid) return { bounds: bounds, rows: [] };
     var rows = [];
     if (steps <= 0) {
@@ -575,12 +602,13 @@
   function buildHeatmap(input, options) {
     options = options || {};
     var step = options.step == null ? 0.5 : Number(options.step);
-    var DeMax = Number(input.DeMax);
+    var blank = outerIsBlank(input.DeMax);
+    var DeMax = blank ? null : Number(input.DeMax);
     var sizes = input.wires || STANDARD_WIRES;
     var wires = [];
     var i;
     for (i = 0; i < sizes.length; i++) {
-      if (sizes[i] < DeMax) wires.push(sizes[i]);
+      if (blank || sizes[i] < DeMax) wires.push(sizes[i]);
     }
     var empty = {
       step: step,
@@ -593,14 +621,21 @@
       maxViable: 0,
       bestDiameters: []
     };
-    if (!(DeMax > 0) || !(step > 0) || !wires.length) return empty;
+    if ((!blank && !(DeMax > 0)) || !(step > 0) || !wires.length) return empty;
 
     var dSmallest = wires[0];
     for (i = 1; i < wires.length; i++) {
       if (wires[i] < dSmallest) dSmallest = wires[i];
     }
+    var dLargest = wires[0];
+    for (i = 1; i < wires.length; i++) {
+      if (wires[i] > dLargest) dLargest = wires[i];
+    }
     var rawDmin = INDEX_MIN * dSmallest;
-    var rawDmax = DeMax - dSmallest;
+    if (!outerIsBlank(input.innerMin) && Number(input.innerMin) > 0) {
+      rawDmin = Math.max(rawDmin, Number(input.innerMin) + dSmallest);
+    }
+    var rawDmax = blank ? INDEX_MAX * dLargest : DeMax - dSmallest;
     var diameters = steppedValues(rawDmin, rawDmax, step);
     empty.Dmin = diameters.length ? diameters[0] : null;
     empty.Dmax = diameters.length ? diameters[diameters.length - 1] : null;
@@ -634,7 +669,8 @@
           F2: input.F2,
           Fmax: input.Fmax,
           LmaxLoad: input.LmaxLoad,
-          DeMax: DeMax,
+          DeMax: blank ? null : DeMax,
+          innerMin: input.innerMin,
           ends: input.ends,
           density: input.density
         });
@@ -765,7 +801,27 @@
     options = options || {};
     var steps = options.steps == null ? 12 : options.steps;
     input = input || {};
-    if (!(Number(input.DeMax) > 0) || !(Number(input.G) > 0) || !(Number(input.Rm) > 0)) {
+    var conflict = constraintConflict(
+      input.pocket != null ? input.pocket : input.DeMax,
+      input.innerMin
+    );
+    if (conflict) {
+      return {
+        ready: false,
+        blocked: "conflict",
+        message: conflict,
+        passing: 0,
+        checked: 0,
+        solidRule: SOLID_RULE,
+        travelGuide: TRAVEL_GUIDE,
+        hardFailures: [],
+        suggestions: [],
+        showTravelGuide: false,
+        passingNearSolid: false
+      };
+    }
+    var outerInvalid = !outerIsBlank(input.DeMax) && !(Number(input.DeMax) > 0);
+    if (outerInvalid || !(Number(input.G) > 0) || !(Number(input.Rm) > 0)) {
       return {
         ready: false,
         blocked: "pocket-or-material",
@@ -956,6 +1012,8 @@
     deriveModeA: deriveModeA,
     deriveModeB: deriveModeB,
     diameterBounds: diameterBounds,
+    constraintConflict: constraintConflict,
+    outerIsBlank: outerIsBlank,
     evaluateDesign: evaluateDesign,
     listWires: listWires,
     scanDiameters: scanDiameters,

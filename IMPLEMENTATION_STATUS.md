@@ -89,12 +89,29 @@ Open, not invented:
 
 Checks: `tests/test-feasibility.js`, 22 assertions, plus the existing engine suite (131). Browser checks covered the worked example, L2 at 0.5 mm with no false suggestion, a case where increasing L2 does help, and light and dark phone layouts.
 
+## SC-005 — Outer and inner diameter limits — built, placement open
+
+Attempt 1. It has not failed.
+
+What is in force:
+
+- The first page, after the choice of two points or point and rate and before the loads, has an outer pocket, the existing diametral clearance, and a minimum inside diameter. Each may be set or left blank. Blank means no limit.
+- Candidates use those limits. An outer limit still caps De. An inner limit rejects a candidate whose Di is below the rod. Neither limit searches inside the existing index range 4 to 16 and does not propose an optimal diameter.
+- A rod minimum greater than or equal to the pocket maximum is rejected before the search, and the typed values are not changed.
+- No allowance is added for the spring growing under compression. That allowance is not defined.
+- The pocket fields have left page 2, so that page is no longer titled as the pocket page. Ends, grade and wind are still on it. The wire page is still the next page and its content is unchanged. The drawing tables are unchanged, so the later De/Di display rule is not applied here.
+
+Open review point, not a final decision:
+
+- The change log did not decide whether limits are the first page or after the input method and before the loads. They are on the first page in that second position so page 2 can lose the diameter inputs and the wire page does not move. This can be moved later.
+
+Checks: `tests/test-constraints.js`, 21 assertions. Engine, feasibility, chart, drawing, theme and PDF release tests still pass.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-005 | Not started | |
-| SC-006 | Not started | |
+| SC-006 | Not started | Page 2 still also has ends, grade and wind; confirm when SC-006 is done |
 | SC-007 | Not started | Concept A asset is not applied yet |
 | SC-008 | Not started | No Digital Asset Links change and no signing fingerprint |
 | SC-009 | Not started | |

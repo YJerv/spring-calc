@@ -95,13 +95,23 @@
       E.fmt(out.LmaxLoad, 3) + " mm</dd>";
   }
 
+  function optionalNum(id) {
+    var raw = val(id);
+    if (raw == null || String(raw).trim() === "") return null;
+    var n = Number(raw);
+    return isFinite(n) ? n : null;
+  }
+
   function geometry() {
-    var pocket = num("pocket");
-    var clearance = num("clearance");
+    var pocket = optionalNum("pocket");
+    var clearance = optionalNum("clearance");
+    var innerMin = optionalNum("innerMin");
+    if (clearance == null) clearance = 0;
     return {
       pocket: pocket,
       clearance: clearance,
-      DeMax: pocket - clearance,
+      innerMin: innerMin,
+      DeMax: pocket == null ? null : pocket - clearance,
       ends: val("ends"),
       wind: val("wind"),
       materialId: val("material"),
@@ -116,16 +126,16 @@
   function refreshGeomSummary() {
     var g = geometry();
     var box = $("geomSummary");
-    if (!(g.pocket > 0)) {
-      box.innerHTML = "";
-      return;
-    }
+    var note = $("constraintNote");
+    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    if (note) note.textContent = conflict || "";
     var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
+    var outerText = g.pocket == null ? "No outer limit" :
+      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " mm  (pocket − clearance)" : "Not positive");
+    var innerText = g.innerMin == null ? "No inner limit" : E.fmt(g.innerMin, 3) + " mm";
     box.innerHTML =
-      "<dt>Maximum outside diameter De max</dt><dd>" +
-      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " mm  (pocket − clearance)" : "—") + "</dd>" +
-      "<dt>Mean diameter for a chosen wire</dt><dd>D = De − d, so D max = " +
-      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " − d" : "—") + "</dd>" +
+      "<dt>Maximum outside diameter De max</dt><dd>" + outerText + "</dd>" +
+      "<dt>Minimum inside diameter</dt><dd>" + innerText + "</dd>" +
       "<dt>Allowable corrected stress (screening)</dt><dd>" +
       (tauAllow ? E.fmt(tauAllow, 0) + " N/mm²  (" + E.fmt(g.tauFactor, 2) + " × Rm)" : "—") + "</dd>";
   }
@@ -146,7 +156,7 @@
     return [
       state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
       val("Lb"), val("Fb"), val("Rb"), val("modeBPoint"),
-      g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
+      g.pocket, g.innerMin, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
     ].join("|");
   }
 
@@ -160,8 +170,10 @@
     var html = "";
     if (note) html += "<p class=\"lead\">" + esc(note) + "</p>";
     if (!report.ready) {
-      html += "<div class=\"status-banner warning\"><strong>Cannot check yet</strong> — " +
-        "Enter the pocket diameter and material before the wire search can run. Nothing was changed.</div>";
+      var blocked = report.blocked === "conflict"
+        ? "<div class=\"status-banner fail\"><strong>Limits conflict</strong> — " + esc(report.message) + " Nothing was changed.</div>"
+        : "<div class=\"status-banner warning\"><strong>Cannot check yet</strong> — Enter a material modulus and tensile strength before the wire search can run. Nothing was changed.</div>";
+      html += blocked;
       box.innerHTML = html;
       return;
     }
@@ -208,7 +220,22 @@
       return;
     }
     var g = geometry();
+    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    if (conflict) {
+      var blockedReport = {
+        ready: false,
+        blocked: "conflict",
+        message: conflict,
+        passing: 0,
+        suggestions: []
+      };
+      state.feasibility = { signature: feasibilitySignature(), report: blockedReport };
+      renderFeasibility(blockedReport, "");
+      return;
+    }
     var input = Object.assign({}, out, {
+      pocket: g.pocket,
+      innerMin: g.innerMin,
       DeMax: g.DeMax,
       ends: g.ends,
       G: g.G,
@@ -229,7 +256,11 @@
       showErr("err1", out.ok ? [] : out.errors);
       if (!out.ok) return false;
       var g = geometry();
-      if (!(g.DeMax > 0)) return true;
+      var conflict = E.constraintConflict(g.pocket, g.innerMin);
+      if (conflict) {
+        renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
+        return false;
+      }
       if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) {
         renderFeasibility(state.feasibility ? state.feasibility.report : null,
           "Choose Calculate before continuing. The check runs on that click, not while typing.");
@@ -240,9 +271,12 @@
     if (step === 2) {
       var g = geometry();
       var errs = [];
-      if (!(g.pocket > 0)) errs.push("Enter the pocket maximum diameter.");
-      if (!(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
-      if (!(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
+      if (g.pocket != null && !(g.pocket > 0)) errs.push("The pocket maximum must be greater than zero, or left blank for no outer limit.");
+      if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The inside-diameter limit must be greater than zero, or left blank.");
+      if (g.pocket != null && !(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
+      if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
+      var conflict = E.constraintConflict(g.pocket, g.innerMin);
+      if (conflict) errs.push(conflict);
       if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
       if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
       if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
@@ -293,6 +327,8 @@
     var g = loadInputs();
     return {
       DeMax: g.DeMax,
+      innerMin: g.innerMin,
+      pocket: g.pocket,
       G: g.G,
       Rm: g.Rm,
       tauFactor: g.tauFactor,
@@ -347,11 +383,19 @@
     var bestBox = $("heatmapBest");
     if (!mount) return;
     var input = wireInputBase();
+    if (input.DeMax == null) {
+      state.heatmap = null;
+      if (bestBox) {
+        bestBox.textContent = "No outer limit is set, so the map is not drawn across the whole index range. Each wire below is evaluated at the existing maximum index, D = 16d. A blank pocket does not propose an optimal diameter; that choice is still open.";
+      }
+      mount.innerHTML = "";
+      return;
+    }
     var hm = E.buildHeatmap(input, { step: 0.5 });
     state.heatmap = hm;
     if (bestBox) bestBox.textContent = describeBestDiameters(hm);
     if (!hm.rows.length) {
-      mount.innerHTML = "<p class=\"lead\">The heat map needs a pocket diameter and load case before it can be drawn.</p>";
+      mount.innerHTML = "<p class=\"lead\">The heat map has no diameters for these limits. A blank pocket is no outer limit; zero or a rod that is not smaller than the pocket is not usable.</p>";
       return;
     }
     var selectedD = state.preferredD;
@@ -415,7 +459,8 @@
   function renderWires() {
     var input = wireInputBase();
     $("wireIntro").innerHTML =
-      "<dt>De max</dt><dd>" + E.fmt(input.DeMax, 3) + " mm</dd>" +
+      "<dt>De max</dt><dd>" + (input.DeMax == null ? "No outer limit" : E.fmt(input.DeMax, 3) + " mm") + "</dd>" +
+      "<dt>Minimum inside diameter</dt><dd>" + (input.innerMin == null ? "No inner limit" : E.fmt(input.innerMin, 3) + " mm") + "</dd>" +
       "<dt>Maximum working load</dt><dd>" + E.fmt(input.Fmax, 3) + " N</dd>" +
       "<dt>Required rate</dt><dd>" + E.fmt(input.R, 4) + " N/mm</dd>";
     var rows = E.listWires(input);
@@ -648,6 +693,7 @@
     setVal("F2", 125);
     setVal("pocket", 20);
     setVal("clearance", 1.5);
+    setVal("innerMin", "");
     setVal("ends", "closed_ground");
     setVal("wind", "right");
     setGrade(2);
@@ -673,7 +719,7 @@
         values: {
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
           Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
-          pocket: val("pocket"), clearance: val("clearance"),
+          pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
           ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
           tauFactor: val("tauFactor"),
@@ -718,7 +764,7 @@
       }
       if (v.selectedWire && v.D) {
         state.selectedWire = Number(v.selectedWire);
-        if (state.loads && geometry().DeMax > 0) {
+        if (state.loads && (geometry().DeMax == null || geometry().DeMax > 0)) {
           var ev = E.evaluateDesign(Object.assign(wireInputBase(), {
             d: state.selectedWire, D: Number(v.D), Rm: num("Rm")
           }));
