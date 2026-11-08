@@ -134,11 +134,34 @@ Open:
 
 Checks: `tests/test-icon.js`, 13 assertions, and the full `npm test` suite. Rasters at 24, 48, 96, 192 and 512 px keep the supplied background colour at the corner.
 
+Android launcher integration for that icon remains pending outside this repository. There is still no wrapper here.
+
+## SC-008 — Digital Asset Links — not completed; blocked on facts this repo does not have
+
+Attempt 1. No fingerprint was invented, and no statement file was added. That is the working result, not a broken partial file.
+
+What the agreed row requires:
+
+- Publish package `uk.co.yjerv.springcalc` with the Play app-signing SHA-256 in `https://yjerv.github.io/.well-known/assetlinks.json`.
+- That URL is the root host, not `https://yjerv.github.io/spring-calc/.well-known/assetlinks.json`.
+- Check that the file loads over HTTPS, that the association validates, and that the Play-installed app opens full screen on devices. Cached results can linger.
+
+What was checked on 8 November 2026, without changing Play Console or deploying:
+
+- `https://yjerv.github.io/` returns 404, “Site not found”. There is no `YJerv/yjerv.github.io` repository visible to this account.
+- `https://yjerv.github.io/.well-known/assetlinks.json` returns 404.
+- This project is published at `https://yjerv.github.io/spring-calc/` from the `main` branch of this repo. A file added here would be served under `/spring-calc/`, which the agreed row says is the wrong place.
+- The Play app-signing SHA-256 is not in this repo, and it was not guessed.
+- There is no Android wrapper here, so the installed app was not rebuilt and was not tested on a device. The Chrome bar on Yuan’s father’s phone is therefore not confirmed fixed.
+
+The statement that would be published later, once the fingerprint is copied from Play Console App integrity / App signing, is one Android app target for `uk.co.yjerv.springcalc` with relation `delegate_permission/common.handle_all_urls` and that fingerprint. No placeholder fingerprint is stored.
+
+Checks: `tests/test-assetlinks.js` (3 assertions) plus the full `npm test` suite. The calculator still opens in a light desktop window and a dark phone-sized window. Those checks do not verify the Play association.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-008 | Not started | No Digital Asset Links change and no signing fingerprint |
 | SC-009 | Not started | |
 | SC-010 | Cancelled | Not implemented |
 | SC-011 | Not started | Objective not agreed; will not be guessed |
