@@ -688,6 +688,243 @@
     };
   }
 
+  var SOLID_RULE = {
+    id: "L2-above-Lc",
+    extraClearanceMm: null,
+    validatedExtraClearance: false,
+    statement: "Each candidate is rejected when L2 is not greater than its own solid length Lc. Lc is calculated from that candidate’s active coils, wire diameter and end type. No further working clearance is added: a validated clearance beyond L2 > Lc is not defined in this calculator."
+  };
+
+  var TRAVEL_GUIDE = {
+    id: "travel-70-80",
+    certified: false,
+    statement: "Workshop guide only, not a rejection rule: operating deflection is ideally about 70% of available travel and not beyond about 80%. This has not been validated, so a candidate is not failed for it. L1 and L2 are operating lengths and should stay clear of solid length."
+  };
+
+  function candidateKey(row) {
+    return Number(row.d).toFixed(4) + "|" + Number(row.D).toFixed(3);
+  }
+
+  function collectCandidates(input, steps) {
+    var seen = {};
+    var rows = [];
+    function add(row) {
+      if (!row || !row.ok) return;
+      var key = candidateKey(row);
+      if (seen[key]) return;
+      seen[key] = true;
+      rows.push(row);
+    }
+    var atMax = listWires(input);
+    var i;
+    for (i = 0; i < atMax.length; i++) add(atMax[i]);
+    for (i = 0; i < atMax.length; i++) {
+      var scan = scanDiameters(Object.assign({}, input, {
+        d: atMax[i].d,
+        Rm: atMax[i].Rm
+      }), steps);
+      var j;
+      for (j = 0; j < scan.rows.length; j++) add(scan.rows[j]);
+    }
+    return rows;
+  }
+
+  function failureTally(rows) {
+    var map = {};
+    var order = [];
+    rows.forEach(function (row) {
+      if (row.pass) return;
+      (row.reasons || []).forEach(function (reason) {
+        if (!map[reason]) {
+          map[reason] = 0;
+          order.push(reason);
+        }
+        map[reason] += 1;
+      });
+    });
+    return order.map(function (reason) {
+      return { reason: reason, count: map[reason] };
+    }).sort(function (a, b) { return b.count - a.count; });
+  }
+
+  function withDerivedLoads(input, derived) {
+    if (!derived || !derived.ok) return null;
+    return Object.assign({}, input, {
+      R: derived.R,
+      L0: derived.L0,
+      L1: derived.L1,
+      F1: derived.F1,
+      L2: derived.L2,
+      F2: derived.F2,
+      Fmax: derived.Fmax,
+      LmaxLoad: derived.LmaxLoad
+    });
+  }
+
+  function assessFeasibility(input, options) {
+    options = options || {};
+    var steps = options.steps == null ? 12 : options.steps;
+    input = input || {};
+    if (!(Number(input.DeMax) > 0) || !(Number(input.G) > 0) || !(Number(input.Rm) > 0)) {
+      return {
+        ready: false,
+        blocked: "pocket-or-material",
+        passing: 0,
+        checked: 0,
+        solidRule: SOLID_RULE,
+        travelGuide: TRAVEL_GUIDE,
+        hardFailures: [],
+        suggestions: [],
+        showTravelGuide: false,
+        passingNearSolid: false
+      };
+    }
+    if (!(Number(input.R) > 0) || !(Number(input.L0) > 0) || !(Number(input.LmaxLoad) > 0)) {
+      return {
+        ready: false,
+        blocked: "loads",
+        passing: 0,
+        checked: 0,
+        solidRule: SOLID_RULE,
+        travelGuide: TRAVEL_GUIDE,
+        hardFailures: [],
+        suggestions: [],
+        showTravelGuide: false,
+        passingNearSolid: false
+      };
+    }
+    var rows = collectCandidates(input, steps);
+    var passing = [];
+    rows.forEach(function (row) {
+      if (row.pass) passing.push(row);
+    });
+    var hardFailures = failureTally(rows);
+    var passingNearSolid = passing.some(function (row) {
+      return row.travelUsed > 0.70;
+    });
+    var solidBlocked = hardFailures.some(function (item) {
+      return item.reason.indexOf("Solid length is not shorter") === 0;
+    });
+    var report = {
+      ready: true,
+      blocked: null,
+      passing: passing.length,
+      checked: rows.length,
+      solidRule: SOLID_RULE,
+      travelGuide: TRAVEL_GUIDE,
+      hardFailures: hardFailures,
+      suggestions: [],
+      showTravelGuide: passingNearSolid || (passing.length === 0 && solidBlocked),
+      passingNearSolid: passingNearSolid,
+      passingAboveExistingTravelWarning: passing.some(function (row) {
+        return row.warnings.some(function (w) {
+          return w.indexOf("85 %") >= 0;
+        });
+      })
+    };
+    if (!options.skipSuggestions && report.passing === 0) {
+      report.suggestions = suggestFeasibleChanges(input, report, { steps: steps });
+    }
+    return report;
+  }
+
+  function probeSuggestion(input, derived, steps, id, text) {
+    var next = withDerivedLoads(input, derived);
+    if (!next) return null;
+    var again = assessFeasibility(next, { steps: steps, skipSuggestions: true });
+    if (!(again.passing > 0)) return null;
+    return {
+      id: id,
+      text: text,
+      helped: true,
+      probePassing: again.passing
+    };
+  }
+
+  function suggestFeasibleChanges(input, report, options) {
+    var steps = options.steps == null ? 12 : options.steps;
+    var out = [];
+    var solid = report.hardFailures.some(function (item) {
+      return item.reason.indexOf("Solid length") === 0 || item.reason.indexOf("Free length") === 0;
+    });
+    var stress = report.hardFailures.some(function (item) {
+      return item.reason.indexOf("Corrected stress") === 0;
+    });
+    var pocket = report.hardFailures.some(function (item) {
+      return item.reason.indexOf("Outside diameter") === 0;
+    });
+    var coils = report.hardFailures.some(function (item) {
+      return item.reason.indexOf("active coils") >= 0;
+    });
+    var L1 = input.L1;
+    var F1 = input.F1;
+    var L2 = input.L2 != null ? input.L2 : input.LmaxLoad;
+    var F2 = input.F2 != null ? input.F2 : input.Fmax;
+
+    if (solid && L1 != null && L2 != null && L1 > L2) {
+      var midL2 = (Number(L1) + Number(L2)) / 2;
+      var raised = probeSuggestion(
+        input,
+        deriveModeA(L1, F1, midL2, F2),
+        steps,
+        "increase-L2",
+        "Increase L2, keeping it shorter than L1. A longer working length was checked and did produce a candidate that passes. Solid length is still calculated for each wire; the entered L2 was not changed."
+      );
+      if (raised) out.push(raised);
+    } else if (solid && L2 != null && input.R > 0 && input.Fmax >= 0 && (input.L1 == null || input.mode === "B")) {
+      var longer = Number(L2) + Math.max(Number(input.Fmax) / Number(input.R), Number(L2));
+      var modeB = deriveModeB(input.Fmax, longer, input.R, input.L2 != null ? "F2" : "F2");
+      var raisedB = probeSuggestion(
+        input,
+        modeB,
+        steps,
+        "increase-L2",
+        "Increase the working length. A longer length was checked and did produce a candidate that passes. The entered length was not changed."
+      );
+      if (raisedB) out.push(raisedB);
+    }
+
+    if (stress && L1 != null && F1 != null && F2 != null && F2 > F1 && L1 > L2) {
+      var lowerF2 = Number(F1) + (Number(F2) - Number(F1)) / 2;
+      var eased = probeSuggestion(
+        input,
+        deriveModeA(L1, F1, L2, lowerF2),
+        steps,
+        "reduce-F2",
+        "Reduce F2, keeping it greater than F1. A lower maximum load was checked and did produce a candidate that passes. The entered load was not changed."
+      );
+      if (eased) out.push(eased);
+    }
+
+    if ((solid || coils) && L1 != null && F1 > 0 && F2 > F1 && L1 > L2) {
+      var lowerF1 = Number(F1) / 2;
+      if (F2 > lowerF1) {
+        var easedF1 = probeSuggestion(
+          input,
+          deriveModeA(L1, lowerF1, L2, F2),
+          steps,
+          "reduce-F1",
+          "Reduce F1, keeping it below F2. A lower initial load raises the rate and shortens solid length. That change was checked and did produce a candidate that passes. The entered load was not changed."
+        );
+        if (easedF1) out.push(easedF1);
+      }
+    }
+
+    if (pocket && Number(input.DeMax) > 0) {
+      var wider = Object.assign({}, input, { DeMax: Number(input.DeMax) * 1.5 });
+      var again = assessFeasibility(wider, { steps: steps, skipSuggestions: true });
+      if (again.passing > 0) {
+        out.push({
+          id: "increase-pocket",
+          helped: true,
+          probePassing: again.passing,
+          text: "Increase the pocket maximum, or reduce the diametral clearance, so the outside diameter has more room. A larger pocket was checked and did produce a candidate that passes. Entered values were not changed."
+        });
+      }
+    }
+    return out;
+  }
+
   function fmt(x, digits) {
     if (x == null || x === "" || !isFinite(Number(x))) return "—";
     var n = Number(x);
@@ -727,6 +964,9 @@
     heatmapBand: heatmapBand,
     steppedValues: steppedValues,
     buildHeatmap: buildHeatmap,
+    SOLID_RULE: SOLID_RULE,
+    TRAVEL_GUIDE: TRAVEL_GUIDE,
+    assessFeasibility: assessFeasibility,
     fmt: fmt,
     lerpTable: lerpTable
   };

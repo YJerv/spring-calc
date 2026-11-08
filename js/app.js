@@ -13,7 +13,8 @@
     preferredD: null,
     design: null,
     scan: null,
-    heatmap: null
+    heatmap: null,
+    feasibility: null
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -133,11 +134,108 @@
     return Object.assign({}, state.loads, geometry());
   }
 
+  function esc(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function feasibilitySignature() {
+    var g = geometry();
+    return [
+      state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
+      val("Lb"), val("Fb"), val("Rb"), val("modeBPoint"),
+      g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
+    ].join("|");
+  }
+
+  function renderFeasibility(report, note) {
+    var box = $("calcResult");
+    if (!box) return;
+    if (!report) {
+      box.innerHTML = note ? "<p class=\"lead\">" + esc(note) + "</p>" : "";
+      return;
+    }
+    var html = "";
+    if (note) html += "<p class=\"lead\">" + esc(note) + "</p>";
+    if (!report.ready) {
+      html += "<div class=\"status-banner warning\"><strong>Cannot check yet</strong> — " +
+        "Enter the pocket diameter and material before the wire search can run. Nothing was changed.</div>";
+      box.innerHTML = html;
+      return;
+    }
+    var tone = report.passing > 0 ? (report.showTravelGuide || report.passingAboveExistingTravelWarning ? "warning" : "pass") : "fail";
+    var title = report.passing > 0 ? "Feasible springs found" : "No feasible spring";
+    var detail = report.passing > 0
+      ? report.passing + " of " + report.checked + " screened wire and diameter combinations pass the existing checks."
+      : "None of " + report.checked + " screened combinations pass. Nothing was changed.";
+    html += "<div class=\"status-banner " + tone + "\"><strong>" + title + "</strong> — " + esc(detail) + "</div>";
+    html += "<p class=\"lead\">" + esc(report.solidRule.statement) + "</p>";
+    if (report.passing === 0 && report.hardFailures.length) {
+      html += "<p><strong>Why they failed</strong></p><ul>" + report.hardFailures.slice(0, 4).map(function (item) {
+        return "<li>" + esc(item.reason) + " (" + item.count + ")</li>";
+      }).join("") + "</ul>";
+    }
+    if (report.suggestions.length) {
+      html += "<p><strong>What to try</strong></p><ul>" + report.suggestions.map(function (item) {
+        return "<li>" + esc(item.text) + "</li>";
+      }).join("") + "</ul>";
+    } else if (report.passing === 0) {
+      html += "<p class=\"lead\">No checked change produced a passing candidate, so none is suggested. Entered values were not changed.</p>";
+    }
+    if (report.showTravelGuide) {
+      html += "<p class=\"lead\">" + esc(report.travelGuide.statement) + "</p>";
+    }
+    if (report.passingAboveExistingTravelWarning) {
+      html += "<p class=\"lead\">Warning, not a failure: at least one passing candidate uses more than 85% of available travel. That is the calculator’s existing warning.</p>";
+    }
+    box.innerHTML = html;
+  }
+
+  function markFeasibilityStale() {
+    if (!state.feasibility) return;
+    if (state.feasibility.signature === feasibilitySignature()) return;
+    renderFeasibility(state.feasibility.report, "Inputs have changed. Choose Calculate again. The notes below are out of date.");
+  }
+
+  function runCalculate() {
+    var out = currentLoads();
+    showErr("err1", out.ok ? [] : out.errors);
+    if (!out.ok) {
+      state.feasibility = null;
+      renderFeasibility(null, out.errors.join(" "));
+      return;
+    }
+    var g = geometry();
+    var input = Object.assign({}, out, {
+      DeMax: g.DeMax,
+      ends: g.ends,
+      G: g.G,
+      Rm: g.Rm,
+      tauFactor: g.tauFactor,
+      materialId: g.materialId,
+      useIndicativeRm: g.useIndicativeRm,
+      density: g.density
+    });
+    var report = E.assessFeasibility(input, { steps: 8 });
+    state.feasibility = { signature: feasibilitySignature(), report: report };
+    renderFeasibility(report, "");
+  }
+
   function validateStep(step) {
     if (step === 1) {
       var out = currentLoads();
       showErr("err1", out.ok ? [] : out.errors);
-      return out.ok;
+      if (!out.ok) return false;
+      var g = geometry();
+      if (!(g.DeMax > 0)) return true;
+      if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) {
+        renderFeasibility(state.feasibility ? state.feasibility.report : null,
+          "Choose Calculate before continuing. The check runs on that click, not while typing.");
+        return false;
+      }
+      return true;
     }
     if (step === 2) {
       var g = geometry();
@@ -730,20 +828,35 @@
       r.addEventListener("change", syncModeUI);
     });
     ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb", "modeBPoint"].forEach(function (id) {
-      $(id).addEventListener("input", refreshLoadSummary);
-      $(id).addEventListener("change", refreshLoadSummary);
+      $(id).addEventListener("input", function () {
+        refreshLoadSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        refreshLoadSummary();
+        markFeasibilityStale();
+      });
     });
     ["pocket", "clearance", "ends", "wind", "G", "Rm", "tauFactor"].forEach(function (id) {
-      $(id).addEventListener("input", refreshGeomSummary);
-      $(id).addEventListener("change", refreshGeomSummary);
+      $(id).addEventListener("input", function () {
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
     });
     $("material").addEventListener("change", function () {
       onMaterialChange();
       refreshGeomSummary();
+      markFeasibilityStale();
     });
+    $("useIndicativeRm").addEventListener("change", markFeasibilityStale);
     $("btnClearance").addEventListener("click", function () {
       setVal("clearance", E.suggestedClearance(num("pocket")));
       refreshGeomSummary();
+      markFeasibilityStale();
     });
     $("pocket").addEventListener("change", function () {
       if (val("clearance") === "") {
@@ -751,7 +864,11 @@
       }
       refreshGeomSummary();
     });
-    $("btnExample").addEventListener("click", loadExample);
+    $("btnExample").addEventListener("click", function () {
+      loadExample();
+      markFeasibilityStale();
+    });
+    $("btnCalculate").addEventListener("click", runCalculate);
     $("passOnly").addEventListener("change", renderWires);
     $("wireList").addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-d]");

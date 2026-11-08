@@ -71,11 +71,28 @@ The white patch around the compression and stress labels was a paper-coloured st
 
 Checks: chart tests 79, theme tests 127, and the rest of `npm test` passed (engine 131, EN 15800 96, drawing 71, PDF release 270). In the browser, all 25 results-graph text nodes had no stroke, in light and dark, at desktop 1280×900 and phone 390×844.
 
+## SC-004 — Calculate, feasibility and working range — built, extra clearance open
+
+Attempt 1. It has not failed. Calculator examples and the SC-002 unpaid PDF path are unchanged.
+
+What is in force:
+
+- Calculate sits under the load fields. The candidate search runs on that click, not on each keystroke. If the pocket is already known, Next waits for a current Calculate.
+- Each screened wire and diameter is accepted or rejected by the existing `evaluateDesign` checks. The hard solid-length rule is the one already in the calculator: L2 must be greater than that candidate’s Lc. Lc comes from that candidate’s coils, wire diameter and end type.
+- L2 equal to Lc fails. L2 below Lc fails. L2 just above Lc can pass. Using more than 80% of available travel does not fail a candidate. The existing “more than 85% of available travel” line stays a warning, not a failure.
+- If nothing passes, the result lists the actual failure reasons. A suggestion is shown only when a checked change produces at least one pass. The entered numbers are not changed. There is no L3 field, so none is suggested.
+- The 70% / 80% sentence is shown as a workshop guide and is explicitly not a rejection rule.
+
+Open, not invented:
+
+- No validated working clearance beyond L2 > Lc exists in the standards notes or the code. None is added. `extraClearanceMm` is null. This part of SC-004 stays partial until a clearance is validated.
+
+Checks: `tests/test-feasibility.js`, 22 assertions, plus the existing engine suite (131). Browser checks covered the worked example, L2 at 0.5 mm with no false suggestion, a case where increasing L2 does help, and light and dark phone layouts.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-004 | Not started | |
 | SC-005 | Not started | |
 | SC-006 | Not started | |
 | SC-007 | Not started | Concept A asset is not applied yet |
