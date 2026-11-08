@@ -541,33 +541,6 @@
     ].join("");
   }
 
-  function particularsText() {
-    var ev = state.design;
-    if (!ev) return "";
-    var lines = [
-      "Helical compression spring particulars",
-      "Method: BS EN 13906-1 (screening calculations)",
-      ""
-    ];
-    $("particulars").querySelectorAll("tbody tr").forEach(function (tr) {
-      var tds = tr.querySelectorAll("td");
-      lines.push(tds[0].textContent + "\t" + tds[1].textContent + "\t" + tds[2].textContent);
-    });
-    lines.push("");
-    lines.push("This export is a design aid, not a certified calculation pack.");
-    return lines.join("\n");
-  }
-
-  function download(filename, text, mime) {
-    var blob = new Blob([text], { type: mime || "text/plain" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
   function loadExample() {
     document.querySelector("input[name=mode][value=A]").checked = true;
     syncModeUI();
@@ -799,7 +772,6 @@
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
     $("gradeResult").addEventListener("change", function () { onGradeInput("gradeResult"); });
-    $("btnPrint").addEventListener("click", function () { window.print(); });
     $("btnExportA3").addEventListener("click", function () {
       if (!state.design || typeof SpringPdf === "undefined") return;
       state.design.wind = val("wind");
@@ -807,14 +779,11 @@
       SpringPdf.save(state.design, {
         grade: currentGrade(),
         clearance: geometry().clearance,
-        filename: "helical-compression-spring-a3.pdf"
+        filename: "helical-compression-spring-a3.pdf",
+        entitlement: (typeof SpringEntitlement !== "undefined")
+          ? SpringEntitlement.productionEntitlement()
+          : undefined
       });
-    });
-    $("btnExportTxt").addEventListener("click", function () {
-      download("spring-particulars.txt", particularsText(), "text/plain");
-    });
-    $("btnExportJson").addEventListener("click", function () {
-      download("spring-design.json", JSON.stringify(state.design, null, 2), "application/json");
     });
     $("btnBack").addEventListener("click", function () {
       if (state.step > 1) goTo(state.step - 1);

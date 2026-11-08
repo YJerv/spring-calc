@@ -4,11 +4,15 @@
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./drawing.js"), require("../vendor/jspdf.umd.min.js"));
+    module.exports = factory(
+      require("./drawing.js"),
+      require("../vendor/jspdf.umd.min.js"),
+      require("./entitlement.js")
+    );
   } else {
-    root.SpringPdf = factory(root.SpringDrawing, root.jspdf);
+    root.SpringPdf = factory(root.SpringDrawing, root.jspdf, root.SpringEntitlement);
   }
-})(typeof self !== "undefined" ? self : this, function (Drawing, jspdfNs) {
+})(typeof self !== "undefined" ? self : this, function (Drawing, jspdfNs, Entitlement) {
   "use strict";
 
   function JsPDF() {
@@ -25,7 +29,9 @@
       .replace(/τ/g, "tau")
       .replace(/≤/g, "<=")
       .replace(/≥/g, ">=")
-      .replace(/[—–−]/g, "-")
+      .replace(/\u2014/g, "\x97")
+      .replace(/\u2013/g, "\x96")
+      .replace(/\u2212/g, "-")
       .replace(/×/g, "x")
       .replace(/·/g, "|");
   }
@@ -178,7 +184,7 @@
     return s;
   }
 
-  function drawTable(doc, x, y, w, maxH, title, banner, rows) {
+  function drawTable(doc, x, y, w, maxH, title, banner, rows, redactValues) {
     var titleH = 6.2;
     var headH = 5.2;
     var n = rows.length;
@@ -219,11 +225,13 @@
       doc.text(String(rows[i].particular), x + 1.2, baseline);
       doc.setTextColor(92, 86, 76);
       doc.text(String(rows[i].symbol), x + col0 + 1, baseline);
-      doc.setTextColor(26, 24, 20);
-      var value = String(rows[i].value);
-      var maxW = w - col0 - col1 - 2.4;
-      var lines = doc.splitTextToSize(value, maxW);
-      doc.text(lines[0], x + col0 + col1 + 1, baseline);
+      if (!redactValues) {
+        doc.setTextColor(26, 24, 20);
+        var value = String(rows[i].value);
+        var maxW = w - col0 - col1 - 2.4;
+        var lines = doc.splitTextToSize(value, maxW);
+        doc.text(lines[0], x + col0 + col1 + 1, baseline);
+      }
     }
     var bodyH = n * rowH;
     doc.setDrawColor(11, 31, 51);
@@ -304,8 +312,35 @@
     doc.text("Spring Designer " + (model.version || "v1.4") + "  ·  design to BS EN 13906-1", x + 1.4, y5 + 15.2);
   }
 
+  function releaseOf(options) {
+    if (Entitlement && typeof Entitlement.releaseTier === "function") {
+      return Entitlement.releaseTier(options);
+    }
+    return "unpaid";
+  }
+
+  function drawPreviewWarning(doc) {
+    var warning = (Entitlement && Entitlement.PREVIEW_WARNING) ||
+      "Preview — incomplete; not for manufacture";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(139, 30, 30);
+    doc.text(warning, 16, 14.2);
+  }
+
+  function drawWatermark(doc) {
+    var text = (Entitlement && Entitlement.WATERMARK) || "Upgrade to release drawing table";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(74, 74, 74);
+    doc.text(text, 48, 168, { angle: 28 });
+    doc.text(text, 78, 268);
+  }
+
   function build(design, options) {
     var model = Drawing.build(design, options);
+    var release = releaseOf(options);
+    var redactValues = release !== "paid";
     var Ctor = JsPDF();
     var doc = usePdfText(new Ctor({
       orientation: "landscape",
@@ -337,7 +372,7 @@
     );
     doc.text(note, 16, 174);
 
-    drawTable(doc, 16, 182, 228, 100, model.table1.title, "MANUFACTURER", model.table1.rows);
+    drawTable(doc, 16, 182, 228, 100, model.table1.title, "MANUFACTURER", model.table1.rows, redactValues);
     var table2Height = drawTable(
       doc,
       250,
@@ -346,7 +381,8 @@
       190,
       model.table2.title,
       model.table2.mark,
-      model.table2.rows
+      model.table2.rows,
+      redactValues
     );
 
     doc.setFont("helvetica", "normal");
@@ -357,13 +393,17 @@
     if (footY < 214) doc.text(foot.slice(0, 3), 250, footY);
 
     drawTitleBlock(doc, model);
-    return { doc: doc, model: model };
+    if (redactValues) {
+      drawWatermark(doc);
+      drawPreviewWarning(doc);
+    }
+    return { doc: doc, model: model, release: release };
   }
 
   function toUint8Array(design, options) {
     var built = build(design, options);
     var buf = built.doc.output("arraybuffer");
-    return { bytes: new Uint8Array(buf), model: built.model, doc: built.doc };
+    return { bytes: new Uint8Array(buf), model: built.model, doc: built.doc, release: built.release };
   }
 
   function save(design, options) {
@@ -377,6 +417,8 @@
     build: build,
     toUint8Array: toUint8Array,
     save: save,
-    drawThirdAngle: drawThirdAngle
+    drawThirdAngle: drawThirdAngle,
+    toPdfText: pdfText,
+    releaseOf: releaseOf
   };
 });
