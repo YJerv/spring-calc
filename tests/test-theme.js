@@ -189,8 +189,8 @@ assert(html.indexOf("Colour supports the labels") >= 0,
   "The coil-diameter chart hint does not rely on colour names alone");
 
 const charts = fs.readFileSync(path.join(__dirname, "..", "js", "charts.js"), "utf8");
-assert(charts.indexOf('stroke: "var(--chart-paper)"') >= 0 && charts.indexOf('"paint-order": "stroke"') >= 0,
-  "Graph text still uses a paper-coloured outline so it stays readable; removing that outline is SC-003");
+assert(charts.indexOf('"paint-order": "stroke"') === -1,
+  "Results-graph text has no paper-coloured outline (SC-003)");
 assert(charts.indexOf("var(--series-l0)") >= 0 && charts.indexOf("var(--chart-ink)") >= 0,
   "Graph series and axis colours come from the shared theme tokens");
 

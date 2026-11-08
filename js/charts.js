@@ -133,11 +133,8 @@
       stroke: "var(--chart-ink)", "stroke-width": 2
     }));
 
-    function haloText(attrs, children) {
+    function labelText(attrs, children) {
       attrs = Object.assign({
-        stroke: "var(--chart-paper)",
-        "stroke-width": 3,
-        "paint-order": "stroke",
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, attrs);
       return el("text", attrs, children);
@@ -175,12 +172,12 @@
       }
       var y1 = above ? y - 15 : y + 12;
       var y2 = above ? y - 6 : y + 21;
-      parts.push(haloText({
+      parts.push(labelText({
         x: tx, y: y1, "text-anchor": "middle", fill: s.colour,
         "font-size": 8, "font-weight": 700
       }, [txt(line1)]));
       if (line2) {
-        parts.push(haloText({
+        parts.push(labelText({
           x: tx, y: y2, "text-anchor": "middle", fill: s.colour,
           "font-size": 8, "font-weight": 650
         }, [txt(line2)]));

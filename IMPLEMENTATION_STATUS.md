@@ -23,7 +23,7 @@ What this branch does:
 - Light and Dark are saved on the device (`spring-calc-theme`, separate from the calculator inputs) and are not replaced when the phone theme changes. Choosing System again follows the phone.
 - `color-scheme` is set from the choice so a browser forced-dark pass is not applied on top of an explicit Light choice. Identical pixels on every forced-colours or high-contrast setting are not guaranteed; borders thicken when the user asks for more contrast, and forced-colours mode keeps system colours.
 - Colours are purpose-named tokens in `css/app.css`. Light keeps the previous paper, navy and gold. The light border is stronger than the old pale line so card edges meet 3:1. Dark uses light text on dark surfaces. Text pairs used for body copy, labels, warnings, buttons and graph series are checked at 4.5:1 or better. Borders are checked at 3:1.
-- Graph, trade-off and on-screen spring colours use those tokens. The white outline behind graph text is still there and now uses the chart paper colour, so it does not become a white box in dark mode. Removing that outline is SC-003 and is not done here.
+- Graph, trade-off and on-screen spring colours use those tokens. SC-003 later removes the paper-coloured outline that had sat behind the results-graph labels.
 - Warnings, pass and fail states keep the words as well as the colour.
 - The coil-diameter chart hint names the curves by their labels, not only by colour.
 - Calculator formulae and inputs are unchanged by SC-001. SC-002 later changes the A3 PDF export only.
@@ -61,11 +61,20 @@ Open, not invented:
 
 Checks: `npm test` passed, including `tests/test-pdf-release.js` (270 assertions). That test extracts compressed PDF text for the worked example. Unpaid text omits table values such as `125.000` and `18.500` and contains the watermark. The paid test-fixture file contains those values and no watermark. The drawing model used on screen still has the full values.
 
+SC-002 stays partially implemented. The paid file is a test fixture only. It is not a real purchase, restore, or Play Billing flow.
+
+## SC-003 — Results graph text outline — built in this branch
+
+Attempt 1. It has not failed.
+
+The white patch around the compression and stress labels was a paper-coloured stroke drawn behind that text (`paint-order: stroke`, 3px). Those labels are now filled text only, in the same series colours. Axis titles, length ticks, the status line and the station table are unchanged. Light and dark contrast checks for those series colours on the chart background still pass. Marker dots still have a thin rim in the chart background colour. That rim is not text.
+
+Checks: chart tests 79, theme tests 127, and the rest of `npm test` passed (engine 131, EN 15800 96, drawing 71, PDF release 270). In the browser, all 25 results-graph text nodes had no stroke, in light and dark, at desktop 1280×900 and phone 390×844.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-003 | Not started | Graph text outline intentionally kept |
 | SC-004 | Not started | |
 | SC-005 | Not started | |
 | SC-006 | Not started | |

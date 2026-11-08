@@ -119,6 +119,10 @@ assert(belowAxisLabels >= 8, "Length names and millimetre values are drawn below
   "found " + belowAxisLabels + " text y-positions below the axis");
 
 ["24.1 %", E.fmt(byId.L1.travelPct, 1) + " %"].forEach(function () { /* placeholder */ });
+assert(html.indexOf("paint-order") === -1 && html.indexOf('stroke-width="3"') === -1,
+  "Compression and stress labels have no white or paper outline");
+assert((html.match(/<text [^>]*fill="var\(--series-/g) || []).length >= 8,
+  "Station labels still use the theme series colours");
 assert(html.indexOf(E.fmt(byId.L1.travelPct, 1) + " %") !== -1, "L1 compression % is written on its line");
 assert(html.indexOf(E.fmt(byId.L2.travelPct, 1) + " %") !== -1, "L2 compression % is written on its line");
 assert(html.indexOf(E.fmt(byId.Ln.travelPct, 1) + " %") !== -1, "Ln compression % is written on its line");
