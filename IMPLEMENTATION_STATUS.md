@@ -123,11 +123,21 @@ Open, not decided in the change log:
 
 Checks: `tests/test-pages.js`, 27 assertions, and the full `npm test` suite. Browser checks opened the material page and the wire page in light and dark, on a desktop window and a phone window.
 
+## SC-007 — Concept A icon — built from the supplied file
+
+Attempt 1. It has not failed. The SVG in `icons/icon.svg` is a byte-for-byte copy of `SC007_concept_A_Coil_icon_ASIS.svg`. Background `#202630`, blue bands `#2457C5`, pale bands `#DCE2EA` at 0.55 opacity, and the 0.85 scale are unchanged. The 192 and 512 PNG icons are rasters of that file. The favicon and the Apple touch icon use those files. The manifest purpose is `any`, so a mask is not asked to crop the square.
+
+Open:
+
+- This repository has no Android project, Trusted Web Activity wrapper, or mipmap launcher resources. None were generated, and nothing was uploaded to Play Console.
+- The supplied file is one full-bleed square. It is not split into adaptive-icon foreground and background layers. A maskable crop was not invented.
+
+Checks: `tests/test-icon.js`, 13 assertions, and the full `npm test` suite. Rasters at 24, 48, 96, 192 and 512 px keep the supplied background colour at the corner.
+
 ## Other items
 
 | Item | In this branch | Notes |
 | --- | --- | --- |
-| SC-007 | Not started | Concept A asset is not applied yet |
 | SC-008 | Not started | No Digital Asset Links change and no signing fingerprint |
 | SC-009 | Not started | |
 | SC-010 | Cancelled | Not implemented |

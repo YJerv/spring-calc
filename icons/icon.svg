@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Spring Designer">
-  <rect width="512" height="512" rx="96" fill="#0b1f33"/>
-  <rect x="36" y="36" width="440" height="440" rx="72" fill="none" stroke="#c4a35a" stroke-width="10"/>
-  <g fill="none" stroke="#e8d7a8" stroke-width="22" stroke-linecap="round">
-    <path d="M176 128 C 176 98, 336 98, 336 128 C 336 158, 176 158, 176 188
-             C 176 218, 336 218, 336 248 C 336 278, 176 278, 176 308
-             C 176 338, 336 338, 336 368 C 336 398, 176 398, 176 384"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108"><defs><clipPath id="m"><rect width="108" height="108"/></clipPath></defs><g clip-path="url(#m)"><rect width="108" height="108" fill="#202630"/><g transform="translate(54 54) scale(0.85) translate(-54 -54)"><line x1="36" y1="42.0" x2="72" y2="30.0" stroke="#DCE2EA" stroke-opacity=".55" stroke-width="6" stroke-linecap="round"/><line x1="36" y1="54.0" x2="72" y2="42.0" stroke="#DCE2EA" stroke-opacity=".55" stroke-width="6" stroke-linecap="round"/><line x1="36" y1="66.0" x2="72" y2="54.0" stroke="#DCE2EA" stroke-opacity=".55" stroke-width="6" stroke-linecap="round"/><line x1="36" y1="78.0" x2="72" y2="66.0" stroke="#DCE2EA" stroke-opacity=".55" stroke-width="6" stroke-linecap="round"/><line x1="36" y1="42.0" x2="72" y2="42.0" stroke="none"/><line x1="36" y1="54.0" x2="72" y2="54.0" stroke="none"/><line x1="36" y1="66.0" x2="72" y2="66.0" stroke="none"/><line x1="36" y1="78.0" x2="72" y2="78.0" stroke="none"/><line x1="36" y1="30.0" x2="72" y2="42.0" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/><line x1="36" y1="42.0" x2="72" y2="54.0" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/><line x1="36" y1="54.0" x2="72" y2="66.0" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/><line x1="36" y1="66.0" x2="72" y2="78.0" stroke="#2457C5" stroke-width="7" stroke-linecap="round"/></g></g></svg>
