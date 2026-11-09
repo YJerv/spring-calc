@@ -20,8 +20,8 @@
   var VIEW = { x: 214, y: 18, w: 108, h: 158 };
   var LAYOUT = {
     table: { x: 16, y: 16, w: 188, gap: 3.5 },
-    side: { x: 214, y: 18, w: 108, h: 158 },
-    end: { w: 56, h: 37 },
+    side: { x: 214, y: 14, w: 108, h: 140 },
+    end: { w: 78, h: 60 },
     notes: { x: 214, w: 190, h: 14 },
     title: { x: 214, y: 232, w: 190, h: 50 },
     border: { x: 10, y: 10, w: 400, h: 277 }

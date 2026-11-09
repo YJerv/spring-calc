@@ -94,7 +94,7 @@
       ? model.layout.axisX
       : v.x + 58 + (v.w - 70) / 2;
     var drawnH = L0 * scale;
-    var yTop = v.y + 8 + Math.max(0, (v.h - 26 - drawnH) / 2);
+    var yTop = v.y + 10;
     var half = (De * scale) / 2;
     var stroke = Math.max(0.25, d * scale * 0.85);
 
@@ -161,18 +161,18 @@
     doc.setTextColor(0, 0, 0);
     doc.text("L0 = " + trimNum(L0) + " mm", dimX - 2.6, yTop + drawnH / 2, { angle: 90, align: "center" });
 
-    var yDe = yTop + drawnH + 7;
+    var yDe = yTop + drawnH + 5;
     dimArrow(doc, cx - half, yDe, cx + half, yDe);
     doc.line(cx - half, yTop + drawnH, cx - half, yDe + 1.2);
     doc.line(cx + half, yTop + drawnH, cx + half, yDe + 1.2);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("De = " + trimNum(De) + " mm", cx, yDe + 3.8, { align: "center" });
+    doc.text("De = " + trimNum(De) + " mm", cx, yDe + 3.2, { align: "center" });
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.text("d = " + trimNum(d) + " mm", cx + half + 3, yTop + 4);
-    doc.text(model.hand + "  ·  " + model.ends, v.x + 2, v.y + v.h - 2);
+    doc.text(model.hand + "  ·  " + model.ends, v.x + 2, v.y + 7.2);
 
     doc.setFontSize(7);
     doc.text("Side view at free length", v.x + 2, v.y + 3.5);
@@ -182,72 +182,101 @@
     var box = model.layout.end;
     var v = model.view;
     var cx = model.layout.axisX;
-    var step = 3.05;
-    var lastY = Math.min(box.y + box.h, model.layout.notes.y) - 2.4;
-    var capTop = lastY - 3 * step;
-    var rOuter = Math.min(box.w / 2 - 3.4, (capTop - box.y - 3.2) / 2);
-    var cy = box.y + 1.1 + rOuter;
+    var capStep = 3.4;
+    var limit = Math.min(box.y + box.h, model.layout.notes.y - 1.5);
+    var capLast = limit - 0.6;
+    var ringLimit = capLast - capStep * 3 - 1.4;
+    var rOuter = Math.min(box.w / 2 - 4.2, (ringLimit - (box.y + 5.6)) / 2);
+    var cy = box.y + 5.4 + rOuter;
     var rInner = rOuter * (v.Di / Math.max(v.De, 0.1));
-    if (!(rInner > 0) || rInner >= rOuter - 0.4) rInner = rOuter * 0.78;
+    if (!(rInner > 1) || rInner >= rOuter - 0.8) rInner = rOuter * 0.78;
     var rMid = (rOuter + rInner) / 2;
+    var ring = rOuter - rInner;
 
-    doc.setFillColor(214, 214, 214);
+    doc.setFillColor(226, 226, 226);
     doc.circle(cx, cy, rOuter, "F");
     doc.setFillColor(255, 255, 255);
     doc.circle(cx, cy, rInner, "F");
 
-    var reach = rOuter + 3.2;
-    doc.setDrawColor(130, 130, 130);
+    var aStart = -22 * Math.PI / 180;
+    var aEnd = -248 * Math.PI / 180;
+    var steps = 72;
+    var i;
+    function bandRadii(u) {
+      var taper = u > 0.9 ? Math.max(0.03, (1 - u) / 0.1) : 1;
+      var half = ring * 0.22 * taper;
+      return { inner: rMid - half, outer: rMid + half };
+    }
+    doc.setFillColor(55, 55, 55);
+    doc.setDrawColor(55, 55, 55);
+    doc.setLineWidth(0.35);
+    for (i = 0; i < steps; i++) {
+      var u0 = i / steps;
+      var u1 = (i + 1) / steps;
+      var g0 = aStart + (aEnd - aStart) * u0;
+      var g1 = aStart + (aEnd - aStart) * u1;
+      var p0 = bandRadii(u0);
+      var p1 = bandRadii(u1);
+      var o0x = cx + p0.outer * Math.cos(g0);
+      var o0y = cy + p0.outer * Math.sin(g0);
+      var o1x = cx + p1.outer * Math.cos(g1);
+      var o1y = cy + p1.outer * Math.sin(g1);
+      var i0x = cx + p0.inner * Math.cos(g0);
+      var i0y = cy + p0.inner * Math.sin(g0);
+      var i1x = cx + p1.inner * Math.cos(g1);
+      var i1y = cy + p1.inner * Math.sin(g1);
+      doc.triangle(o0x, o0y, o1x, o1y, i0x, i0y, "FD");
+      doc.triangle(i0x, i0y, o1x, o1y, i1x, i1y, "FD");
+    }
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.28);
+    doc.circle(cx, cy, rOuter, "S");
+    doc.circle(cx, cy, rInner, "S");
+
+    var reach = rOuter + 2.6;
+    doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.18);
-    doc.setLineDashPattern([1.6, 0.65, 0.22, 0.65], 0);
+    doc.setLineDashPattern([1.8, 0.7, 0.28, 0.7], 0);
     doc.line(cx - reach, cy, cx + reach, cy);
     doc.line(cx, cy - reach, cx, cy + reach);
     doc.setLineDashPattern([], 0);
 
-    var thin = 112 * Math.PI / 180;
-    var thick = Math.PI * 2;
-    var steps = 48;
-    var i;
-    doc.setDrawColor(55, 55, 55);
-    doc.setLineCap("round");
-    for (i = 0; i < steps; i++) {
-      var u0 = i / steps;
-      var u1 = (i + 1) / steps;
-      var a0 = thin + (thick - thin) * u0;
-      var a1 = thin + (thick - thin) * u1;
-      var width = (rOuter - rInner) * (u1 < 0.16 ? (u1 / 0.16) * 0.82 : 0.82);
-      doc.setLineWidth(Math.max(0.15, width));
-      doc.line(
-        cx + rMid * Math.cos(a0), cy + rMid * Math.sin(a0),
-        cx + rMid * Math.cos(a1), cy + rMid * Math.sin(a1)
-      );
-    }
-
-    var tip = Math.max(1.6, (rOuter - rInner) * 0.85);
-    doc.setFillColor(20, 20, 20);
-    doc.rect(cx + rMid - tip / 2, cy - tip / 2, tip, tip, "F");
+    var side = ring;
+    doc.setFillColor(75, 75, 75);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(cx + rInner, cy - side / 2, ring, side, "FD");
 
     var rightHand = model.hand !== "LH";
-    var ax = cx + rMid;
-    var ay = cy + tip / 2 + 0.25;
+    var dirx = 0.9;
+    var diry = rightHand ? 1 : -1;
+    var mag = Math.sqrt(dirx * dirx + diry * diry);
+    dirx /= mag;
+    diry /= mag;
+    var px = -diry;
+    var py = dirx;
+    var bx = cx + rMid + ring * 0.08;
+    var by = cy + (rightHand ? side / 2 + 0.15 : -side / 2 - 0.15);
     doc.setFillColor(0, 0, 0);
-    if (rightHand) {
-      doc.triangle(ax - 1.15, ay, ax + 1.15, ay, ax, ay + 2.2, "F");
-    } else {
-      var up = cy - tip / 2 - 0.25;
-      doc.triangle(ax - 1.15, up, ax + 1.15, up, ax, up - 2.2, "F");
-    }
+    doc.triangle(
+      bx + px * 1.05, by + py * 1.05,
+      bx - px * 1.05, by - py * 1.05,
+      bx + dirx * 2.7, by + diry * 2.7,
+      "F"
+    );
 
     var endName = v.ends === "closed_ground" ? "Square and ground" : (model.ends || "—");
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("End view", cx, capTop, { align: "center" });
+    doc.setFontSize(9);
+    doc.text("End view", cx, box.y + 3.6, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.text("De = " + trimNum(v.De) + " mm", cx, capTop + step, { align: "center" });
-    doc.text("Di = " + trimNum(v.Di) + " mm", cx, capTop + 2 * step, { align: "center" });
-    doc.text(endName, cx, lastY, { align: "center" });
+    doc.setFontSize(8);
+    var capY = cy + rOuter + 4.4;
+    doc.text("De = " + trimNum(v.De) + " mm", cx, capY, { align: "center" });
+    doc.text("Di = " + trimNum(v.Di) + " mm", cx, capY + 3.4, { align: "center" });
+    doc.text(endName, cx, capY + 6.8, { align: "center" });
   }
 
   function trimNum(x) {
