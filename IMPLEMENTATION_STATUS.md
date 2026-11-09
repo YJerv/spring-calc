@@ -213,8 +213,14 @@ Attempt 1. It has not failed. The sheet is still one A3 landscape PDF. The on-sc
 What the latest written layout does here:
 
 - Tables and the spring are black and white. Table 1 is top left and Table 2 is directly under it, same left edge and width, with a small gap. Both are sized to their text.
-- The main spring is vertical on the right, with the end view to its right. There is no second small side sketch. The view dimensions remain L0, De and d, which are the three on the marked-up source. No other view dimensions were added.
-- Closed and ground ends: the side view has low-pitch end turns and a flat line at each end, perpendicular to the axis. The end view is a spiral that opens from the inside to the outside, with a short flat at the tip. It is not a closed ring.
+- The main spring is vertical on the right. There is no second small side sketch. The side-view dimensions remain L0, De and d. No other side-view dimensions were added.
+- Closed and ground ends: the side view has low-pitch end turns and a flat line at each end, perpendicular to the axis.
+
+Yuan’s review of 9 November 2026, on this same sheet:
+
+- Table 1 and Table 2 have a horizontal line between every row, on both the unpaid sheet and the paid test-fixture sheet.
+- The end view is under the vertical spring, on the same axis, because the sheet is third-angle. The spiral that had been drawn to the right is gone.
+- The end view follows Yuan’s example: a grey ring between De and Di, dash-dot centre lines, a darker wire band that tapers to an end near 7 o’clock, a black square at 3 o’clock for the ground tip, and a black arrowhead just below that square for a right-hand wind. The caption under it reads End view, De, Di, and the actual end type. Square and ground is the wording when the ends are closed and ground.
 - Notes 1 to 3, the three notes already on the sheet, sit immediately above the title block. The title block is shorter than before. The type sizes of its title and values are unchanged. The export filename is not written into it.
 - The standards paragraph sits under Table 2 as a note, at the same size as the other notes.
 - Table 1 keeps wire diameter, coils, loads at L1 and L2, hand, ends, grade, squareness and parallelism. Lengths at F1 and F2 moved onto it. Mean coil diameter, free length, load at Ln, material and tensile strength moved to Table 2. Coil-diameter tolerance and scope were deleted from Table 1. Recommended shortest length Ln was deleted and was not moved. Deflection to solid, deflection at Ln, corrected stress at L0, pocket clearance, wire length, mass and the indicative free-length tolerance were deleted from Table 2.

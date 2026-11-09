@@ -146,7 +146,10 @@ assert(model.table2.rows.some(function (r) { return r.value.indexOf("BS EN 13906
 assert(model.table2.rows.some(function (r) { return r.particular === "Material"; }), "Material has moved to Table 2");
 assert(model.notes.length === 3 && model.notes[0].text.indexOf("ASME Y14.5") >= 0, "Notes 1 to 3 are still the three existing notes");
 assert(model.layout.side.x > model.layout.table.x + model.layout.table.w, "The side view is to the right of the tables");
-assert(model.layout.end.x > model.layout.side.x, "The end view is to the right of the side view");
+assert(model.layout.end.y >= model.layout.side.y + model.layout.side.h - 0.1, "Third angle places the end view under the side view");
+assert(Math.abs((model.layout.end.x + model.layout.end.w / 2) - model.layout.axisX) < 0.2,
+  "The end-view centre line is the spring axis");
+assert(model.layout.end.y + model.layout.end.h <= model.layout.notes.y + 0.1, "The end view stays above the notes");
 assert(model.layout.notes.y + model.layout.notes.h <= model.layout.title.y + 0.1, "Notes sit above the title block");
 assert(model.verificationNote.indexOf("transcribed") >= 0 || model.verificationNote.indexOf("not re-read") >= 0,
   "Drawing carries the verification caveat for Table 3 and aF");

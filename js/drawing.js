@@ -21,12 +21,15 @@
   var LAYOUT = {
     table: { x: 16, y: 16, w: 188, gap: 3.5 },
     side: { x: 214, y: 18, w: 108, h: 158 },
-    end: { x: 332, y: 36, w: 72, h: 78 },
+    end: { w: 56, h: 37 },
     notes: { x: 214, w: 190, h: 14 },
     title: { x: 214, y: 232, w: 190, h: 50 },
     border: { x: 10, y: 10, w: 400, h: 277 }
   };
   LAYOUT.notes.y = LAYOUT.title.y - LAYOUT.notes.h - 1.5;
+  LAYOUT.axisX = LAYOUT.side.x + 58 + (LAYOUT.side.w - 70) / 2;
+  LAYOUT.end.x = LAYOUT.axisX - LAYOUT.end.w / 2;
+  LAYOUT.end.y = LAYOUT.side.y + LAYOUT.side.h + 2;
   var GENERAL_NOTE = "DIMENSIONS IN MILLIMETRES, INTERPRET PER ASME Y14.5";
 
   function fmt(x, digits) {
