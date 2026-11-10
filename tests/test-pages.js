@@ -42,6 +42,10 @@ console.log("Page order after the design-constraints swap\n");
 assert(page1.indexOf(">1. Design constraints<") >= 0, "The first page is design constraints");
 assert(page1.indexOf('id="pocket"') >= 0 && page1.indexOf('id="innerMin"') >= 0 && page1.indexOf('id="clearance"') >= 0,
   "The first page has the diameter limits");
+assert(page1.indexOf(">Spring guide diameter<") >= 0 && page1.indexOf('id="innerClearance"') >= 0,
+  "The first page has a spring guide diameter and its clearance");
+assert(page1.indexOf("Used only when a spring guide diameter is entered.") >= 0,
+  "The guide clearance hint says when it is used");
 assert(page1.indexOf("Suggested clearance is a typical workshop allowance") === -1,
   "The suggested-clearance paragraph is not left on the constraints page");
 assert(page1.indexOf('data-help="diameters"') >= 0, "The diameter help button is on the first page");
@@ -54,7 +58,7 @@ assert(page2.indexOf('id="L1"') >= 0 && page2.indexOf('id="btnCalculate"') >= 0,
 assert(page2.indexOf('data-help="duty"') >= 0, "The working-loads help button is on the second page");
 assert(page2.indexOf('id="ends"') >= 0 && page2.indexOf('id="grade"') >= 0 && page2.indexOf('id="wind"') >= 0,
   "Ends, grade and wind stay with the loads, before Calculate");
-["pocket", "innerMin", "clearance", "material"].forEach(function (id) {
+["pocket", "innerMin", "clearance", "innerClearance", "material"].forEach(function (id) {
   assert(page2.indexOf('id="' + id + '"') === -1, "The second page does not contain " + id);
 });
 
@@ -77,7 +81,7 @@ const wirePage = [
   "<h2>4. Standard wire diameters</h2>",
   'id="heatmapLegend"',
   "Well within (τk ≤ 70 % of allowable)",
-  "Invalid (pocket, index 4–16, solid length or coil count)",
+  "Invalid (pocket, spring guide, index 4–16, solid length or coil count)",
   'id="heatmapScroll"',
   "Swipe the map sideways to see every standard wire.",
   'id="passOnly"',
@@ -89,6 +93,12 @@ wirePage.forEach(function (phrase) {
 });
 const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
 assert(helpJs.indexOf("The heat map compares mean coil diameter D") >= 0, "The heat-map explanation is in the help window");
+const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
+const renderAt = appJs.indexOf("function renderHeatmap()");
+const renderFn = appJs.slice(renderAt, appJs.indexOf("function selectHeatmapCell"));
+assert(renderFn.indexOf("buildHeatmap(input)") >= 0, "The page builds the heat map from the current limits");
+assert(renderFn.indexOf("input.DeMax == null) {") === -1, "A blank pocket does not skip the heat map");
+assert(renderFn.indexOf("No pocket or spring guide is set") >= 0, "The open map explains the 1 mm to 100 mm range");
 assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
 assert(page4.indexOf('id="wireIntro"') === -1, "The wire page has no D max summary box");
 const page6 = section(html, "step-6");

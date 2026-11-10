@@ -84,7 +84,7 @@ assert(dutySvg.toLowerCase().indexOf("shorter") === -1, "The duty picture does n
 assert(dutySvg.toLowerCase().indexOf("compression") === -1, "The duty picture does not say compression");
 assert(dutySvg.indexOf("data-strand=\"front\"") >= 0, "The duty springs are helical coils");
 const diameters = Help.topic("diameters").body;
-["Pocket", "Clearance", "Inside diameter", "Blank box", "not defined", "not agreed", "<svg",
+["Pocket", "Clearance", "Spring guide", "Blank box", "not defined", "not agreed", "<svg",
   "Suggested clearance", "Leave a box blank for no limit"].forEach(function (phrase) {
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
 });

@@ -96,6 +96,12 @@ assert(innerOnly.ready && innerOnly.passing > 0, "An inner limit alone can pass"
 const innerWire = E.listWires(Object.assign({}, duty, { DeMax: null, innerMin: 20, wires: [2] }));
 assert(innerWire.length === 1 && innerWire[0].Di + 1e-9 >= 20,
   "With no pocket, the chosen diameter still meets the rod", innerWire[0] && innerWire[0].Di);
+const withClearance = E.springGuideLimit({ innerMin: 10, innerClearance: 2 });
+assert(Math.abs(withClearance - 12) < 1e-9, "Guide clearance is added to the spring guide diameter");
+assert(E.springGuideLimit({ innerMin: 10, innerClearance: 0 }) === 10, "Zero guide clearance adds nothing");
+assert(E.springGuideLimit({ innerMin: null, innerClearance: 2 }) === null, "Guide clearance is ignored when the guide is blank");
+const cleared = E.evaluateDesign(Object.assign({ d: 2, D: 16.5, DeMax: 18.5, innerMin: known.Di - 1.5, innerClearance: 2 }, duty));
+assert(!cleared.pass, "Guide plus clearance can reject a spring the bare guide would allow");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

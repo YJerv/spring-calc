@@ -310,13 +310,22 @@
     return value == null || value === "";
   }
 
+  function springGuideLimit(input) {
+    if (!input || outerIsBlank(input.innerMin)) return null;
+    var guide = Number(input.innerMin);
+    if (!(guide > 0)) return guide;
+    var clearance = outerIsBlank(input.innerClearance) ? 0 : Number(input.innerClearance);
+    if (!(clearance > 0)) clearance = 0;
+    return guide + clearance;
+  }
+
   function constraintConflict(pocket, innerMin) {
     if (outerIsBlank(pocket) || outerIsBlank(innerMin)) return null;
     var outer = Number(pocket);
     var inner = Number(innerMin);
     if (!(outer > 0) || !(inner > 0)) return null;
     if (inner >= outer - 1e-12) {
-      return "The minimum inside diameter is not smaller than the pocket maximum, so the rod cannot fit in the hole.";
+      return "The spring guide diameter is not smaller than the pocket maximum, so the guide cannot fit in the hole.";
     }
     return null;
   }
@@ -354,7 +363,7 @@
     var Fmax = Number(input.Fmax != null ? input.Fmax : (F2 != null ? F2 : F1));
     var LmaxLoad = input.LmaxLoad != null ? Number(input.LmaxLoad) : (L2 != null ? L2 : L1);
     var DeMax = outerIsBlank(input.DeMax) ? null : Number(input.DeMax);
-    var innerMin = outerIsBlank(input.innerMin) ? null : Number(input.innerMin);
+    var innerMin = springGuideLimit(input);
     var ends = input.ends || "closed_ground";
     var e = ENDS[ends] || ENDS.closed_ground;
     var reasons = [];
@@ -402,7 +411,7 @@
     if (!(w - 1e-9 <= INDEX_MAX)) reasons.push("Spring index w = D/d is above 16 (flimsy and prone to tangle).");
     if (DeMax != null && De - 1e-6 > DeMax) reasons.push("Outside diameter exceeds the pocket (De max).");
     if (innerMin != null && innerMin > 0 && !(Di + 1e-9 >= innerMin)) {
-      reasons.push("Inside diameter is below the minimum for the rod or component.");
+      reasons.push("Inside diameter is below the spring guide diameter.");
     }
     if (!(Di > 0)) reasons.push("Inside diameter is not positive.");
     if (!(n + 1e-9 >= N_MIN)) reasons.push("Fewer than two active coils.");
@@ -511,7 +520,7 @@
     for (var i = 0; i < sizes.length; i++) {
       var d = sizes[i];
       if (!blank && !(d < DeMax)) continue;
-      var bounds = diameterBounds(d, blank ? null : DeMax, input.innerMin);
+      var bounds = diameterBounds(d, blank ? null : DeMax, springGuideLimit(input));
       var D = bounds.Dmax > 0 ? bounds.Dmax : bounds.Dmin;
       if (!(D > 0)) continue;
       var rm = input.Rm;
@@ -534,7 +543,7 @@
         Fmax: input.Fmax,
         LmaxLoad: input.LmaxLoad,
         DeMax: blank ? null : DeMax,
-        innerMin: input.innerMin,
+        innerMin: springGuideLimit(input),
         ends: input.ends,
         density: input.density
       });
@@ -547,16 +556,24 @@
 
   function scanDiameters(input, steps) {
     steps = steps == null ? 40 : steps;
-    var bounds = diameterBounds(input.d, input.DeMax, input.innerMin);
+    var bounds = diameterBounds(input.d, input.DeMax, springGuideLimit(input));
     if (!bounds.valid) return { bounds: bounds, rows: [] };
     var rows = [];
     if (steps <= 0) {
-      rows.push(evaluateDesign(Object.assign({}, input, { D: bounds.Dmax })));
+      rows.push(evaluateDesign(Object.assign({}, input, {
+        D: bounds.Dmax,
+        innerMin: springGuideLimit(input),
+        innerClearance: null
+      })));
       return { bounds: bounds, rows: rows };
     }
     for (var i = 0; i <= steps; i++) {
       var D = bounds.Dmin + ((bounds.Dmax - bounds.Dmin) * i) / steps;
-      rows.push(evaluateDesign(Object.assign({}, input, { D: D })));
+      rows.push(evaluateDesign(Object.assign({}, input, {
+        D: D,
+        innerMin: springGuideLimit(input),
+        innerClearance: null
+      })));
     }
     return { bounds: bounds, rows: rows };
   }
@@ -599,16 +616,31 @@
     return out;
   }
 
+  function wireFitsMap(d, maxOd, minId) {
+    var low = 1;
+    var high = 100;
+    if (maxOd != null) high = Math.min(high, maxOd - d);
+    if (minId != null && minId > 0) low = Math.max(low, minId + d);
+    return high + 1e-9 >= low;
+  }
+
   function buildHeatmap(input, options) {
     options = options || {};
-    var step = options.step == null ? 0.5 : Number(options.step);
+    /* 1 mm steps everywhere. Unconstrained maps are specified at 1 mm, and the
+       same step keeps a constrained map on the same scale. */
+    var step = options.step == null ? 1 : Number(options.step);
     var blank = outerIsBlank(input.DeMax);
     var DeMax = blank ? null : Number(input.DeMax);
+    var minId = springGuideLimit(input);
+    var hasInner = minId != null && minId > 0;
+    var constrained = !blank || hasInner;
     var sizes = input.wires || STANDARD_WIRES;
     var wires = [];
     var i;
     for (i = 0; i < sizes.length; i++) {
-      if (blank || sizes[i] < DeMax) wires.push(sizes[i]);
+      if (!constrained || wireFitsMap(sizes[i], blank ? null : DeMax, hasInner ? minId : null)) {
+        wires.push(sizes[i]);
+      }
     }
     var empty = {
       step: step,
@@ -623,19 +655,14 @@
     };
     if ((!blank && !(DeMax > 0)) || !(step > 0) || !wires.length) return empty;
 
-    var dSmallest = wires[0];
+    var dThin = wires[0];
     for (i = 1; i < wires.length; i++) {
-      if (wires[i] < dSmallest) dSmallest = wires[i];
+      if (wires[i] < dThin) dThin = wires[i];
     }
-    var dLargest = wires[0];
-    for (i = 1; i < wires.length; i++) {
-      if (wires[i] > dLargest) dLargest = wires[i];
-    }
-    var rawDmin = INDEX_MIN * dSmallest;
-    if (!outerIsBlank(input.innerMin) && Number(input.innerMin) > 0) {
-      rawDmin = Math.max(rawDmin, Number(input.innerMin) + dSmallest);
-    }
-    var rawDmax = blank ? INDEX_MAX * dLargest : DeMax - dSmallest;
+    var rawDmin = 1;
+    var rawDmax = 100;
+    if (!blank) rawDmax = DeMax - dThin;
+    if (hasInner) rawDmin = minId + dThin;
     var diameters = steppedValues(rawDmin, rawDmax, step);
     empty.Dmin = diameters.length ? diameters[0] : null;
     empty.Dmax = diameters.length ? diameters[diameters.length - 1] : null;
@@ -670,7 +697,7 @@
           Fmax: input.Fmax,
           LmaxLoad: input.LmaxLoad,
           DeMax: blank ? null : DeMax,
-          innerMin: input.innerMin,
+          innerMin: hasInner ? minId : null,
           ends: input.ends,
           density: input.density
         });
@@ -828,7 +855,7 @@
     input = input || {};
     var conflict = constraintConflict(
       input.pocket != null ? input.pocket : input.DeMax,
-      input.innerMin
+      springGuideLimit(input)
     );
     if (conflict) {
       return finishFeasibility(input, {
@@ -1038,6 +1065,7 @@
     deriveModeB: deriveModeB,
     diameterBounds: diameterBounds,
     constraintConflict: constraintConflict,
+    springGuideLimit: springGuideLimit,
     outerIsBlank: outerIsBlank,
     evaluateDesign: evaluateDesign,
     listWires: listWires,

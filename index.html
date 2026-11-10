@@ -72,9 +72,14 @@
               <span class="hint">Used only when a pocket is entered.</span>
             </div>
             <div class="field">
-              <label for="innerMin">Minimum inside diameter</label>
+              <label for="innerMin">Spring guide diameter</label>
               <div class="unit-row"><input id="innerMin" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-              <span class="hint">For a rod or component through the spring. Blank means no inner limit.</span>
+              <span class="hint">For a guide rod or component through the spring. Blank means no inner limit.</span>
+            </div>
+            <div class="field">
+              <label for="innerClearance">Diametral clearance</label>
+              <div class="unit-row"><input id="innerClearance" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+              <span class="hint">Used only when a spring guide diameter is entered.</span>
             </div>
           </div>
           <div class="btn-row no-print">
@@ -252,7 +257,7 @@
             <li><span class="swatch good" aria-hidden="true"></span> Well within (τk ≤ 70 % of allowable)</li>
             <li><span class="swatch amber" aria-hidden="true"></span> Approaching or at the limit (70–100 %)</li>
             <li><span class="swatch over" aria-hidden="true"></span> Over allowable (τk &gt; 100 %)</li>
-            <li><span class="swatch invalid" aria-hidden="true"></span> Invalid (pocket, index 4–16, solid length or coil count)</li>
+            <li><span class="swatch invalid" aria-hidden="true"></span> Invalid (pocket, spring guide, index 4–16, solid length or coil count)</li>
           </ul>
           <div class="heatmap-wrap">
             <div class="heatmap-scroll" id="heatmapScroll" tabindex="0"></div>

@@ -21,7 +21,7 @@
 
   function diameterDiagram() {
     return '' +
-      '<svg class="help-svg" viewBox="0 0 360 200" role="img" aria-label="End view: pocket around the spring, diametral clearance, and a rod through the inside diameter.">' +
+      '<svg class="help-svg" viewBox="0 0 360 200" role="img" aria-label="End view: pocket around the spring, diametral clearance, and a spring guide through the inside.">' +
       '<circle cx="100" cy="100" r="86" class="help-pocket"/>' +
       '<circle cx="100" cy="100" r="68" class="help-wire"/>' +
       '<circle cx="100" cy="100" r="40" class="help-wire"/>' +
@@ -30,8 +30,8 @@
       '<text x="198" y="52">maximum outside</text>' +
       '<text x="198" y="84">Clearance</text>' +
       '<text x="198" y="100">pocket minus spring</text>' +
-      '<text x="198" y="132">Inside diameter</text>' +
-      '<text x="198" y="148">for a rod or part</text>' +
+      '<text x="198" y="132">Spring guide</text>' +
+      '<text x="198" y="148">plus its clearance</text>' +
       '<text x="198" y="180">Blank box = no limit</text>' +
       '</svg>';
   }
@@ -78,11 +78,11 @@
       title: "Diameter limits",
       body: diameterDiagram() +
         "<p>The pocket is the largest outside diameter the hole will accept. Diametral clearance is subtracted from the pocket only when a pocket is entered. Leave the pocket blank when there is no outer limit.</p>" +
-        "<p>The minimum inside diameter is the smallest hole that must still let a rod or component pass through. Leave that box blank when there is no inner limit.</p>" +
-        "<p>If the inner limit is not smaller than the pocket, the page says so before any search. That message stays on the page.</p>" +
+        "<p>The spring guide diameter is the rod or component that must pass through the spring. Diametral clearance is added to it only when a spring guide diameter is entered. A blank or zero clearance adds nothing. Leave the guide blank when there is no inner limit.</p>" +
+        "<p>If the spring guide diameter, including that clearance, is not smaller than the pocket, the page says so before any search. That message stays on the page.</p>" +
         "<p>No extra allowance is added for the outside diameter growing under compression. That allowance is not defined.</p>" +
         "<p>Leaving the pocket blank does not make this app propose a diameter. How a diameter would be chosen is not agreed yet.</p>" +
-        "<p>Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit.</p>" +
+        "<p>Set an outer pocket, a spring guide diameter, both, or neither. Leave a box blank for no limit.</p>" +
         "<p>Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already the maximum outside diameter. No extra allowance is added for the diameter growing under compression; that allowance is not defined.</p>"
     },
     grades: {
@@ -128,7 +128,7 @@
     },
     wire: {
       title: "Standard wire diameters",
-      body: "<p>The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>" +
+      body: "<p>The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). With no pocket and no spring guide, D runs from 1 mm to 100 mm in 1 mm steps and the wires run from 0.2 mm to 12 mm. A pocket limits the top row to the maximum outside diameter minus the thinnest wire, and a spring guide limits the bottom row to the guide plus its clearance plus that wire. Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, spring guide, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>" +
         "<p>Each size is also listed below, evaluated at the largest mean diameter that still fits the pocket: D = De max − d. Corrected stress τk uses the Bergsträsser factor from BS EN 13906-1.</p>"
     },
     graph: {

@@ -107,6 +107,7 @@ Open review point, not a final decision:
 
 - 10 November 2026, R2-01. Design constraints are page 1 and working loads and lengths are page 2. Material, wire, coil diameter and results follow as pages 3 to 6. Ends, grade and wind stay on the loads page, before Calculate.
 - R2-03 moved the suggested-clearance paragraph and the longer diameter-limits paragraph into the diameter help window. A one-line hint stays under the heading.
+- The inner limit is labelled Spring guide diameter. A diametral clearance is added to it only when a guide is entered; blank or zero adds nothing. The heat map uses 1 mm steps: 1–100 mm with no limits, and otherwise D from guide + clearance + thinnest wire up to pocket − clearance − thinnest wire. There is no suggested-clearance button for the guide.
 
 Checks: `tests/test-constraints.js`, 21 assertions. Engine, feasibility, chart, drawing, theme and PDF release tests still pass.
 

@@ -106,11 +106,14 @@
     var pocket = optionalNum("pocket");
     var clearance = optionalNum("clearance");
     var innerMin = optionalNum("innerMin");
+    var innerClearance = optionalNum("innerClearance");
     if (clearance == null) clearance = 0;
+    if (innerClearance == null) innerClearance = 0;
     return {
       pocket: pocket,
       clearance: clearance,
       innerMin: innerMin,
+      innerClearance: innerClearance,
       DeMax: pocket == null ? null : pocket - clearance,
       ends: val("ends"),
       wind: val("wind"),
@@ -127,7 +130,7 @@
     var g = geometry();
     var box = $("geomSummary");
     var note = $("constraintNote");
-    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (note) note.textContent = conflict || "";
     var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
     box.innerHTML =
@@ -151,7 +154,7 @@
     return [
       state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
       val("Lb"), val("Fb"), val("Rb"), val("modeBPoint"),
-      g.pocket, g.innerMin, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
+      g.pocket, g.innerMin, g.innerClearance, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
     ].join("|");
   }
 
@@ -218,7 +221,7 @@
       return;
     }
     var g = geometry();
-    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (conflict) {
       var blockedReport = {
         ready: false,
@@ -234,6 +237,7 @@
     var input = Object.assign({}, out, {
       pocket: g.pocket,
       innerMin: g.innerMin,
+      innerClearance: g.innerClearance,
       DeMax: g.DeMax,
       ends: g.ends,
       G: g.G,
@@ -252,10 +256,11 @@
     var g = geometry();
     var errs = [];
     if (g.pocket != null && !(g.pocket > 0)) errs.push("The pocket maximum must be greater than zero, or left blank for no outer limit.");
-    if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The inside-diameter limit must be greater than zero, or left blank.");
+    if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The spring guide diameter must be greater than zero, or left blank.");
+    if (g.innerMin != null && !(g.innerClearance >= 0)) errs.push("The spring guide clearance must be zero or greater.");
     if (g.pocket != null && !(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
     if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
-    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (conflict) errs.push(conflict);
     return errs;
   }
@@ -270,7 +275,7 @@
       var out = currentLoads();
       showErr("err1", out.ok ? [] : out.errors);
       if (!out.ok) return false;
-      var conflict = E.constraintConflict(geometry().pocket, geometry().innerMin);
+      var conflict = E.constraintConflict(geometry().pocket, E.springGuideLimit(geometry()));
       if (conflict) {
         renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
         return false;
@@ -336,6 +341,7 @@
     return {
       DeMax: g.DeMax,
       innerMin: g.innerMin,
+      innerClearance: g.innerClearance,
       pocket: g.pocket,
       G: g.G,
       Rm: g.Rm,
@@ -391,19 +397,16 @@
     var bestBox = $("heatmapBest");
     if (!mount) return;
     var input = wireInputBase();
-    if (input.DeMax == null) {
-      state.heatmap = null;
-      if (bestBox) {
-        bestBox.textContent = "No outer limit is set, so the map is not drawn across the whole index range. Each wire below is evaluated at the existing maximum index, D = 16d. A blank pocket does not propose an optimal diameter; that choice is still open.";
-      }
-      mount.innerHTML = "";
-      return;
-    }
-    var hm = E.buildHeatmap(input, { step: 0.5 });
+    var hm = E.buildHeatmap(input);
     state.heatmap = hm;
-    if (bestBox) bestBox.textContent = describeBestDiameters(hm);
+    if (bestBox) {
+      var openMap = input.DeMax == null && !(E.springGuideLimit(input) > 0);
+      bestBox.textContent = (openMap
+        ? "No pocket or spring guide is set, so mean diameter runs from 1 mm to 100 mm in 1 mm steps. A blank pocket does not propose an optimal diameter; that choice is still open. "
+        : "") + describeBestDiameters(hm);
+    }
     if (!hm.rows.length) {
-      mount.innerHTML = "<p class=\"lead\">The heat map has no diameters for these limits. A blank pocket is no outer limit; zero or a rod that is not smaller than the pocket is not usable.</p>";
+      mount.innerHTML = "<p class=\"lead\">The heat map has no diameters for these limits.</p>";
       return;
     }
     var selectedD = state.preferredD;
@@ -696,6 +699,7 @@
     setVal("pocket", 20);
     setVal("clearance", 1.5);
     setVal("innerMin", "");
+    setVal("innerClearance", "");
     setVal("ends", "closed_ground");
     setVal("wind", "right");
     setGrade(2);
@@ -723,6 +727,7 @@
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
           Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
           pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
+          innerClearance: val("innerClearance"),
           ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
           tauFactor: val("tauFactor"),
@@ -975,7 +980,7 @@
         markFeasibilityStale();
       });
     });
-    ["pocket", "clearance", "ends", "wind", "G", "Rm", "tauFactor"].forEach(function (id) {
+    ["pocket", "clearance", "innerMin", "innerClearance", "ends", "wind", "G", "Rm", "tauFactor"].forEach(function (id) {
       $(id).addEventListener("input", function () {
         refreshGeomSummary();
         markFeasibilityStale();
