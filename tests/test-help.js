@@ -88,9 +88,10 @@ const diameters = Help.topic("diameters").body;
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
 });
 const grades = Help.topic("grades").body;
-["Grade 1", "0.63", "Grade 2", "1.00", "Grade 3", "1.60", "BS EN 15800", "not a copy", "does not change the rate"].forEach(function (phrase) {
+["Grade 1", "0.63", "Grade 2", "1.00", "Grade 3", "1.60", "BS EN 15800", "not a copy", "does not change the rate", "BS EN 15000"].forEach(function (phrase) {
   assert(grades.indexOf(phrase) >= 0, "Grade help includes: " + phrase);
 });
+assert(html.indexOf("Grade 1 —") === -1 && html.indexOf(">Grade 1<") >= 0, "Grade menus show the label only");
 const ends = Help.topic("ends").body;
 ["Closed and ground", "Closed, not ground", "Open and ground", "Open, not ground", "solid length"].forEach(function (phrase) {
   assert(ends.indexOf(phrase) >= 0, "End help includes: " + phrase);

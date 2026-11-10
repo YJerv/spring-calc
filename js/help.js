@@ -87,7 +87,7 @@
       title: "Quality grades",
       body: "<p>These are plain descriptions of the three manufacturing grades this app can apply. They are not a copy of BS EN 15800, and they are not a substitute for it. The grade scales the tolerance band. It does not change the rate, the solid length or the stress check.</p>" +
         "<p>Grade 1, Q = 0.63, is the fine band. Force, length and coil-diameter scatter come out smaller than for the other two grades. Use it only when the duty needs that closer band. Conditions for grade 1 still appear on the results page when they apply. They are not moved into this window.</p>" +
-        "<p>Grade 2, Q = 1.00, is the ordinary band. This app starts on grade 2. It is also the grade used here when the drawing does not name one.</p>" +
+        "<p>Grade 2, Q = 1.00, is the ordinary band. This app starts on grade 2. It is also the grade used here when the drawing does not name one. Grade 1 is only for duties that need it. The standard is BS EN 15800, not BS EN 15000.</p>" +
         "<p>Grade 3, Q = 1.60, is the coarse band. The tolerance scatter is wider. Use it when the assembly can accept that.</p>" +
         "<p>The same grade control is repeated on the results page. Changing either one changes both. The tolerance figures and any grade warning stay on the results page.</p>"
     },
