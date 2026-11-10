@@ -36,6 +36,8 @@ Checks on this commit, before any later item:
 
 SC-001 remains in this branch. The live site and Play Console build are unchanged.
 
+Light background, 10 November 2026. Dark mode and the PDF drawing were not changed. The page is now `#fafbfc` and cards are white. Borders, the coil back, the invalid heat-map cell and the help-diagram fill were adjusted so text stays at 4.5:1 and UI edges stay at 3:1. The best-row mark uses the body ink in light mode; dark mode still uses gold.
+
 ## SC-002 — Unpaid and paid A3 PDF — built in this branch, purchase path open
 
 Attempt 1. It has not failed. No production unlock was added.

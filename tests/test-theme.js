@@ -173,7 +173,9 @@ function checkPairs(name, tokens) {
 checkPairs("Light", light);
 checkPairs("Dark", dark);
 
-assert(light["--chart-paper"] === "#fbf8f1", "Light charts keep the existing paper colour");
+assert(light["--paper"] === "#fafbfc", "Light page background is near-white");
+assert(light["--card"] === "#ffffff", "Light cards are white");
+assert(light["--chart-paper"] === "#ffffff", "Light charts sit on white");
 assert(dark["--chart-paper"] !== light["--chart-paper"], "Dark charts are not left on the light paper colour");
 
 console.log("\nSettings markup and graph labels\n");
