@@ -65,13 +65,14 @@ const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8"
 const entJs = fs.readFileSync(path.join(__dirname, "..", "js", "entitlement.js"), "utf8");
 const pdfJs = fs.readFileSync(path.join(__dirname, "..", "js", "pdf.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
 assert(appJs.indexOf("productionEntitlement") >= 0, "The page asks for the production entitlement");
 assert(appJs.indexOf("spring-calc-paid") === -1 && entJs.indexOf("localStorage") === -1,
   "No paid flag is stored in the browser");
 assert(html.indexOf("btnExportTxt") === -1 && html.indexOf("btnExportJson") === -1 && html.indexOf("btnPrint") === -1,
   "Text, JSON and print exports are not offered");
 assert(html.indexOf("Export A3 drawing (PDF)") >= 0, "A3 PDF remains the export");
-assert(html.indexOf("no adverts") >= 0 || html.indexOf("There are no adverts") >= 0, "The page states there are no adverts");
+assert((html + helpJs).indexOf("no adverts") >= 0, "The page states there are no adverts");
 assert(pdfJs.indexOf("redactValues") >= 0, "Table drawing can omit values");
 
 console.log("\nWorked-example sheets\n");
