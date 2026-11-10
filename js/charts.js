@@ -498,9 +498,9 @@
     var ox = pad.l;
     var oy = 124;
     var radius = 16;
-    var frontW = 3.8;
-    var backW = 2.5;
-    var turns = 7;
+    var frontW = 5.7;
+    var backW = 3.75;
+    var turns = 9;
     var gap = 6;
     var xFix = 368;
     var font = "ui-sans-serif, system-ui, sans-serif";
@@ -662,6 +662,7 @@
       "data-coil-radius": String(radius),
       "data-front-stroke": String(frontW),
       "data-back-stroke": String(backW),
+      "data-turns": String(turns),
       "aria-label": "Load, F against deflection, S, with horizontal springs at L0, L1 and L2"
     }, parts);
   }

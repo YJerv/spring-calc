@@ -177,7 +177,7 @@ Open, not decided:
 
 Checks: `tests/test-help.js`, 83 assertions, and the full `npm test` suite. In the browser, Enter opens the duty window, Escape closes it and restores focus, typed values and the Calculate result stay, and the same checks were repeated on a phone-sized window in light and dark.
 
-10 November 2026, R2-10. The duty window no longer shows the two small method sketches. In their place is a load graph in the results-graph colours. The axes read “Load, F” and “Deflection, S”. The line passes through the origin, and L1/F1 and L2/F2 are marked. Under the graph, three horizontal helical springs share that scale, fixed at the right: L2 on top, then L1, then L0. A dotted line drops from each graph point to that spring’s moving end. There is no solid-length row. The explanatory paragraphs are unchanged. The picture uses fixed example positions, so an empty form still draws it.
+10 November 2026, R2-10. The duty window no longer shows the two small method sketches. In their place is a load graph in the results-graph colours. The axes read “Load, F” and “Deflection, S”. The line passes through the origin, and L1/F1 and L2/F2 are marked. Under the graph, three horizontal helical springs share that scale, fixed at the right: L2 on top, then L1, then L0. Each has nine coils. The front wire is 5.7px and the back strand 3.75px at the 390px design width. A dotted line drops from each graph point to that spring’s moving end. There is no solid-length row. The explanatory paragraphs are unchanged. The picture uses fixed example positions, so an empty form still draws it.
 
 ## SC-011 — Blank pocket diameter — not implemented; objective not agreed
 

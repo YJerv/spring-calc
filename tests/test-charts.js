@@ -184,8 +184,9 @@ assert(duty.toLowerCase().indexOf("compression") === -1, "Duty illustration does
 assert(duty.toLowerCase().indexOf("shorter") === -1, "Duty illustration does not label the axis shorter");
 assert(duty.indexOf("data-spring=\"Lc\"") === -1 && !/>Lc</.test(duty), "Duty illustration has no solid-length spring");
 assert(duty.indexOf("data-coil-radius=\"16\"") >= 0, "Coil diameter is the enlarged side-view size");
-assert(duty.indexOf("data-front-stroke=\"3.8\"") >= 0, "Front coil stroke is about 3.5 to 4");
-assert(duty.indexOf("data-back-stroke=\"2.5\"") >= 0, "Back coil stroke is about 2.5");
+assert(duty.indexOf("data-front-stroke=\"5.7\"") >= 0, "Front coil stroke is about 5.7");
+assert(duty.indexOf("data-back-stroke=\"3.75\"") >= 0, "Back coil stroke is about 3.75");
+assert(duty.indexOf("data-turns=\"9\"") >= 0, "Each spring has nine coils");
 
 function dutyTags(name) {
   return duty.match(new RegExp("<" + name + "\\b[^>]*>", "g")) || [];
@@ -208,7 +209,10 @@ assert(rowY("L2") < rowY("L1") && rowY("L1") < rowY("L0"), "Spring rows run L2, 
   assert(coils.some(function (part) { return dutyAttr(part, "data-strand") === "front"; }), id + " has a front strand");
   assert(coils.some(function (part) { return dutyAttr(part, "data-strand") === "back"; }), id + " has a back strand");
   const front = coils.find(function (part) { return dutyAttr(part, "data-strand") === "front"; });
-  assert(dutyAttr(front, "stroke-width") === "3.8", id + " front strand uses the thick stroke");
+  assert(dutyAttr(front, "stroke-width") === "5.7", id + " front strand uses the thick stroke");
+  const back = coils.find(function (part) { return dutyAttr(part, "data-strand") === "back"; });
+  assert(dutyAttr(back, "stroke-width") === "3.75", id + " back strand uses the lighter stroke");
+  assert(coils.filter(function (part) { return dutyAttr(part, "data-strand") === "front"; }).length === 10, id + " draws nine coils");
   const ys = dutyAttr(front, "points").split(" ").map(function (p) { return Number(p.split(",")[1]); });
   assert(ys.length >= 8 && Math.max.apply(null, ys) - Math.min.apply(null, ys) > 12, id + " is a coil loop, not a zigzag");
 });
