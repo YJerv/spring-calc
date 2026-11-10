@@ -35,25 +35,46 @@ const page1 = section(html, "step-1");
 const page2 = section(html, "step-2");
 const page3 = section(html, "step-3");
 
-console.log("Page 2 is material only\n");
+const page4 = section(html, "step-4");
 
-assert(page2.indexOf(">2. Material<") >= 0, "The second page is titled Material");
-assert(page2.indexOf('id="material"') >= 0, "The second page has the material choice");
-assert(page2.indexOf('id="G"') >= 0 && page2.indexOf('id="Rm"') >= 0, "The second page has G and Rm");
-["ends", "grade", "wind", "pocket", "innerMin", "clearance"].forEach(function (id) {
+console.log("Page order after the design-constraints swap\n");
+
+assert(page1.indexOf(">1. Design constraints<") >= 0, "The first page is design constraints");
+assert(page1.indexOf('id="pocket"') >= 0 && page1.indexOf('id="innerMin"') >= 0 && page1.indexOf('id="clearance"') >= 0,
+  "The first page has the diameter limits");
+assert(page1.indexOf("Suggested clearance is a typical workshop allowance") >= 0,
+  "The suggested-clearance note stays on the constraints page");
+assert(page1.indexOf('data-help="diameters"') >= 0, "The diameter help button is on the first page");
+["L1", "ends", "grade", "wind", "material"].forEach(function (id) {
+  assert(page1.indexOf('id="' + id + '"') === -1, "The first page does not contain " + id);
+});
+
+assert(page2.indexOf(">2. Working loads and lengths<") >= 0, "The second page is working loads and lengths");
+assert(page2.indexOf('id="L1"') >= 0 && page2.indexOf('id="btnCalculate"') >= 0, "The second page has the loads and Calculate");
+assert(page2.indexOf('data-help="duty"') >= 0, "The working-loads help button is on the second page");
+assert(page2.indexOf('id="ends"') >= 0 && page2.indexOf('id="grade"') >= 0 && page2.indexOf('id="wind"') >= 0,
+  "Ends, grade and wind stay with the loads, before Calculate");
+["pocket", "innerMin", "clearance", "material"].forEach(function (id) {
   assert(page2.indexOf('id="' + id + '"') === -1, "The second page does not contain " + id);
+});
+
+console.log("\nMaterial is the third page\n");
+
+assert(page3.indexOf(">3. Material<") >= 0, "The third page is titled Material");
+assert(page3.indexOf('id="material"') >= 0, "The third page has the material choice");
+assert(page3.indexOf('id="G"') >= 0 && page3.indexOf('id="Rm"') >= 0, "The third page has G and Rm");
+["ends", "grade", "wind", "pocket", "innerMin", "clearance"].forEach(function (id) {
+  assert(page3.indexOf('id="' + id + '"') === -1, "The material page does not contain " + id);
 });
 
 console.log("\nEnds, grade and wind are off the wire page\n");
 
-assert(page1.indexOf('id="ends"') >= 0 && page1.indexOf('id="grade"') >= 0 && page1.indexOf('id="wind"') >= 0,
-  "Ends, grade and wind are on the first page");
 ["ends", "grade", "wind", "material", "pocket"].forEach(function (id) {
-  assert(page3.indexOf('id="' + id + '"') === -1, "The wire page does not contain " + id);
+  assert(page4.indexOf('id="' + id + '"') === -1, "The wire page does not contain " + id);
 });
 
 const wirePage = [
-  "<h2>3. Standard wire diameters</h2>",
+  "<h2>4. Standard wire diameters</h2>",
   "The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns).",
   "Tap a cell to select that D and d.",
   'id="heatmapLegend"',
@@ -67,7 +88,7 @@ const wirePage = [
   'id="wireList"'
 ];
 wirePage.forEach(function (phrase) {
-  assert(page3.indexOf(phrase) >= 0, "Wire page still contains: " + phrase.slice(0, 60));
+  assert(page4.indexOf(phrase) >= 0, "Wire page still contains: " + phrase.slice(0, 60));
 });
 
 console.log("\n" + passed + " passed, " + failed + " failed");

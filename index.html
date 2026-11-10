@@ -49,33 +49,17 @@
     <span id="p3"></span>
     <span id="p4"></span>
     <span id="p5"></span>
+    <span id="p6"></span>
   </div>
 
   <main>
     <section id="step-1" class="step active" data-step="1">
       <div class="card">
         <div class="with-info">
-          <h2>1. Working loads and lengths</h2>
-          <button type="button" class="info-btn no-print" data-help="duty" aria-label="Information: working loads and lengths" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          <h2>1. Design constraints</h2>
+          <button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
-        <p class="lead">Set the duty either as two load–length points, or as one point plus the required spring rate.</p>
-
-        <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
-          <label id="modeALabel">
-            <input type="radio" name="mode" value="A" checked>
-            <strong>Two points</strong>
-            <small>L1, F1 and L2, F2</small>
-          </label>
-          <label id="modeBLabel">
-            <input type="radio" name="mode" value="B">
-            <strong>Point and rate</strong>
-            <small>One load, one length, R</small>
-          </label>
-        </div>
-
-        <fieldset class="constraints">
-          <legend class="with-info"><span>Diameter limits</span><button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></legend>
-          <p class="hint lead">Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit. These limits sit here, after the input method and before the loads, so the next page can stay free of diameters and the wire page can stay where it is. That place is not a final decision.</p>
+        <p class="hint lead">Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit.</p>
           <div class="grid-2">
             <div class="field">
               <label for="pocket">Spring pocket, maximum diameter</label>
@@ -98,11 +82,34 @@
           </div>
           <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already the maximum outside diameter. No extra allowance is added for the diameter growing under compression; that allowance is not defined.</p>
           <p id="constraintNote" class="lead"></p>
-        </fieldset>
+          <div class="error" id="errConstraints"></div>
+      </div>
+    </section>
+
+    <section id="step-2" class="step" data-step="2">
+      <div class="card">
+        <div class="with-info">
+          <h2>2. Working loads and lengths</h2>
+          <button type="button" class="info-btn no-print" data-help="duty" aria-label="Information: working loads and lengths" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
+        <p class="lead">Set the duty either as two load–length points, or as one point plus the required spring rate.</p>
+
+        <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
+          <label id="modeALabel">
+            <input type="radio" name="mode" value="A" checked>
+            <strong>Two points</strong>
+            <small>L1, F1 and L2, F2</small>
+          </label>
+          <label id="modeBLabel">
+            <input type="radio" name="mode" value="B">
+            <strong>Point and rate</strong>
+            <small>One load, one length, R</small>
+          </label>
+        </div>
 
         <fieldset class="constraints">
           <legend>Ends, grade and wind</legend>
-          <p class="hint lead">These are not material properties, so they are not on the material page, and they are not on the wire page. Ends affect solid length, so they are set before Calculate. This place on the first page is not a final decision.</p>
+          <p class="hint lead">These are not material properties, so they are not on the material page, and they are not on the wire page. Ends affect solid length, so they are set before Calculate. This place is not a final decision.</p>
           <div class="field">
             <div class="with-info">
               <label for="ends">Ends</label>
@@ -192,10 +199,10 @@
       </div>
     </section>
 
-    <section id="step-2" class="step" data-step="2">
+    <section id="step-3" class="step" data-step="3">
       <div class="card">
         <div class="with-info">
-          <h2>2. Material</h2>
+          <h2>3. Material</h2>
           <button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
         <p class="lead">Choose the material and the stiffness and strength used for the search.</p>
@@ -236,9 +243,9 @@
       </div>
     </section>
 
-    <section id="step-3" class="step" data-step="3">
+    <section id="step-4" class="step" data-step="4">
       <div class="card">
-        <h2>3. Standard wire diameters</h2>
+        <h2>4. Standard wire diameters</h2>
         <p class="lead">The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>
         <dl class="summary" id="wireIntro"></dl>
         <div id="heatmapPanel" class="heatmap-panel">
@@ -264,9 +271,9 @@
       </div>
     </section>
 
-    <section id="step-4" class="step" data-step="4">
+    <section id="step-5" class="step" data-step="5">
       <div class="card">
-        <h2>4. Optimise mean coil diameter</h2>
+        <h2>5. Optimise mean coil diameter</h2>
         <p class="lead">For the selected wire, vary D between the index limits (4 to 16) and the pocket. Smaller D lowers stress but needs more coils and a longer solid length.</p>
         <div class="btn-row no-print">
           <button type="button" class="btn gold" id="btnOptimise">Auto-optimise</button>
@@ -285,9 +292,9 @@
       </div>
     </section>
 
-    <section id="step-5" class="step" data-step="5">
+    <section id="step-6" class="step" data-step="6">
       <div class="card">
-        <h2>5. Results</h2>
+        <h2>6. Results</h2>
         <div id="resultBanner"></div>
         <h3 style="margin:8px 0 4px;font-size:1rem;">Load–length characteristic</h3>
         <p class="lead">Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>

@@ -49,7 +49,7 @@ expected.forEach(function (id) {
   assert(topic && topic.title && topic.body.indexOf("<") >= 0, id + " has a title and a body");
 });
 assert(Help.topic("wind") === null, "Wound direction has no help topic");
-["step-3", "step-4", "step-5"].forEach(function (id) {
+["step-4", "step-5", "step-6"].forEach(function (id) {
   assert(section(html, id).indexOf("info-btn") === -1, id + " has no information button");
 });
 const windAt = html.indexOf('id="wind"');

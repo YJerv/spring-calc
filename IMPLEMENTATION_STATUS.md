@@ -105,7 +105,7 @@ What is in force:
 
 Open review point, not a final decision:
 
-- The change log did not decide whether limits are the first page or after the input method and before the loads. They are on the first page in that second position so page 2 can lose the diameter inputs and the wire page does not move. This can be moved later.
+- 10 November 2026, R2-01. Design constraints are page 1 and working loads and lengths are page 2. Material, wire, coil diameter and results follow as pages 3 to 6. Ends, grade and wind stay on the loads page, before Calculate. The suggested-clearance note stays on the constraints page.
 
 Checks: `tests/test-constraints.js`, 21 assertions. Engine, feasibility, chart, drawing, theme and PDF release tests still pass.
 
@@ -115,13 +115,13 @@ Attempt 1. It has not failed.
 
 What is in force:
 
-- Page 2 shows the material, G, Rm, the allowable stress factor and the indicative Rm option. It does not ask for a pocket, an inside diameter, ends, a quality grade or a wind direction.
-- The wire page is still page 3. Its heading, heat map, legend, wire list and the sentence about D = De max − d are unchanged.
-- Ends, manufacturing grade and wind are on the first page, with the diameter limits and before the loads. Ends stay available to Calculate because solid length depends on them. Grade remains linked to the same control on the results page. Wind remains available for the drawing.
+- After R2-01, page 3 shows the material, G, Rm, the allowable stress factor and the indicative Rm option. It does not ask for a pocket, an inside diameter, ends, a quality grade or a wind direction.
+- The wire page is page 4. Its heat map, legend, wire list and the sentence about D = De max − d are unchanged. The heading number follows the new order.
+- Ends, manufacturing grade and wind are on page 2 with the working loads, before Calculate. Grade remains linked to the same control on the results page. Wind remains available for the drawing.
 
 Open, not decided in the change log:
 
-- The log says the second page is material only and the third page stays as it is. It does not say where ends, grade and wind should go. They are on the first page so the wire page does not change. That place can be moved.
+- The log says the material page is material only and the wire page stays as it is. It does not say where ends, grade and wind should go. They travel with the loads page so they stay before Calculate. A different place is not decided.
 
 Checks: `tests/test-pages.js`, 27 assertions, and the full `npm test` suite. Browser checks opened the material page and the wire page in light and dark, on a desktop window and a phone window.
 

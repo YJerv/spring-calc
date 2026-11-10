@@ -248,13 +248,29 @@
     renderFeasibility(report, "");
   }
 
+  function constraintErrors() {
+    var g = geometry();
+    var errs = [];
+    if (g.pocket != null && !(g.pocket > 0)) errs.push("The pocket maximum must be greater than zero, or left blank for no outer limit.");
+    if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The inside-diameter limit must be greater than zero, or left blank.");
+    if (g.pocket != null && !(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
+    if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
+    var conflict = E.constraintConflict(g.pocket, g.innerMin);
+    if (conflict) errs.push(conflict);
+    return errs;
+  }
+
   function validateStep(step) {
     if (step === 1) {
+      var constraintErrs = constraintErrors();
+      showErr("errConstraints", constraintErrs);
+      return constraintErrs.length === 0;
+    }
+    if (step === 2) {
       var out = currentLoads();
       showErr("err1", out.ok ? [] : out.errors);
       if (!out.ok) return false;
-      var g = geometry();
-      var conflict = E.constraintConflict(g.pocket, g.innerMin);
+      var conflict = E.constraintConflict(geometry().pocket, geometry().innerMin);
       if (conflict) {
         renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
         return false;
@@ -266,22 +282,16 @@
       }
       return true;
     }
-    if (step === 2) {
+    if (step === 3) {
       var g = geometry();
       var errs = [];
-      if (g.pocket != null && !(g.pocket > 0)) errs.push("The pocket maximum must be greater than zero, or left blank for no outer limit.");
-      if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The inside-diameter limit must be greater than zero, or left blank.");
-      if (g.pocket != null && !(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
-      if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
-      var conflict = E.constraintConflict(g.pocket, g.innerMin);
-      if (conflict) errs.push(conflict);
       if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
       if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
       if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
       showErr("err2", errs);
       return errs.length === 0;
     }
-    if (step === 3) {
+    if (step === 4) {
       if (!state.selectedWire) {
         showErr("err3", ["Select a wire diameter to continue."]);
         return false;
@@ -289,7 +299,7 @@
       showErr("err3", []);
       return true;
     }
-    if (step === 4) {
+    if (step === 5) {
       if (!state.design) {
         showErr("err4", ["Adjust the mean diameter, or use auto-optimise."]);
         return false;
@@ -305,18 +315,18 @@
     document.querySelectorAll(".step").forEach(function (sec) {
       sec.classList.toggle("active", Number(sec.getAttribute("data-step")) === step);
     });
-    for (var i = 1; i <= 5; i++) {
+    for (var i = 1; i <= 6; i++) {
       var p = $("p" + i);
       p.className = i === step ? "on" : (i < step ? "done" : "");
     }
     $("btnBack").disabled = step === 1;
-    $("btnNext").textContent = step === 5 ? "Start again" : (step === 4 ? "Show results" : "Next");
-    if (step === 3) {
+    $("btnNext").textContent = step === 6 ? "Start again" : (step === 5 ? "Show results" : "Next");
+    if (step === 4) {
       renderHeatmap();
       renderWires();
     }
-    if (step === 4) setupOptimise();
-    if (step === 5) renderResults();
+    if (step === 5) setupOptimise();
+    if (step === 6) renderResults();
     window.scrollTo(0, 0);
     persist();
   }
@@ -713,6 +723,7 @@
     try {
       var data = {
         step: state.step,
+        pageOrder: "r2-01",
         mode: state.mode,
         values: {
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
@@ -744,7 +755,9 @@
         else if (k === "D") { /* applied after evaluate */ }
         else if ($(k)) setVal(k, v[k]);
       });
-      if (data.step) state.step = data.step;
+      if (data.step) {
+        state.step = data.pageOrder === "r2-01" ? data.step : Math.min(6, Number(data.step) + 1);
+      }
       if (data.mode) {
         var radio = document.querySelector("input[name=mode][value=\"" + data.mode + "\"]");
         if (radio) radio.checked = true;
@@ -1015,7 +1028,7 @@
     $("btnOptimise").addEventListener("click", autoOptimise);
     function onGradeInput(id) {
       setGrade(val(id));
-      if (state.step === 5 && state.design) renderResults();
+      if (state.step === 6 && state.design) renderResults();
       persist();
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
@@ -1057,7 +1070,7 @@
       if (state.step > 1) goTo(state.step - 1);
     });
     $("btnNext").addEventListener("click", function () {
-      if (state.step === 5) {
+      if (state.step === 6) {
         goTo(1);
         return;
       }
