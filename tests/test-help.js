@@ -36,22 +36,22 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
 const helpSrc = fs.readFileSync(path.join(root, "js/help.js"), "utf8");
 
-const expected = ["duty", "diameters", "grades", "ends", "materials", "stress"];
-assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the six agreed subjects");
+const expected = ["duty", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export"];
+assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the agreed subjects");
 
 console.log("\nButtons sit on the agreed questions only\n");
 
 const buttons = html.match(/class="info-btn[^"]*"/g) || [];
-assert(buttons.length === 6, "There are six circled information buttons", String(buttons.length));
+assert(buttons.length === 9, "There are nine circled information buttons", String(buttons.length));
 expected.forEach(function (id) {
   assert(html.indexOf('data-help="' + id + '"') >= 0, "A button opens " + id);
   const topic = Help.topic(id);
   assert(topic && topic.title && topic.body.indexOf("<") >= 0, id + " has a title and a body");
 });
 assert(Help.topic("wind") === null, "Wound direction has no help topic");
-["step-4", "step-5", "step-6"].forEach(function (id) {
-  assert(section(html, id).indexOf("info-btn") === -1, id + " has no information button");
-});
+assert(section(html, "step-5").indexOf("info-btn") === -1, "The optimise page has no information button");
+assert(section(html, "step-4").indexOf('data-help="wire"') >= 0, "The wire page opens its explanation");
+assert(section(html, "step-6").indexOf('data-help="graph"') >= 0, "The results page opens the graph explanation");
 const windAt = html.indexOf('id="wind"');
 const windField = html.slice(html.lastIndexOf("<div class=\"field\">", windAt), html.indexOf("</div>", windAt));
 assert(windField.indexOf("info-btn") === -1, "The wind control has no information button");
@@ -84,9 +84,13 @@ assert(dutySvg.toLowerCase().indexOf("shorter") === -1, "The duty picture does n
 assert(dutySvg.toLowerCase().indexOf("compression") === -1, "The duty picture does not say compression");
 assert(dutySvg.indexOf("data-strand=\"front\"") >= 0, "The duty springs are helical coils");
 const diameters = Help.topic("diameters").body;
-["Pocket", "Clearance", "Inside diameter", "Blank box", "not defined", "not agreed", "<svg"].forEach(function (phrase) {
+["Pocket", "Clearance", "Inside diameter", "Blank box", "not defined", "not agreed", "<svg",
+  "Suggested clearance", "Leave a box blank for no limit"].forEach(function (phrase) {
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
 });
+assert(Help.topic("wire").body.indexOf("Tap a cell") >= 0, "Wire help explains the heat map");
+assert(Help.topic("graph").body.indexOf("85 %") >= 0, "Graph help explains the stations");
+assert(Help.topic("export").body.indexOf("Upgrade to release drawing table") >= 0, "Export help keeps the unpaid warning");
 const grades = Help.topic("grades").body;
 ["Grade 1", "0.63", "Grade 2", "1.00", "Grade 3", "1.60", "BS EN 15800", "not a copy", "does not change the rate", "BS EN 15000"].forEach(function (phrase) {
   assert(grades.indexOf(phrase) >= 0, "Grade help includes: " + phrase);

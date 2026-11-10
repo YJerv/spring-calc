@@ -59,7 +59,7 @@
           <h2>1. Design constraints</h2>
           <button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
-        <p class="hint lead">Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit.</p>
+        <p class="hint lead">Leave a box blank for no limit.</p>
           <div class="grid-2">
             <div class="field">
               <label for="pocket">Spring pocket, maximum diameter</label>
@@ -80,7 +80,6 @@
           <div class="btn-row no-print">
             <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
           </div>
-          <p class="lead hint">Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already the maximum outside diameter. No extra allowance is added for the diameter growing under compression; that allowance is not defined.</p>
           <p id="constraintNote" class="lead"></p>
           <div class="error" id="errConstraints"></div>
       </div>
@@ -109,7 +108,6 @@
 
         <fieldset class="constraints">
           <legend>Ends, grade and wind</legend>
-          <p class="hint lead">These are not material properties, so they are not on the material page, and they are not on the wire page. Ends affect solid length, so they are set before Calculate. This place is not a final decision.</p>
           <div class="field">
             <div class="with-info">
               <label for="ends">Ends</label>
@@ -244,8 +242,10 @@
 
     <section id="step-4" class="step" data-step="4">
       <div class="card">
-        <h2>4. Standard wire diameters</h2>
-        <p class="lead">The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>
+        <div class="with-info">
+          <h2>4. Standard wire diameters</h2>
+          <button type="button" class="info-btn no-print" data-help="wire" aria-label="Information: standard wire diameters" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
         <dl class="summary" id="wireIntro"></dl>
         <div id="heatmapPanel" class="heatmap-panel">
           <p class="heatmap-best" id="heatmapBest"></p>
@@ -260,7 +260,6 @@
           </div>
           <p class="lead hint">Swipe the map sideways to see every standard wire. Highlighted rows give the most viable wire options.</p>
         </div>
-        <p class="lead">Each size is also listed below, evaluated at the largest mean diameter that still fits the pocket: D = De max − d. Corrected stress τk uses the Bergsträsser factor from BS EN 13906-1.</p>
         <div class="wire-toolbar">
           <label><input type="checkbox" id="passOnly" checked> Show passing sizes only</label>
           <span id="wireCount"></span>
@@ -293,10 +292,12 @@
 
     <section id="step-6" class="step" data-step="6">
       <div class="card">
-        <h2>6. Results</h2>
+        <div class="with-info">
+          <h2>6. Results</h2>
+          <button type="button" class="info-btn no-print" data-help="graph" aria-label="Information: load graph" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
         <div id="resultBanner"></div>
         <h3 style="margin:8px 0 4px;font-size:1rem;">Load–length characteristic</h3>
-        <p class="lead">Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>
         <div class="chart-wrap">
           <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
@@ -356,8 +357,8 @@
         </div>
         <div class="btn-row no-print">
           <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
+          <button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
-        <p class="lead hint" id="exportNote">The only export is an A3 PDF drawing. There are no adverts. A one-off permanent Pro unlock for complete drawings is agreed, but the price, Play Billing product and verification server are not configured, so this page cannot unlock one. The file from this button is the unpaid preview: every table value is left out of the PDF, and the sheet carries the line “Upgrade to release drawing table”. The results on this page stay complete.</p>
         <details class="notes">
           <summary>Method, formulae and limitations</summary>
           <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire. Manufacturing tolerances follow BS EN 15800 (quality grades 1, 2 and 3), which replaced BS 1726 for cylindrical helical compression spring tolerances. The designer remains responsible for checking the current standards, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>

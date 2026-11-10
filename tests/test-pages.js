@@ -42,8 +42,8 @@ console.log("Page order after the design-constraints swap\n");
 assert(page1.indexOf(">1. Design constraints<") >= 0, "The first page is design constraints");
 assert(page1.indexOf('id="pocket"') >= 0 && page1.indexOf('id="innerMin"') >= 0 && page1.indexOf('id="clearance"') >= 0,
   "The first page has the diameter limits");
-assert(page1.indexOf("Suggested clearance is a typical workshop allowance") >= 0,
-  "The suggested-clearance note stays on the constraints page");
+assert(page1.indexOf("Suggested clearance is a typical workshop allowance") === -1,
+  "The suggested-clearance paragraph is not left on the constraints page");
 assert(page1.indexOf('data-help="diameters"') >= 0, "The diameter help button is on the first page");
 ["L1", "ends", "grade", "wind", "material"].forEach(function (id) {
   assert(page1.indexOf('id="' + id + '"') === -1, "The first page does not contain " + id);
@@ -75,14 +75,11 @@ console.log("\nEnds, grade and wind are off the wire page\n");
 
 const wirePage = [
   "<h2>4. Standard wire diameters</h2>",
-  "The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns).",
-  "Tap a cell to select that D and d.",
   'id="heatmapLegend"',
   "Well within (τk ≤ 70 % of allowable)",
   "Invalid (pocket, index 4–16, solid length or coil count)",
   'id="heatmapScroll"',
   "Swipe the map sideways to see every standard wire.",
-  "Each size is also listed below, evaluated at the largest mean diameter that still fits the pocket: D = De max − d.",
   'id="passOnly"',
   "Show passing sizes only",
   'id="wireList"'
@@ -90,6 +87,9 @@ const wirePage = [
 wirePage.forEach(function (phrase) {
   assert(page4.indexOf(phrase) >= 0, "Wire page still contains: " + phrase.slice(0, 60));
 });
+const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
+assert(helpJs.indexOf("The heat map compares mean coil diameter D") >= 0, "The heat-map explanation is in the help window");
+assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

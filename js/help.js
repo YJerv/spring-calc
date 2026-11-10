@@ -81,7 +81,9 @@
         "<p>The minimum inside diameter is the smallest hole that must still let a rod or component pass through. Leave that box blank when there is no inner limit.</p>" +
         "<p>If the inner limit is not smaller than the pocket, the page says so before any search. That message stays on the page.</p>" +
         "<p>No extra allowance is added for the outside diameter growing under compression. That allowance is not defined.</p>" +
-        "<p>Leaving the pocket blank does not make this app propose a diameter. How a diameter would be chosen is not agreed yet.</p>"
+        "<p>Leaving the pocket blank does not make this app propose a diameter. How a diameter would be chosen is not agreed yet.</p>" +
+        "<p>Set an outer pocket, a minimum inside diameter for a rod, both, or neither. Leave a box blank for no limit.</p>" +
+        "<p>Suggested clearance is a typical workshop allowance for a spring working in a hole. Set it to zero if the pocket value is already the maximum outside diameter. No extra allowance is added for the diameter growing under compression; that allowance is not defined.</p>"
     },
     grades: {
       title: "Quality grades",
@@ -101,7 +103,8 @@
         "</div>" +
         "<p>Closed ends finish with coils wound down to touch the previous coil. Open ends do not. Ground ends are flattened so the spring can stand on a face square to its axis. Ends that are not ground keep the wire’s round end.</p>" +
         "<p>The pictures are sketches of those four choices. They are not manufacturing drawings.</p>" +
-        "<p>Ends change the solid length. Closed ends add inactive coils. An end that is not ground adds a further wire diameter to the solid length in this calculator. Set the ends before Calculate. The choice does not alter numbers you have already typed.</p>"
+        "<p>Ends change the solid length. Closed ends add inactive coils. An end that is not ground adds a further wire diameter to the solid length in this calculator. Set the ends before Calculate. The choice does not alter numbers you have already typed.</p>" +
+        "<p>Ends, grade and wind are not material properties, so they are not on the material page, and they are not on the wire page. This place is not a final decision.</p>"
     },
     materials: {
       title: "Materials",
@@ -122,6 +125,19 @@
         "<p>It matters because skipping it understates the inside stress, and a spring can then look acceptable when it is not. The factor grows as the coil gets tighter. At the index limits this app already uses, it is about 1.38 at index 4 and about 1.08 at index 16. The expression is not used at index 0.75 or below. This correction is not a fatigue life, not a temperature derating, and not a certified allowable stress.</p>" +
         "<h3>Allowable stress factor</h3>" +
         "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. The fail or warning text stays on the page; it is not replaced by this window. The wire page still shows its own stress bands.</p>"
+    },
+    wire: {
+      title: "Standard wire diameters",
+      body: "<p>The heat map compares mean coil diameter D (rows) with the standard wire diameters (columns). Colour follows corrected stress τk as a percentage of allowable; grey cells fail a pocket, index, solid-length or coil-count check. Tap a cell to select that D and d.</p>" +
+        "<p>Each size is also listed below, evaluated at the largest mean diameter that still fits the pocket: D = De max − d. Corrected stress τk uses the Bergsträsser factor from BS EN 13906-1.</p>"
+    },
+    graph: {
+      title: "Load graph",
+      body: "<p>Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>"
+    },
+    export: {
+      title: "A3 drawing export",
+      body: "<p>The only export is an A3 PDF drawing. There are no adverts. A one-off permanent Pro unlock for complete drawings is agreed, but the price, Play Billing product and verification server are not configured, so this page cannot unlock one. The file from this button is the unpaid preview: every table value is left out of the PDF, and the sheet carries the line “Upgrade to release drawing table”. The results on this page stay complete.</p>"
     }
   };
 
