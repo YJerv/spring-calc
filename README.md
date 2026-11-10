@@ -136,14 +136,9 @@ Phone-sized captures (390 × 844 logical pixels, 2× pixel density) live in `scr
 - `05c-particulars.png` — spring particulars table
 - `06-diagram.png` — scaled side-view diagram at free length
 
-## Later publication on Google Play
+## Google Play
 
-The app is a plain HTML/CSS/JS PWA (manifest + service worker, no build step). A subsequent packaging step can wrap it as:
-
-- a **Trusted Web Activity** (Bubblewrap / PWABuilder), or
-- a **Capacitor** Android project pointing at this folder.
-
-That work is not part of this first version (store listing, signing key, Play Console).
+`android/` is a Trusted Web Activity that opens https://yjerv.github.io/spring-calc/. Packaging steps, the upload key and Digital Asset Links are described in [android/README.md](android/README.md). Store text is in [android/store/listing.md](android/store/listing.md). This review branch does not sign or upload a build.
 
 ## Limitations
 

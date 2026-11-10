@@ -39,8 +39,14 @@ const files = walk(root, []);
 const statements = files.filter(function (file) {
   return path.basename(file) === "assetlinks.json";
 });
-assert(statements.length === 0,
-  "No assetlinks.json is shipped from this project path");
+const onlyWrapper = statements.length === 1 &&
+  statements[0].split(path.sep).join("/").endsWith("android/assetlinks.json");
+assert(onlyWrapper,
+  "The only assetlinks file is the Android wrapper template, not a site-root statement",
+  statements.map(function (file) { return path.relative(root, file); }).join(", "));
+const template = fs.readFileSync(path.join(root, "android", "assetlinks.json"), "utf8");
+assert(template.indexOf("PASTE_APP_SIGNING_CERTIFICATE_SHA256_FROM_PLAY_CONSOLE") >= 0,
+  "The wrapper template still has no real signing fingerprint");
 
 const entitlement = fs.readFileSync(path.join(root, "js", "entitlement.js"), "utf8");
 assert(entitlement.indexOf("uk.co.yjerv.springcalc") >= 0,

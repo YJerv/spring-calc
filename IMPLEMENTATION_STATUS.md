@@ -129,14 +129,11 @@ Checks: `tests/test-pages.js`, 27 assertions, and the full `npm test` suite. Bro
 
 Attempt 1. It has not failed. The SVG in `icons/icon.svg` is a byte-for-byte copy of `SC007_concept_A_Coil_icon_ASIS.svg`. Background `#202630`, blue bands `#2457C5`, pale bands `#DCE2EA` at 0.55 opacity, and the 0.85 scale are unchanged. The 192 and 512 PNG icons are rasters of that file. The favicon and the Apple touch icon use those files. The manifest purpose is `any`, so a mask is not asked to crop the square.
 
-Open:
+10 November 2026. The Trusted Web Activity project from the separate Play wrapper branch is now in `android/` on this review branch. Icons were regenerated from `icons/icon.svg` with `rsvg-convert`. Launcher icons are the full square. Maskable and adaptive icons keep the spring inside the 66% safe zone on a `#202630` field. The web manifest keeps the `any` icons and adds `icons/icon-maskable-192.png` and `icons/icon-maskable-512.png` with purpose `maskable`. No keystore, AAB or APK was created, and Play Console was not touched.
 
-- This repository has no Android project, Trusted Web Activity wrapper, or mipmap launcher resources. None were generated, and nothing was uploaded to Play Console.
-- The supplied file is one full-bleed square. It is not split into adaptive-icon foreground and background layers. A maskable crop was not invented.
+This item stays amber until Yuan approves the previews and the wrapper is installed on a device.
 
-Checks: `tests/test-icon.js`, 13 assertions, and the full `npm test` suite. Rasters at 24, 48, 96, 192 and 512 px keep the supplied background colour at the corner.
-
-Android launcher integration for that icon remains pending outside this repository. There is still no wrapper here.
+Checks: `tests/test-icon.js`, `tests/test-android-icons.py`, and the full `npm test` suite. Preview sheet: `sc007_android_icon_previews.png`.
 
 ## SC-008 — Digital Asset Links — not completed; blocked on facts this repo does not have
 
@@ -248,7 +245,7 @@ These words describe this branch. They do not change the live WIP Results colour
 | SC-004 | Partial | No validated extra clearance beyond L2 greater than solid length. The 70–80% sentence is a guide, not a fail |
 | SC-005 | Partial | Where the limit boxes sit is not a final decision |
 | SC-006 | Partial | Where ends, grade and wind sit is not a final decision |
-| SC-007 | Partial | Web icon is in. Android launcher integration is pending outside this repository |
+| SC-007 | Amber | Web icon is in. Android wrapper is on this branch for preview. Not approved and not installed on a device |
 | SC-008 | Blocked | Root host and Play app-signing SHA-256 are not available. No statement file was added. The guard is not an association |
 | SC-009 | Partial | Further information buttons, beyond the six agreed topics, are not decided |
 | SC-010 | Cancelled | Not implemented |

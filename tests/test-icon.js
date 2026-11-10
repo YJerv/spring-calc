@@ -39,8 +39,7 @@ assert(svg.indexOf("#0b1f33") === -1 && svg.indexOf("#c4a35a") === -1,
 assert(html.indexOf('href="icons/icon.svg"') >= 0, "The favicon is the SVG icon");
 assert(html.indexOf('href="icons/icon-192.png"') >= 0, "The Apple touch icon is the 192 PNG");
 
-manifest.icons.forEach(function (icon) {
-  assert(icon.purpose === "any", icon.src + " is purpose any, so the full square is not masked");
+manifest.icons.filter(function (icon) { return icon.purpose === "any"; }).forEach(function (icon) {
   const buf = fs.readFileSync(path.join(root, icon.src));
   if (icon.src.endsWith(".png")) {
     const w = buf.readUInt32BE(16);
@@ -49,11 +48,10 @@ manifest.icons.forEach(function (icon) {
     assert(w === expected && h === expected, icon.src + " is " + expected + " px", w + "x" + h);
   }
 });
-
-const android = fs.readdirSync(root).some(function (name) {
-  return name === "android" || name === "twa" || name === "app";
-});
-assert(android === false, "This repo has no Android or TWA project to rebuild");
+assert(manifest.icons.some(function (icon) { return icon.purpose === "maskable" && icon.src.indexOf("icon-maskable-512") >= 0; }),
+  "The manifest also has a maskable 512 icon");
+assert(manifest.icons.some(function (icon) { return icon.purpose === "maskable" && icon.src.indexOf("icon-maskable-192") >= 0; }),
+  "The manifest also has a maskable 192 icon");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
