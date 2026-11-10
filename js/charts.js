@@ -82,7 +82,7 @@
     var L0 = design.L0;
     var Lc = design.Lc;
     var span = Math.max(L0 - Lc, 1);
-    var Lleft = L0 + 0.06 * span;
+    var Lleft = L0;
     var Lright = Lc - 0.08 * span;
     var stations = loadGraphStations(design);
     var Ftop = 1;

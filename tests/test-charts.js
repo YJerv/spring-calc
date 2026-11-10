@@ -99,6 +99,10 @@ const html = svg.innerHTML;
 assert(!!html && html.length > 200, "Graph renders SVG markup");
 assert(html.indexOf(">Deflection, S<") !== -1, "The load graph x axis is labelled Deflection, S");
 assert(html.toLowerCase().indexOf("shorter") === -1, "The load graph does not say shorter");
+const springLine = html.match(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)" stroke="var\(--chart-ink\)" stroke-width="2"/);
+assert(springLine && Math.abs(Number(springLine[1]) - 58) < 0.2, "The spring line starts on the y axis at L0");
+assert(springLine && Math.abs(Number(springLine[2]) - (336 - 78)) < 0.2, "The spring line starts at zero load");
+assert(springLine && Math.abs(Number(springLine[3]) - 58) > 1, "The spring line runs straight away from the origin");
 assert(svg.attrs.viewBox.indexOf("390") === 0 || /0 0 390 /.test(svg.attrs.viewBox),
   "Graph is laid out for a 390 px phone width", svg.attrs.viewBox);
 
