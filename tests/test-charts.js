@@ -97,6 +97,8 @@ const svg = fakeSvg();
 C.renderLoadGraph(svg, ev);
 const html = svg.innerHTML;
 assert(!!html && html.length > 200, "Graph renders SVG markup");
+assert(html.indexOf(">Deflection, S<") !== -1, "The load graph x axis is labelled Deflection, S");
+assert(html.toLowerCase().indexOf("shorter") === -1, "The load graph does not say shorter");
 assert(svg.attrs.viewBox.indexOf("390") === 0 || /0 0 390 /.test(svg.attrs.viewBox),
   "Graph is laid out for a 390 px phone width", svg.attrs.viewBox);
 

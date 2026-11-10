@@ -117,7 +117,7 @@
       x: pad.l + (W - pad.l - pad.r) / 2, y: H - 8, fill: "var(--chart-ink)", "font-size": 10,
       "text-anchor": "middle",
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
-    }, ["Length L (mm)  →  shorter"]));
+    }, ["Deflection, S"]));
 
     var x0 = xOf(L0);
     var y0 = yOf(0);
