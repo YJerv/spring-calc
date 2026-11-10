@@ -90,6 +90,8 @@ wirePage.forEach(function (phrase) {
 const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
 assert(helpJs.indexOf("The heat map compares mean coil diameter D") >= 0, "The heat-map explanation is in the help window");
 assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
+assert(page4.indexOf('id="wireIntro"') === -1, "The wire page has no D max summary box");
+assert(page4.indexOf('id="heatmapScroll"') >= 0, "The wire matrix stays");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

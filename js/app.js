@@ -466,11 +466,6 @@
 
   function renderWires() {
     var input = wireInputBase();
-    $("wireIntro").innerHTML =
-      "<dt>De max</dt><dd>" + (input.DeMax == null ? "No outer limit" : E.fmt(input.DeMax, 3) + " mm") + "</dd>" +
-      "<dt>Minimum inside diameter</dt><dd>" + (input.innerMin == null ? "No inner limit" : E.fmt(input.innerMin, 3) + " mm") + "</dd>" +
-      "<dt>Maximum working load</dt><dd>" + E.fmt(input.Fmax, 3) + " N</dd>" +
-      "<dt>Required rate</dt><dd>" + E.fmt(input.R, 4) + " N/mm</dd>";
     var rows = E.listWires(input);
     state.wireRows = rows;
     var passOnly = $("passOnly").checked;
