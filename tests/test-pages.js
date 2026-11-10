@@ -91,6 +91,10 @@ const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf
 assert(helpJs.indexOf("The heat map compares mean coil diameter D") >= 0, "The heat-map explanation is in the help window");
 assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
 assert(page4.indexOf('id="wireIntro"') === -1, "The wire page has no D max summary box");
+const page6 = section(html, "step-6");
+assert(/<details class="notes">\s*<summary>Spring particulars<\/summary>/.test(page6),
+  "Spring particulars are collapsed by default");
+assert(page6.indexOf("<details class=\"notes\" open") === -1, "Spring particulars are not open on arrival");
 assert(page4.indexOf('id="heatmapScroll"') >= 0, "The wire matrix stays");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
