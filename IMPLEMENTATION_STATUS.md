@@ -105,7 +105,8 @@ What is in force:
 
 Open review point, not a final decision:
 
-- 10 November 2026, R2-01. Design constraints are page 1 and working loads and lengths are page 2. Material, wire, coil diameter and results follow as pages 3 to 6. Ends, grade and wind stay on the loads page, before Calculate. The suggested-clearance note stays on the constraints page.
+- 10 November 2026, R2-01. Design constraints are page 1 and working loads and lengths are page 2. Material, wire, coil diameter and results follow as pages 3 to 6. Ends, grade and wind stay on the loads page, before Calculate.
+- R2-03 moved the suggested-clearance paragraph and the longer diameter-limits paragraph into the diameter help window. A one-line hint stays under the heading.
 
 Checks: `tests/test-constraints.js`, 21 assertions. Engine, feasibility, chart, drawing, theme and PDF release tests still pass.
 
@@ -116,7 +117,7 @@ Attempt 1. It has not failed.
 What is in force:
 
 - After R2-01, page 3 shows the material, G, Rm, the allowable stress factor and the indicative Rm option. It does not ask for a pocket, an inside diameter, ends, a quality grade or a wind direction.
-- The wire page is page 4. Its heat map, legend, wire list and the sentence about D = De max − d are unchanged. The heading number follows the new order.
+- The wire page is page 4. Its heat map, legend and wire list stay. R2-04 removed the De max summary above the matrix. R2-03 moved the longer heat-map paragraph into the wire help window. The heading number follows the new order.
 - Ends, manufacturing grade and wind are on page 2 with the working loads, before Calculate. Grade remains linked to the same control on the results page. Wind remains available for the drawing.
 
 Open, not decided in the change log:
