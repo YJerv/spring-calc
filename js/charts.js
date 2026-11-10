@@ -490,38 +490,34 @@
   }
 
   function dutyIllustration() {
-    var W = 360;
-    var graphH = 168;
-    var H = 268;
-    var pad = { l: 54, r: 16, t: 22, b: 32 };
+    /* 390 user units is the design width the coil strokes are sized for. */
+    var W = 390;
+    var pad = { l: 48, r: 14, t: 26 };
     var plotW = W - pad.l - pad.r;
-    var plotH = graphH - pad.t - pad.b;
+    var plotH = 98;
     var ox = pad.l;
-    var oy = graphH - pad.b;
-    var xFix = ox + plotW * 0.92;
+    var oy = 124;
+    var radius = 16;
+    var frontW = 3.8;
+    var backW = 2.5;
+    var turns = 7;
+    var gap = 6;
+    var xFix = 368;
+    var font = "ui-sans-serif, system-ui, sans-serif";
+    var labelW = {
+      "Load, F": 50,
+      "Deflection, S": 86,
+      "L0": 20,
+      "L1": 20,
+      "L2": 20,
+      "L1 / F1": 48,
+      "L2 / F2": 48
+    };
+    var ascent = 10;
+    var descent = 3;
+    function r1(n) { return Math.round(n * 10) / 10; }
     function xOf(u) { return ox + u * plotW; }
     function yOf(f) { return oy - f * plotH; }
-    var font = "ui-sans-serif, system-ui, sans-serif";
-    var parts = [];
-    parts.push(empty("rect", {
-      x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)"
-    }));
-    parts.push(empty("line", {
-      x1: ox, y1: pad.t, x2: ox, y2: oy,
-      stroke: "var(--chart-ink)", "stroke-width": 1.2
-    }));
-    parts.push(empty("line", {
-      x1: ox, y1: oy, x2: W - pad.r, y2: oy,
-      stroke: "var(--chart-ink)", "stroke-width": 1.2
-    }));
-    parts.push(el("text", {
-      x: 8, y: 14, fill: "var(--chart-ink)", "font-size": 11, "font-weight": 600,
-      "font-family": font
-    }, ["Load F"]));
-    parts.push(el("text", {
-      x: ox + plotW / 2, y: graphH - 8, fill: "var(--chart-ink)", "font-size": 10,
-      "font-weight": 600, "text-anchor": "middle", "font-family": font
-    }, ["Compression from L0"]));
 
     var u1 = 0.36;
     var u2 = 0.68;
@@ -529,90 +525,144 @@
     var y1 = yOf(u1);
     var x2 = xOf(u2);
     var y2 = yOf(u2);
-    var xEnd = xOf(0.86);
-    var yEnd = yOf(0.86);
+    var cy2 = 172;
+    var cy1 = 218;
+    var cy0 = 264;
+    var H = cy0 + radius + frontW + 8;
+
+    var parts = [];
+    parts.push(empty("rect", {
+      x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)"
+    }));
     parts.push(empty("line", {
-      x1: ox, y1: oy, x2: xEnd, y2: yEnd,
-      stroke: "var(--chart-ink)", "stroke-width": 2
+      x1: r1(ox), y1: pad.t, x2: r1(ox), y2: r1(oy),
+      stroke: "var(--chart-ink)", "stroke-width": 1.2, "data-axis": "y"
+    }));
+    parts.push(empty("line", {
+      x1: r1(ox), y1: r1(oy), x2: W - pad.r, y2: r1(oy),
+      stroke: "var(--chart-ink)", "stroke-width": 1.2, "data-axis": "x"
     }));
 
-    function guides(x, y, colour) {
-      parts.push(empty("line", {
-        x1: ox, y1: y, x2: x, y2: y,
-        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
-      }));
-      parts.push(empty("line", {
-        x1: x, y1: y, x2: x, y2: oy,
-        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
-      }));
-    }
-    guides(x1, y1, "var(--series-l1)");
-    guides(x2, y2, "var(--series-l2)");
-    parts.push(empty("circle", {
-      cx: x1, cy: y1, r: 4.2, fill: "var(--series-l1)",
-      stroke: "var(--chart-paper)", "stroke-width": 1.4
-    }));
-    parts.push(empty("circle", {
-      cx: x2, cy: y2, r: 4.2, fill: "var(--series-l2)",
-      stroke: "var(--chart-paper)", "stroke-width": 1.4
-    }));
-    parts.push(el("text", {
-      x: x1 - 6, y: y1 - 8, fill: "var(--series-l1)", "font-size": 10,
-      "font-weight": 700, "text-anchor": "end", "font-family": font
-    }, ["L1 / F1"]));
-    parts.push(el("text", {
-      x: x2 + 8, y: y2 - 8, fill: "var(--series-l2)", "font-size": 10,
-      "font-weight": 700, "text-anchor": "start", "font-family": font
-    }, ["L2 / F2"]));
-
-    function zig(x0, x1, y, amp) {
-      var n = 14;
-      var pts = [];
-      var i;
-      for (i = 0; i <= n; i++) {
-        var t = i / n;
-        var x = x0 + t * (x1 - x0);
-        var yy = y;
-        if (i !== 0 && i !== n) yy = y + (i % 2 === 0 ? amp : -amp);
-        pts.push(x.toFixed(1) + "," + yy.toFixed(1));
-      }
-      return pts.join(" ");
-    }
-    var states = [
-      { id: "L0", u: 0, y: graphH + 22 },
-      { id: "L1", u: u1, y: graphH + 50 },
-      { id: "L2", u: u2, y: graphH + 78 }
-    ];
-    states.forEach(function (s) {
-      var xMove = xOf(s.u);
-      parts.push(empty("polyline", {
-        points: zig(xMove, xFix, s.y + 1.5, 5),
-        fill: "none", stroke: "var(--coil-back)", "stroke-width": 2,
-        "stroke-linecap": "round", "stroke-linejoin": "round",
-        "data-spring": s.id
-      }));
-      parts.push(empty("polyline", {
-        points: zig(xMove, xFix, s.y, 5.5),
-        fill: "none", stroke: "var(--chart-ink)", "stroke-width": 2,
-        "stroke-linecap": "round", "stroke-linejoin": "round",
-        "data-spring": s.id
-      }));
-      parts.push(empty("line", {
-        x1: xFix, y1: s.y - 8, x2: xFix, y2: s.y + 8,
-        stroke: "var(--chart-ink)", "stroke-width": 1.4
-      }));
+    function addLabel(text, x, baseline, anchor, fill) {
+      var w = labelW[text];
+      var left = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
+      var box = { x: r1(left), y: r1(baseline - ascent), w: w, h: ascent + descent };
       parts.push(el("text", {
-        x: 6, y: s.y + 3, fill: "var(--chart-ink)", "font-size": 10,
-        "font-weight": 700, "font-family": font
-      }, [s.id]));
-    });
+        x: r1(x), y: r1(baseline), fill: fill, "font-size": 11, "font-weight": 700,
+        "text-anchor": anchor, "font-family": font,
+        "data-box": box.x + "," + box.y + "," + box.w + "," + box.h
+      }, [text]));
+    }
+
+    addLabel("Load, F", 8, 14, "start", "var(--chart-ink)");
+    addLabel("Deflection, S", (x1 + x2) / 2, oy + gap + ascent + 1, "middle", "var(--chart-ink)");
+
+    var xEnd = xOf(0.9);
+    var yEnd = yOf(0.9);
+    parts.push(empty("line", {
+      x1: r1(ox), y1: r1(oy), x2: r1(xEnd), y2: r1(yEnd),
+      stroke: "var(--chart-ink)", "stroke-width": 2, "data-spring-line": "1"
+    }));
+
+    function hGuide(x, y, colour) {
+      parts.push(empty("line", {
+        x1: r1(ox), y1: r1(y), x2: r1(x), y2: r1(y),
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
+      }));
+    }
+    function vGuide(id, x, yFrom, yTo, colour) {
+      parts.push(empty("line", {
+        x1: r1(x), y1: r1(yFrom), x2: r1(x), y2: r1(yTo),
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3",
+        "data-guide": id
+      }));
+    }
+    hGuide(x1, y1, "var(--series-l1)");
+    hGuide(x2, y2, "var(--series-l2)");
+    vGuide("L1", x1, y1, cy1 - radius, "var(--series-l1)");
+    vGuide("L2", x2, y2, cy2 - radius, "var(--series-l2)");
+    vGuide("L0", ox, oy + 3, cy0 - radius, "var(--series-l0)");
+
+    parts.push(empty("circle", {
+      cx: r1(x1), cy: r1(y1), r: 4.2, fill: "var(--series-l1)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    parts.push(empty("circle", {
+      cx: r1(x2), cy: r1(y2), r: 4.2, fill: "var(--series-l2)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    addLabel("L0", ox - gap - 1, oy - gap - descent - 1, "end", "var(--series-l0)");
+    addLabel("L1 / F1", x1 - gap - 5, y1 - gap - descent - 1, "end", "var(--series-l1)");
+    addLabel("L2 / F2", x2 - gap - 5, y2 - gap - descent - 1, "end", "var(--series-l2)");
+
+    function addHelix(id, x0, cy, colour) {
+      var steps = turns * 36;
+      var back = [];
+      var front = [];
+      function flush(buf, stroke, width, strand) {
+        if (buf.length < 2) { buf.length = 0; return; }
+        parts.push(empty("polyline", {
+          points: buf.join(" "),
+          fill: "none",
+          stroke: stroke,
+          "stroke-width": width,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          "data-spring": id,
+          "data-strand": strand,
+          "data-cy": String(cy)
+        }));
+        buf.length = 0;
+      }
+      var i;
+      var prevFront = null;
+      for (i = 0; i <= steps; i++) {
+        var t = i / steps;
+        var ang = t * turns * 2 * Math.PI;
+        var x = x0 + t * (xFix - x0);
+        var y = cy + radius * Math.sin(ang);
+        var pt = r1(x) + "," + r1(y);
+        var isFront = Math.cos(ang) >= 0;
+        if (prevFront !== null && isFront !== prevFront) {
+          if (isFront) {
+            back.push(pt);
+            flush(back, "var(--coil-back)", backW, "back");
+            front.push(pt);
+          } else {
+            front.push(pt);
+            flush(front, "var(--chart-ink)", frontW, "front");
+            back.push(pt);
+          }
+        } else if (isFront) front.push(pt);
+        else back.push(pt);
+        prevFront = isFront;
+      }
+      flush(back, "var(--coil-back)", backW, "back");
+      flush(front, "var(--chart-ink)", frontW, "front");
+      [x0, xFix].forEach(function (seatX) {
+        parts.push(empty("line", {
+          x1: r1(seatX), y1: r1(cy - radius), x2: r1(seatX), y2: r1(cy + radius),
+          stroke: "var(--chart-ink)", "stroke-width": 2.2,
+          "data-seat": id
+        }));
+      });
+      addLabel(id, 8, cy + (ascent - descent) / 2, "start", colour);
+    }
+
+    /* L2 (shortest) on top, then L1, then L0. Fixed end on the right. */
+    addHelix("L2", x2, cy2, "var(--series-l2)");
+    addHelix("L1", x1, cy1, "var(--series-l1)");
+    addHelix("L0", ox, cy0, "var(--series-l0)");
 
     return el("svg", {
       class: "help-svg duty-graph",
       viewBox: "0 0 " + W + " " + H,
       xmlns: "http://www.w3.org/2000/svg",
       role: "img",
-      "aria-label": "Load against compression from free length, with springs at L0, L1 and L2"
+      "data-coil-radius": String(radius),
+      "data-front-stroke": String(frontW),
+      "data-back-stroke": String(backW),
+      "aria-label": "Load, F against deflection, S, with horizontal springs at L0, L1 and L2"
     }, parts);
   }
 

@@ -74,11 +74,15 @@ const duty = Help.topic("duty").body;
   assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
 });
 assert(duty.indexOf("L1 / F1") >= 0 && duty.indexOf("L2 / F2") >= 0, "Duty help marks L1 and L2 on the graph");
-assert((duty.match(/data-spring="L0"/g) || []).length === 2, "Duty help draws the free spring");
-assert((duty.match(/data-spring="L1"/g) || []).length === 2, "Duty help draws the spring at L1");
-assert((duty.match(/data-spring="L2"/g) || []).length === 2, "Duty help draws the spring at L2");
+assert(duty.indexOf(">Load, F<") >= 0 && duty.indexOf(">Deflection, S<") >= 0, "Duty help names the axes");
+["L0", "L1", "L2"].forEach(function (id) {
+  assert(duty.indexOf('data-spring="' + id + '"') >= 0, "Duty help draws the " + id + " spring");
+  assert(duty.indexOf('data-guide="' + id + '"') >= 0, "Duty help drops a dotted line to " + id);
+});
 const dutySvg = duty.slice(duty.indexOf("<svg"), duty.indexOf("</svg>") + 6);
 assert(dutySvg.toLowerCase().indexOf("shorter") === -1, "The duty picture does not say shorter");
+assert(dutySvg.toLowerCase().indexOf("compression") === -1, "The duty picture does not say compression");
+assert(dutySvg.indexOf("data-strand=\"front\"") >= 0, "The duty springs are helical coils");
 const diameters = Help.topic("diameters").body;
 ["Pocket", "Clearance", "Inside diameter", "Blank box", "not defined", "not agreed", "<svg"].forEach(function (phrase) {
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
