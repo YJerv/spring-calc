@@ -601,7 +601,6 @@
     g = Number(g);
     if (g !== 1 && g !== 2 && g !== 3) g = 2;
     setVal("grade", String(g));
-    setVal("gradeResult", String(g));
     return g;
   }
 
@@ -1027,7 +1026,6 @@
       persist();
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
-    $("gradeResult").addEventListener("change", function () { onGradeInput("gradeResult"); });
     function refreshExportName() {
       if (!$("exportFilename") || typeof SpringPdf === "undefined" || typeof SpringEntitlement === "undefined") return;
       var naming = SpringPdf.exportFilename({

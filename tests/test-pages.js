@@ -95,6 +95,7 @@ const page6 = section(html, "step-6");
 assert(/<details class="notes">\s*<summary>Spring particulars<\/summary>/.test(page6),
   "Spring particulars are collapsed by default");
 assert(page6.indexOf("<details class=\"notes\" open") === -1, "Spring particulars are not open on arrival");
+assert(page6.indexOf('id="gradeResult"') === -1, "The results page has no tolerance grade menu");
 assert(page4.indexOf('id="heatmapScroll"') >= 0, "The wire matrix stays");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
