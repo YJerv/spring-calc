@@ -489,13 +489,141 @@
     svg.innerHTML = parts.join("");
   }
 
+  function dutyIllustration() {
+    var W = 360;
+    var graphH = 168;
+    var H = 268;
+    var pad = { l: 54, r: 16, t: 22, b: 32 };
+    var plotW = W - pad.l - pad.r;
+    var plotH = graphH - pad.t - pad.b;
+    var ox = pad.l;
+    var oy = graphH - pad.b;
+    var xFix = ox + plotW * 0.92;
+    function xOf(u) { return ox + u * plotW; }
+    function yOf(f) { return oy - f * plotH; }
+    var font = "ui-sans-serif, system-ui, sans-serif";
+    var parts = [];
+    parts.push(empty("rect", {
+      x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)"
+    }));
+    parts.push(empty("line", {
+      x1: ox, y1: pad.t, x2: ox, y2: oy,
+      stroke: "var(--chart-ink)", "stroke-width": 1.2
+    }));
+    parts.push(empty("line", {
+      x1: ox, y1: oy, x2: W - pad.r, y2: oy,
+      stroke: "var(--chart-ink)", "stroke-width": 1.2
+    }));
+    parts.push(el("text", {
+      x: 8, y: 14, fill: "var(--chart-ink)", "font-size": 11, "font-weight": 600,
+      "font-family": font
+    }, ["Load F"]));
+    parts.push(el("text", {
+      x: ox + plotW / 2, y: graphH - 8, fill: "var(--chart-ink)", "font-size": 10,
+      "font-weight": 600, "text-anchor": "middle", "font-family": font
+    }, ["Compression from L0"]));
+
+    var u1 = 0.36;
+    var u2 = 0.68;
+    var x1 = xOf(u1);
+    var y1 = yOf(u1);
+    var x2 = xOf(u2);
+    var y2 = yOf(u2);
+    var xEnd = xOf(0.86);
+    var yEnd = yOf(0.86);
+    parts.push(empty("line", {
+      x1: ox, y1: oy, x2: xEnd, y2: yEnd,
+      stroke: "var(--chart-ink)", "stroke-width": 2
+    }));
+
+    function guides(x, y, colour) {
+      parts.push(empty("line", {
+        x1: ox, y1: y, x2: x, y2: y,
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
+      }));
+      parts.push(empty("line", {
+        x1: x, y1: y, x2: x, y2: oy,
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
+      }));
+    }
+    guides(x1, y1, "var(--series-l1)");
+    guides(x2, y2, "var(--series-l2)");
+    parts.push(empty("circle", {
+      cx: x1, cy: y1, r: 4.2, fill: "var(--series-l1)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    parts.push(empty("circle", {
+      cx: x2, cy: y2, r: 4.2, fill: "var(--series-l2)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    parts.push(el("text", {
+      x: x1 - 6, y: y1 - 8, fill: "var(--series-l1)", "font-size": 10,
+      "font-weight": 700, "text-anchor": "end", "font-family": font
+    }, ["L1 / F1"]));
+    parts.push(el("text", {
+      x: x2 + 8, y: y2 - 8, fill: "var(--series-l2)", "font-size": 10,
+      "font-weight": 700, "text-anchor": "start", "font-family": font
+    }, ["L2 / F2"]));
+
+    function zig(x0, x1, y, amp) {
+      var n = 14;
+      var pts = [];
+      var i;
+      for (i = 0; i <= n; i++) {
+        var t = i / n;
+        var x = x0 + t * (x1 - x0);
+        var yy = y;
+        if (i !== 0 && i !== n) yy = y + (i % 2 === 0 ? amp : -amp);
+        pts.push(x.toFixed(1) + "," + yy.toFixed(1));
+      }
+      return pts.join(" ");
+    }
+    var states = [
+      { id: "L0", u: 0, y: graphH + 22 },
+      { id: "L1", u: u1, y: graphH + 50 },
+      { id: "L2", u: u2, y: graphH + 78 }
+    ];
+    states.forEach(function (s) {
+      var xMove = xOf(s.u);
+      parts.push(empty("polyline", {
+        points: zig(xMove, xFix, s.y + 1.5, 5),
+        fill: "none", stroke: "var(--coil-back)", "stroke-width": 2,
+        "stroke-linecap": "round", "stroke-linejoin": "round",
+        "data-spring": s.id
+      }));
+      parts.push(empty("polyline", {
+        points: zig(xMove, xFix, s.y, 5.5),
+        fill: "none", stroke: "var(--chart-ink)", "stroke-width": 2,
+        "stroke-linecap": "round", "stroke-linejoin": "round",
+        "data-spring": s.id
+      }));
+      parts.push(empty("line", {
+        x1: xFix, y1: s.y - 8, x2: xFix, y2: s.y + 8,
+        stroke: "var(--chart-ink)", "stroke-width": 1.4
+      }));
+      parts.push(el("text", {
+        x: 6, y: s.y + 3, fill: "var(--chart-ink)", "font-size": 10,
+        "font-weight": 700, "font-family": font
+      }, [s.id]));
+    });
+
+    return el("svg", {
+      class: "help-svg duty-graph",
+      viewBox: "0 0 " + W + " " + H,
+      xmlns: "http://www.w3.org/2000/svg",
+      role: "img",
+      "aria-label": "Load against compression from free length, with springs at L0, L1 and L2"
+    }, parts);
+  }
+
   root.SpringCharts = {
     renderLoadGraph: renderLoadGraph,
     renderTradeoff: renderTradeoff,
     renderSpringDiagram: renderSpringDiagram,
     loadGraphStations: loadGraphStations,
     travelPercent: travelPercent,
-    stressAtLoad: stressAtLoad
+    stressAtLoad: stressAtLoad,
+    dutyIllustration: dutyIllustration
   };
   if (typeof module === "object" && module.exports) {
     module.exports = root.SpringCharts;

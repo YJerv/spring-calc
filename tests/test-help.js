@@ -73,6 +73,12 @@ const duty = Help.topic("duty").body;
   "does not fail", "<svg"].forEach(function (phrase) {
   assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
 });
+assert(duty.indexOf("L1 / F1") >= 0 && duty.indexOf("L2 / F2") >= 0, "Duty help marks L1 and L2 on the graph");
+assert((duty.match(/data-spring="L0"/g) || []).length === 2, "Duty help draws the free spring");
+assert((duty.match(/data-spring="L1"/g) || []).length === 2, "Duty help draws the spring at L1");
+assert((duty.match(/data-spring="L2"/g) || []).length === 2, "Duty help draws the spring at L2");
+const dutySvg = duty.slice(duty.indexOf("<svg"), duty.indexOf("</svg>") + 6);
+assert(dutySvg.toLowerCase().indexOf("shorter") === -1, "The duty picture does not say shorter");
 const diameters = Help.topic("diameters").body;
 ["Pocket", "Clearance", "Inside diameter", "Blank box", "not defined", "not agreed", "<svg"].forEach(function (phrase) {
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);

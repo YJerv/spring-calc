@@ -177,6 +177,8 @@ Open, not decided:
 
 Checks: `tests/test-help.js`, 83 assertions, and the full `npm test` suite. In the browser, Enter opens the duty window, Escape closes it and restores focus, typed values and the Calculate result stay, and the same checks were repeated on a phone-sized window in light and dark.
 
+10 November 2026, R2-10. The duty window no longer shows the two small method sketches. In their place is a load graph in the results-graph colours: load F against compression from free length L0, the line through the origin, and L1/F1 and L2/F2 marked with dashed guides. Under that graph, three horizontal springs share the same horizontal scale: free length L0, compressed to L1, and compressed further to L2. The explanatory paragraphs are unchanged. The picture uses fixed example positions, so an empty form still draws it. The horizontal axis is not labelled “shorter”.
+
 ## SC-011 — Blank pocket diameter — not implemented; objective not agreed
 
 Attempt 1. It has not failed, and it did not choose a diameter. The Decision approves the idea and says the optimisation objective and the search limits are still to be agreed before implementation. The notes record Yuan’s intent and do not approve a particular objective. Lowest stress, smallest size, least material and best fatigue margin are listed there and not chosen. No search bound was added.

@@ -173,6 +173,33 @@ const loadedYs = [byId.L1, byId.L2, byId.Ln, byId.Lc].map(function (s) {
 });
 assert(loadedYs.length === 4, "Four loaded stations to match the trimmed markers");
 
+const duty = C.dutyIllustration();
+assert(typeof duty === "string" && duty.indexOf("<svg") === 0, "Duty illustration is an SVG");
+assert(duty.indexOf("help-svg duty-graph") >= 0, "Duty illustration uses the chart help class");
+assert(duty.indexOf("var(--chart-paper)") >= 0 && duty.indexOf("var(--chart-ink)") >= 0, "Duty illustration uses chart colours");
+assert(duty.indexOf("L1 / F1") >= 0 && duty.indexOf("L2 / F2") >= 0, "Duty illustration marks L1/F1 and L2/F2");
+assert(duty.indexOf("stroke-dasharray") >= 0, "Duty illustration draws dashed guides");
+assert(duty.indexOf("Compression from L0") >= 0, "Duty illustration names compression from free length");
+assert(duty.toLowerCase().indexOf("shorter") === -1, "Duty illustration does not label the axis shorter");
+const springIds = duty.match(/data-spring="L[012]"/g) || [];
+assert(springIds.length === 6, "Three spring states, each with a back and a front coil");
+["L0", "L1", "L2"].forEach(function (id) {
+  assert(duty.indexOf("data-spring=\"" + id + "\"") >= 0, "Spring state " + id + " is drawn");
+});
+function movingEndX(id) {
+  const tag = duty.split("<polyline").find(function (part) {
+    return part.indexOf("data-spring=\"" + id + "\"") >= 0 && part.indexOf("var(--chart-ink)") >= 0;
+  });
+  const points = tag.match(/points="([0-9.]+),/);
+  return Number(points[1]);
+}
+const axis = duty.match(/<line x1="([0-9.]+)" y1="22"/);
+assert(Math.abs(movingEndX("L0") - Number(axis[1])) < 0.2, "Free spring starts at zero compression");
+["L1", "L2"].forEach(function (id) {
+  const marker = duty.match(new RegExp("<circle[^>]*cx=\"([0-9.]+)\"[^>]*fill=\"var\\(--series-" + id.toLowerCase() + "\\)\""));
+  assert(Math.abs(movingEndX(id) - Number(marker[1])) < 0.2, id + " spring lines up with its load point");
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

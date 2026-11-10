@@ -239,7 +239,8 @@ legend.with-info { width: 100%; padding-right: 0; }
   border-radius: 10px;
   color: var(--ink);
 }
-.help-svg text { fill: currentColor; font-size: 12px; font-family: "Source Sans 3", "Segoe UI", sans-serif; }
+.help-svg:not(.duty-graph) text { fill: currentColor; font-size: 12px; font-family: "Source Sans 3", "Segoe UI", sans-serif; }
+.help-svg.duty-graph { max-width: 100%; overflow: hidden; }
 .help-axis, .help-mark, .help-wire { fill: none; stroke: var(--info); stroke-width: 2; }
 .help-solid { fill: none; stroke: var(--ink); stroke-width: 3; }
 .help-pocket { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; }

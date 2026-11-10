@@ -12,28 +12,11 @@
   "use strict";
 
   function dutyDiagram() {
-    return '' +
-      '<svg class="help-svg" viewBox="0 0 360 188" role="img" aria-label="Two ways to describe the duty: two load and length points, or one point and a rate.">' +
-      '<text x="8" y="16" font-weight="700">Two points</text>' +
-      '<line x1="28" y1="32" x2="28" y2="172" class="help-axis"/>' +
-      '<line x1="16" y1="48" x2="40" y2="48" class="help-mark"/>' +
-      '<text x="48" y="44">L1 longer length</text>' +
-      '<text x="48" y="58">F1 lighter load</text>' +
-      '<line x1="16" y1="108" x2="40" y2="108" class="help-mark"/>' +
-      '<text x="48" y="104">L2 shorter length</text>' +
-      '<text x="48" y="118">F2 heavier load</text>' +
-      '<line x1="16" y1="168" x2="40" y2="168" class="help-solid"/>' +
-      '<text x="48" y="172">Lc solid length</text>' +
-      '<text x="48" y="78">rate from the two points</text>' +
-      '<text x="188" y="16" font-weight="700">Point and rate</text>' +
-      '<line x1="206" y1="32" x2="206" y2="120" class="help-axis"/>' +
-      '<line x1="194" y1="70" x2="218" y2="70" class="help-mark"/>' +
-      '<text x="226" y="66">L one length</text>' +
-      '<text x="226" y="80">F its load</text>' +
-      '<text x="188" y="148">R rate, entered</text>' +
-      '<text x="188" y="164">Say if this point is</text>' +
-      '<text x="188" y="178">F1 or F2</text>' +
-      '</svg>';
+    var charts = null;
+    if (typeof SpringCharts !== "undefined") charts = SpringCharts;
+    else if (typeof require === "function") charts = require("./charts.js");
+    if (charts && typeof charts.dutyIllustration === "function") return charts.dutyIllustration();
+    return "";
   }
 
   function diameterDiagram() {
@@ -77,7 +60,8 @@
   var TOPICS = {
     duty: {
       title: "Working loads and lengths",
-      body: dutyDiagram() +
+      body: function () {
+        return dutyDiagram() +
         "<h3>Two ways to set the duty</h3>" +
         "<p>Two points: enter the longer operating length L1 with its load F1, and the shorter operating length L2 with its load F2. The rate is the change in load divided by the change in length.</p>" +
         "<p>Point and rate: enter one operating length, the load at that length, and the rate R. Say whether that point is the lighter load F1 or the heavier load F2. The other point is worked out from the rate.</p>" +
@@ -87,7 +71,8 @@
         "<p>The number of coils is calculated from the rate, the wire and the coil diameter. It is not chosen on this page.</p>" +
         "<h3>Solid length and the working range</h3>" +
         "<p>Solid length, Lc, is the length when the coils are pressed together. It is calculated for each candidate from that candidate’s coils, wire diameter and end type. Calculate rejects a candidate when L2 is not longer than that candidate’s own solid length. No further working clearance is added, because a validated clearance beyond L2 greater than Lc is not defined in this calculator.</p>" +
-        "<p>Loads become less predictable as a spring nears solid. Keep the operating lengths clear of solid length. A workshop guide, not a rejection rule and not a validated limit, is that operating deflection is ideally about 70% of the available travel, and not beyond about 80%. Available travel is the free length minus the solid length. Calculate does not fail a spring for that guide. Warnings from Calculate stay on the page.</p>"
+        "<p>Loads become less predictable as a spring nears solid. Keep the operating lengths clear of solid length. A workshop guide, not a rejection rule and not a validated limit, is that operating deflection is ideally about 70% of the available travel, and not beyond about 80%. Available travel is the free length minus the solid length. Calculate does not fail a spring for that guide. Warnings from Calculate stay on the page.</p>";
+      }
     },
     diameters: {
       title: "Diameter limits",
@@ -141,7 +126,10 @@
   };
 
   function topic(id) {
-    return TOPICS[id] || null;
+    var item = TOPICS[id];
+    if (!item) return null;
+    var body = typeof item.body === "function" ? item.body() : item.body;
+    return { title: item.title, body: body };
   }
 
   function ids() {
