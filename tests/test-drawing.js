@@ -187,9 +187,10 @@ function inside(box) {
 assert(inside(drawn.table1) && inside(drawn.table2) && inside(drawn.disclaimer),
   "Tables and the disclaimer stay on the sheet",
   JSON.stringify(drawn));
-assert(drawn.table2.y >= drawn.table1.y + drawn.table1.h - 0.1 &&
-  drawn.table2.y - (drawn.table1.y + drawn.table1.h) < 8,
-  "Table 2 is close under Table 1");
+assert(Math.abs(drawn.gaps.top - drawn.gaps.between) < 0.05 &&
+  Math.abs(drawn.gaps.between - drawn.gaps.bottom) < 0.05,
+  "The three left-hand gaps are equal",
+  JSON.stringify(drawn.gaps));
 assert(drawn.table1.x === drawn.table2.x && drawn.table1.w === drawn.table2.w, "The two tables share a left edge and width");
 assert(drawn.disclaimer.x + drawn.disclaimer.w <= built.model.layout.title.x + 0.2,
   "The disclaimer stays left of the title block");

@@ -212,7 +212,7 @@ Attempt 1. It has not failed. The sheet is still one A3 landscape PDF. The on-sc
 
 What the latest written layout does here:
 
-- Tables and the spring are black and white. Table 1 is top left and Table 2 is directly under it, same left edge and width, with a small gap. Both are sized to their text.
+- Tables and the spring are black and white. Table 1 is top left and Table 2 is under it, same left edge and width. Both are sized to their text. On 10 November 2026 the vertical gaps were made even: from the inner border at 12 mm, between the tables, and from the bottom of the note under Table 2 to the top of the bottom watermark band at 263.441 mm. That same left area is used on the paid sheet. Each of the three gaps is 26.152 mm.
 - The main spring is vertical on the right. There is no second small side sketch. The side-view dimensions remain L0, De and d. No other side-view dimensions were added.
 - Closed and ground ends: the side view has low-pitch end turns and a flat line at each end, perpendicular to the axis.
 

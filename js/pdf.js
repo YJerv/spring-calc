@@ -286,22 +286,38 @@
     return s;
   }
 
-  function drawTable(doc, x, y, w, maxH, title, banner, rows, redactValues) {
-    var titleH = 6.2;
-    var headH = 5.2;
-    var n = rows.length;
+  function rowHeights(doc, rows, w, redactValues) {
     var col0 = Math.min(78, w * 0.46);
     var col1 = 16;
     var maxW = w - col0 - col1 - 2.4;
     var lineH = 2.7;
     var heights = [];
     var i;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < rows.length; i++) {
       var wrapped = redactValues ? [""] : doc.splitTextToSize(String(rows[i].value), maxW);
       if (!wrapped.length) wrapped = [""];
-      heights.push(Math.max(4.2, wrapped.length * lineH + 1.3));
       rows[i].wrapped = wrapped;
+      heights.push(Math.max(4.2, wrapped.length * lineH + 1.3));
     }
+    return heights;
+  }
+
+  function tableHeight(doc, rows, w, redactValues) {
+    var heights = rowHeights(doc, rows, w, redactValues);
+    var sum = 0;
+    var i;
+    for (i = 0; i < heights.length; i++) sum += heights[i];
+    return 6.2 + 5.2 + sum;
+  }
+
+  function drawTable(doc, x, y, w, maxH, title, banner, rows, redactValues) {
+    var titleH = 6.2;
+    var headH = 5.2;
+    var n = rows.length;
+    var col0 = Math.min(78, w * 0.46);
+    var col1 = 16;
+    var heights = rowHeights(doc, rows, w, redactValues);
+    var i;
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
@@ -498,25 +514,54 @@
     drawEndView(doc, model);
 
     var place = model.layout;
+    var innerTop = 12;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    var watermarkEm = doc.getTextDimensions("Upgrade to release drawing table").h;
+    var usableBottom = 268 - watermarkEm * 0.718;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    var disclaimer = doc.splitTextToSize("Note  " + model.verificationNote, place.table.w);
+    var lineMm = doc.getLineHeight() / doc.internal.scaleFactor;
+    var noteEm = doc.getTextDimensions("Ag").h;
+    var noteDescent = noteEm * 0.207;
+    var noteAttach = 3.2;
+    var noteDepth = noteAttach + Math.max(0, disclaimer.length - 1) * lineMm + noteDescent;
+    var t1h = tableHeight(doc, model.table1.rows, place.table.w, redactValues);
+    var t2h = tableHeight(doc, model.table2.rows, place.table.w, redactValues);
+    var gap = (usableBottom - innerTop - t1h - t2h - noteDepth) / 3;
+    var y1 = innerTop + gap;
+    var y2 = y1 + t1h + gap;
     var t1 = drawTable(
-      doc, place.table.x, place.table.y, place.table.w, 120,
+      doc, place.table.x, y1, place.table.w, 120,
       model.table1.title, "MANUFACTURER", model.table1.rows, redactValues
     );
-    var t2y = place.table.y + t1 + place.table.gap;
     var t2 = drawTable(
-      doc, place.table.x, t2y, place.table.w, 140,
+      doc, place.table.x, y2, place.table.w, 140,
       model.table2.title, model.table2.mark, model.table2.rows, redactValues
     );
+    var noteY = y2 + t2 + noteAttach;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(0, 0, 0);
-    var disclaimer = doc.splitTextToSize("Note  " + model.verificationNote, place.table.w);
-    var noteY = t2y + t2 + 3.2;
     doc.text(disclaimer, place.table.x, noteY);
+    var noteBottom = noteY + Math.max(0, disclaimer.length - 1) * lineMm + noteDescent;
     place.drawn = {
-      table1: { x: place.table.x, y: place.table.y, w: place.table.w, h: t1 },
-      table2: { x: place.table.x, y: t2y, w: place.table.w, h: t2 },
-      disclaimer: { x: place.table.x, y: noteY, w: place.table.w, h: disclaimer.length * 3.1 }
+      table1: { x: place.table.x, y: y1, w: place.table.w, h: t1 },
+      table2: { x: place.table.x, y: y2, w: place.table.w, h: t2 },
+      disclaimer: {
+        x: place.table.x,
+        y: noteY - noteEm * 0.718,
+        w: place.table.w,
+        h: noteBottom - (noteY - noteEm * 0.718)
+      },
+      gaps: {
+        top: Math.round((y1 - innerTop) * 1000) / 1000,
+        between: Math.round((y2 - (y1 + t1)) * 1000) / 1000,
+        bottom: Math.round((usableBottom - noteBottom) * 1000) / 1000,
+        usableTop: innerTop,
+        usableBottom: Math.round(usableBottom * 1000) / 1000
+      }
     };
 
     doc.setFont("helvetica", "normal");
