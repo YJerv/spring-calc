@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
   <script>
     (function () {
       var choice = "system";
@@ -11,8 +12,11 @@
         if (stored === "light" || stored === "dark" || stored === "system") choice = stored;
       } catch (err) { /* keep system */ }
       var dark = choice === "dark" || (choice !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      var resolved = dark ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", choice);
-      document.documentElement.setAttribute("data-resolved", dark ? "dark" : "light");
+      document.documentElement.setAttribute("data-resolved", resolved);
+      var scheme = document.querySelector('meta[name="color-scheme"]');
+      if (scheme) scheme.setAttribute("content", resolved === "dark" ? "dark" : "light only");
     })();
   </script>
   <meta name="theme-color" content="#0b1f33">

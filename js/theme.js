@@ -42,13 +42,21 @@
     return choice;
   }
 
+  function colorSchemeContent(resolved) {
+    return resolved === "dark" ? "dark" : "light only";
+  }
+
   function apply(doc, choice, prefersDark) {
     choice = normaliseTheme(choice);
     var resolved = resolvedTheme(choice, prefersDark);
     var rootEl = doc.documentElement;
     rootEl.setAttribute("data-theme", choice);
     rootEl.setAttribute("data-resolved", resolved);
-    return { choice: choice, resolved: resolved };
+    if (doc.querySelector) {
+      var meta = doc.querySelector('meta[name="color-scheme"]');
+      if (meta && meta.setAttribute) meta.setAttribute("content", colorSchemeContent(resolved));
+    }
+    return { choice: choice, resolved: resolved, colorScheme: colorSchemeContent(resolved) };
   }
 
   function attach(doc, win) {
@@ -95,6 +103,7 @@
     resolvedTheme: resolvedTheme,
     readChoice: readChoice,
     writeChoice: writeChoice,
+    colorSchemeContent: colorSchemeContent,
     apply: apply,
     attach: attach
   };
