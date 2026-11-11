@@ -102,9 +102,16 @@ assert(renderFn.indexOf("No pocket or spring guide is set") >= 0, "The open map 
 assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
 assert(page4.indexOf('id="wireIntro"') === -1, "The wire page has no D max summary box");
 const page6 = section(html, "step-6");
-assert(/<details class="notes">\s*<summary>Spring particulars<\/summary>/.test(page6),
+assert(/<details class="notes result-fold" id="particularsFold">\s*<summary aria-expanded="false">Spring particulars<\/summary>/.test(page6),
   "Spring particulars are collapsed by default");
-assert(page6.indexOf("<details class=\"notes\" open") === -1, "Spring particulars are not open on arrival");
+assert(page6.indexOf('id="particularsFold" open') === -1, "Spring particulars are not open on arrival");
+["loadFold", "tolFold", "springFold"].forEach(function (id) {
+  assert(page6.indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
+});
+const appJsFolds = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
+assert(appJsFolds.indexOf('summary.setAttribute("aria-expanded"') >= 0, "Result cards expose aria-expanded");
+assert(appJsFolds.indexOf('card.id === "loadFold"') >= 0 && appJsFolds.indexOf("renderLoadGraph($(\"graphSvg\")") >= 0,
+  "Opening the load card redraws the graph");
 assert(page6.indexOf('id="gradeResult"') === -1, "The results page has no tolerance grade menu");
 assert(page4.indexOf('id="heatmapScroll"') >= 0, "The wire matrix stays");
 

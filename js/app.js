@@ -623,6 +623,28 @@
     $("tolVerify").textContent = model.verificationNote;
   }
 
+  function syncResultFold(card) {
+    var summary = card.querySelector("summary");
+    if (summary) summary.setAttribute("aria-expanded", card.open ? "true" : "false");
+  }
+
+  function bindResultFolds() {
+    document.querySelectorAll("#step-6 details.result-fold").forEach(function (card) {
+      if (card.getAttribute("data-bound") === "1") {
+        syncResultFold(card);
+        return;
+      }
+      card.setAttribute("data-bound", "1");
+      syncResultFold(card);
+      card.addEventListener("toggle", function () {
+        syncResultFold(card);
+        if (!card.open || !state.design) return;
+        if (card.id === "loadFold") C.renderLoadGraph($("graphSvg"), state.design);
+        if (card.id === "springFold") C.renderSpringDiagram($("springSvg"), state.design);
+      });
+    });
+  }
+
   function renderResults() {
     var ev = state.design;
     if (!ev) return;
@@ -644,6 +666,7 @@
 
     C.renderLoadGraph($("graphSvg"), ev);
     C.renderSpringDiagram($("springSvg"), ev);
+    bindResultFolds();
     renderGraphLegend(ev);
 
     var body = $("particulars").querySelector("tbody");

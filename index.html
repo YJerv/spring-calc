@@ -301,36 +301,42 @@
           <button type="button" class="info-btn no-print" data-help="graph" aria-label="Information: load graph" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
         <div id="resultBanner"></div>
-        <h3 style="margin:8px 0 4px;font-size:1rem;">Load–length characteristic</h3>
-        <div class="chart-wrap">
-          <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <div class="table-wrap">
-          <table class="particulars" id="graphLegend">
-            <thead>
-              <tr><th>Station</th><th>Length</th><th>Load</th><th>Compression</th><th>τk</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-          <p class="lead hint" id="graphLegendNote">Compression is the deflection as a percentage of available travel (L0 − Lc). τk is the Bergsträsser-corrected shear stress.</p>
-        </div>
       </div>
       <div class="card">
-        <h3 style="margin:0 0 8px;font-size:1rem;">Manufacturing tolerances (BS EN 15800)</h3>
-        <div id="tolNote" class="status-banner warning hidden"></div>
-        <div class="table-wrap">
-          <table class="particulars" id="tolerances">
-            <thead>
-              <tr><th>Particular</th><th>Symbol</th><th>Value</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <p class="lead hint" id="tolVerify"></p>
+        <details class="notes result-fold" id="loadFold" open>
+          <summary aria-expanded="true">Load–length characteristic</summary>
+          <div class="chart-wrap">
+            <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="table-wrap">
+            <table class="particulars" id="graphLegend">
+              <thead>
+                <tr><th>Station</th><th>Length</th><th>Load</th><th>Compression</th><th>τk</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="lead hint" id="graphLegendNote">Compression is the deflection as a percentage of available travel (L0 − Lc). τk is the Bergsträsser-corrected shear stress.</p>
+          </div>
+        </details>
       </div>
       <div class="card">
-        <details class="notes">
-          <summary>Spring particulars</summary>
+        <details class="notes result-fold" id="tolFold" open>
+          <summary aria-expanded="true">Manufacturing tolerances (BS EN 15800)</summary>
+          <div id="tolNote" class="status-banner warning hidden"></div>
+          <div class="table-wrap">
+            <table class="particulars" id="tolerances">
+              <thead>
+                <tr><th>Particular</th><th>Symbol</th><th>Value</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="lead hint" id="tolVerify"></p>
+        </details>
+      </div>
+      <div class="card">
+        <details class="notes result-fold" id="particularsFold">
+          <summary aria-expanded="false">Spring particulars</summary>
           <div class="table-wrap">
             <table class="particulars" id="particulars">
               <thead>
@@ -342,10 +348,11 @@
         </details>
       </div>
       <div class="card">
-        <h3 style="margin:0 0 8px;font-size:1rem;">Scaled side view at free length</h3>
-        <div class="chart-wrap">
-          <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
+        <details class="notes result-fold" id="springFold" open>
+          <summary aria-expanded="true">Scaled side view at free length</summary>
+          <div class="chart-wrap">
+            <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
         <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
         <div class="field no-print">
           <label for="exportName">PDF filename</label>
@@ -370,6 +377,7 @@
           </ul>
           <p>Coil-diameter tolerances are taken from EN 15800 Table 3. Force and length tolerances use the grade factor Q, the coil factor kf and the geometry factor aF. Q, kf, the force and length formulae, squareness, parallelism and the scope limits were checked against published clause values. Table 3 and the aF coefficients were transcribed from a public copy of the standard and are flagged in the results because they were not re-read from a licensed PDF.</p>
           <p>This tool is a design aid. It is not a substitute for BS EN 13906-1, BS EN 15800, EN 10270 or a drawing office procedure, and it is not affiliated with BSI.</p>
+        </details>
         </details>
       </div>
     </section>
