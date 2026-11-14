@@ -728,7 +728,14 @@
     return { delta: delta, outside: outside, inside: inside, flags: flags };
   }
 
-  var NO_OPTIONS = "No options available – relax the application constraints (a larger or a smaller spring), alter the duty or select another material.";
+  var FAIL_HINTS = {
+    rate: "Bring the loads closer together (or move the lengths further apart) to reduce the rate.",
+    stress: "Reduce F2, or make L2 longer, so the corrected stress falls under the limit.",
+    deflection: "Move L1 or L2 so both working deflections sit between 20% and 80% of available travel.",
+    solid: "Increase L2 so it stays above the solid length, or use a thinner wire.",
+    diameter: "Widen the pocket or ease the spring-guide limit so the spring has room."
+  };
+  var NO_OPTIONS = FAIL_HINTS.diameter;
 
   function deflectionPercents(ev) {
     var out = [];
@@ -774,8 +781,21 @@
     var all = [];
     var sawOverTravel = false;
     var anyWithinRaisedStress = false;
+    var anyBounds = false;
+    var counts = { solid: 0, pocket: 0, guide: 0, coilsFew: 0, coilsMany: 0, index: 0, stress: 0 };
     var i;
     var j;
+    function tally(ev) {
+      (ev.reasons || []).forEach(function (reason) {
+        if (reason.indexOf("Solid length") === 0 || reason.indexOf("Free length") === 0) counts.solid++;
+        else if (reason.indexOf("Outside diameter") === 0) counts.pocket++;
+        else if (reason.indexOf("Inside diameter") === 0) counts.guide++;
+        else if (reason.indexOf("Fewer than two") === 0) counts.coilsFew++;
+        else if (reason.indexOf("More than 30") === 0) counts.coilsMany++;
+        else if (reason.indexOf("Spring index") === 0) counts.index++;
+        else if (reason.indexOf("Corrected stress") === 0) counts.stress++;
+      });
+    }
     for (i = 0; i < wires.length; i++) {
       var d = wires[i];
       var rm = input.Rm;
@@ -785,10 +805,12 @@
       }
       var bounds = diameterBounds(d, input.DeMax, springGuideLimit(input));
       if (!bounds.valid) continue;
+      anyBounds = true;
       var diameters = diameterSamples(bounds);
       for (j = 0; j < diameters.length; j++) {
         var ev = evaluateDesign(Object.assign({}, input, { d: d, D: diameters[j], Rm: rm }));
         if (!ev.ok) continue;
+        tally(ev);
         var compressed = ev.deflPct2 != null ? ev.deflPct2 : null;
         if (compressed != null && compressed > 100 + 1e-6) sawOverTravel = true;
         if (!geometricOk(ev)) continue;
@@ -830,11 +852,13 @@
       }
     }
     if (!tier) {
+      var hint = failureHint(counts, all, anyBounds, sawOverTravel);
       return {
         level: "fail",
         tier: null,
         warning: "",
-        message: NO_OPTIONS,
+        message: hint,
+        hint: hint,
         hardBreach: sawOverTravel || !anyWithinRaisedStress,
         best: null,
         perDiameter: [],
@@ -867,10 +891,43 @@
       warning: tier.warning,
       message: tier.id === "strict" ? "" : tier.warning,
       hardBreach: false,
+      hint: "",
       best: best,
       perDiameter: perDiameter,
       candidates: pool
     };
+  }
+
+  function failureHint(counts, pool, anyBounds, sawOverTravel) {
+    if (!anyBounds) return FAIL_HINTS.diameter;
+    if (!pool.length) {
+      var ranked = [
+        { n: counts.solid + (sawOverTravel ? counts.solid : 0), hint: FAIL_HINTS.solid },
+        { n: counts.pocket + counts.guide, hint: FAIL_HINTS.diameter },
+        { n: counts.coilsFew, hint: FAIL_HINTS.rate },
+        { n: counts.index, hint: FAIL_HINTS.diameter },
+        { n: counts.coilsMany, hint: FAIL_HINTS.rate }
+      ];
+      var top = ranked[0];
+      for (var i = 1; i < ranked.length; i++) {
+        if (ranked[i].n > top.n) top = ranked[i];
+      }
+      if (top.n > 0) return top.hint;
+      return FAIL_HINTS.diameter;
+    }
+    var outside = 0;
+    var over = 0;
+    var softest = null;
+    for (var j = 0; j < pool.length; j++) {
+      var ev = pool[j];
+      var stress = ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
+      if (!softest || stress < softest) softest = stress;
+      if (stressWithin(ev, 1.2)) outside++;
+      else over++;
+    }
+    if (outside > 0 && outside >= over) return FAIL_HINTS.deflection;
+    if (counts.coilsFew > counts.stress) return FAIL_HINTS.rate;
+    return FAIL_HINTS.stress;
   }
 
   function geometricOk(ev) {
@@ -1363,6 +1420,7 @@
     compressedClearance: compressedClearance,
     searchOptimisation: searchOptimisation,
     NO_OPTIONS: NO_OPTIONS,
+    FAIL_HINTS: FAIL_HINTS,
     geometricOk: geometricOk,
     heatmapBand: heatmapBand,
     steppedValues: steppedValues,

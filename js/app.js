@@ -261,7 +261,7 @@
       ? "Working deflection is between 30% and 70%, and the stress is within the active limit."
       : (screen.level === "warning"
         ? screen.warning
-        : "Relax the application constraints (a larger or a smaller spring), alter the duty or select another material.");
+        : (screen.message || E.NO_OPTIONS));
     html += "<div class=\"status-banner " + tone + "\"><strong>" + title + "</strong> — " + esc(detail) + "</div>";
     if (screen.level !== "pass" && report.suggestions && report.suggestions.length) {
       html += "<p><strong>What to try</strong></p><ul>" + report.suggestions.map(function (item) {

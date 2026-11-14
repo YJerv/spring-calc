@@ -51,7 +51,7 @@
       body: "<p>Check searches standard wire sizes and mean coil diameters inside the pocket and the spring guide. It does not draw that search here.</p>" +
         "<p>Green means a spring meets every criterion: working deflection between 30% and 70% of available travel, and corrected stress within the active limit.</p>" +
         "<p>Orange means a spring can be found only with the wider band, deflection between 20% and 80%, or with a stress limit 20% higher than the one set. The page states which warning applies.</p>" +
-        "<p>Red means those allowances are not enough. If the stress would be more than 20% over the limit, or the most compressed length uses more than the available travel, Check says there are no options. Relax the application constraints, alter the duty or select another material.</p>" +
+        "<p>Red means those allowances are not enough. Check then gives one line for the cause it found: bring the loads closer to cut the rate, reduce F2 or lengthen L2 when the stress is high, move L1 or L2 when the deflection band is missed, increase L2 when the solid length is too long, or widen the pocket or the spring guide when the diameters are too tight.</p>" +
         "<p>Each candidate is still rejected when L2 is not longer than that candidate’s own solid length. The solid length is calculated from the coils, the wire and the ends.</p>"
     },
     diameters: {

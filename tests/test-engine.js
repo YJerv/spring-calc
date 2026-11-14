@@ -387,8 +387,26 @@ assert(oneWire.perDiameter.length > 0 && oneWire.perDiameter.every(function (row
   return Math.abs(row.d - 2) < 1e-9;
 }), "Each diameter for that wire uses the selected wire");
 const tight = E.searchOptimisation(Object.assign({}, example, { L1: 50, F1: 50, L2: 1, F2: 125, L0: 60, R: 5, Fmax: 125, LmaxLoad: 1 }));
-assert(tight.level === "fail" && tight.best == null && tight.message.indexOf("No options available") === 0,
-  "An impossible compressed length reports that no options are available");
+assert(tight.level === "fail" && tight.best == null && tight.message === E.FAIL_HINTS.solid,
+  "A solid length past L2 says to lengthen L2 or use a thinner wire");
+const highRate = E.searchOptimisation(Object.assign({}, example, {
+  L1: 50, F1: 10, L2: 49, F2: 500, L0: 51, R: 490, Fmax: 500, LmaxLoad: 49
+}));
+assert(highRate.level === "fail" && highRate.message === E.FAIL_HINTS.rate,
+  "A rate no wire can meet says to bring the loads closer or the lengths further apart");
+const highStress = E.searchOptimisation(Object.assign({}, example, {
+  L1: 80, F1: 100, L2: 40, F2: 4000, L0: 90, R: 97.5, Fmax: 4000, LmaxLoad: 40, DeMax: 40
+}));
+assert(highStress.level === "fail" && highStress.message === E.FAIL_HINTS.stress,
+  "Stress above the raised limit says to reduce F2 or lengthen L2");
+const offBand = E.searchOptimisation(Object.assign({}, example, {
+  L1: 58, F1: 20, L2: 40, F2: 80, L0: 60, R: 3, Fmax: 80, LmaxLoad: 40, DeMax: 40
+}));
+assert(offBand.level === "fail" && offBand.message === E.FAIL_HINTS.deflection,
+  "A deflection band no geometry can meet says to move L1 or L2");
+const tightPocket = E.searchOptimisation(Object.assign({}, example, { DeMax: 0.5 }));
+assert(tightPocket.level === "fail" && tightPocket.message === E.FAIL_HINTS.diameter,
+  "A pocket no wire can enter says to widen the pocket or ease the guide");
 const growth = E.coilDiameterIncrease(16.5, 2, 25);
 assertClose(growth, 0.1 * (625 - 40 - 0.8) / 16.5, "Coil diameter increase uses the standard deflection formula");
 const grown = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { pocket: 20, clearance: 1.5 });

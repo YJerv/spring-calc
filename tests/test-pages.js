@@ -63,6 +63,8 @@ assert(pages[5].indexOf(">Optimise<") >= 0 && pages[5].indexOf('id="Dslider"') >
 assert(pages[5].indexOf('id="Dslider"') < pages[5].indexOf('id="tradeoffSvg"'), "The stress graph sits under the slider");
 assert(appJs.indexOf("C.renderTradeoff") >= 0 && appJs.indexOf("paintCoil") >= 0, "Moving the slider redraws the stress graph");
 assert(appJs.indexOf("wires: [d]") >= 0, "Optimise searches mean diameters for the selected wire");
+assert(appJs.indexOf("screen.message || E.NO_OPTIONS") >= 0, "A failed check shows the specific hint");
+assert(appJs.indexOf("alter the duty or select another material") === -1, "The generic no-options line is no longer shown");
 assert(pages[6].indexOf(">7. Results<") >= 0, "Page 7 is results");
 assert(html.indexOf('id="p7"') >= 0, "The progress marks seven pages");
 
