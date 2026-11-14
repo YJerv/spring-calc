@@ -290,9 +290,17 @@
     }
 
     var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" })];
+    var stressLabelX = 13;
+    var stressLabelY = pad.t + (H - pad.t - pad.b) / 2;
     parts.push(el("text", {
-      x: pad.l, y: 14, fill: "var(--series-l2)", "font-size": 9, "font-weight": 700,
-      "font-family": "ui-sans-serif, system-ui, sans-serif"
+      x: stressLabelX,
+      y: stressLabelY,
+      fill: "var(--series-l2)",
+      "font-size": 9,
+      "font-weight": 700,
+      "text-anchor": "middle",
+      "font-family": "ui-sans-serif, system-ui, sans-serif",
+      transform: "rotate(-90 " + stressLabelX + " " + stressLabelY + ")"
     }, ["Stress % of allowable"]));
     parts.push(el("text", {
       x: W - pad.r, y: 14, fill: "var(--series-l0)", "font-size": 9, "font-weight": 700,

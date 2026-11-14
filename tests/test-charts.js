@@ -339,7 +339,13 @@ const tradeRows = [12, 14, 16].map(function (D) {
 });
 const trade = fakeSvg();
 C.renderTradeoff(trade, tradeRows, 14);
-assert(trade.innerHTML.indexOf("Stress % of allowable") >= 0, "The coil graph names the stress curve");
+assert(trade.innerHTML.split("Stress % of allowable").length === 2, "The stress name appears once");
+const stressTag = trade.innerHTML.split("<text").filter(function (part) {
+  return part.indexOf("Stress % of allowable") >= 0;
+})[0];
+assert(stressTag && stressTag.indexOf("rotate(-90 ") >= 0, "The left axis label is rotated -90 degrees");
+assert(stressTag.indexOf('text-anchor="middle"') >= 0, "The left axis label is centred on the axis");
+assert(stressTag.indexOf('y="82"') >= 0, "The left axis label is vertically centred on the plot");
 assert(trade.innerHTML.indexOf("Solid length Lc") >= 0, "The coil graph names the solid-length curve");
 assert(trade.innerHTML.indexOf("Mean coil diameter D (mm)") >= 0, "The coil graph names the mean-diameter axis");
 assert(trade.innerHTML.indexOf("<polyline") >= 0, "The coil graph draws the stress curve");
