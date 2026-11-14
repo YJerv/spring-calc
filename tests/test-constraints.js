@@ -4,6 +4,7 @@
  */
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 const E = require(path.join(__dirname, "..", "js", "engine.js"));
 
@@ -102,6 +103,16 @@ assert(E.springGuideLimit({ innerMin: 10, innerClearance: 0 }) === 10, "Zero gui
 assert(E.springGuideLimit({ innerMin: null, innerClearance: 2 }) === null, "Guide clearance is ignored when the guide is blank");
 const cleared = E.evaluateDesign(Object.assign({ d: 2, D: 16.5, DeMax: 18.5, innerMin: known.Di - 1.5, innerClearance: 2 }, duty));
 assert(!cleared.pass, "Guide plus clearance can reject a spring the bare guide would allow");
+
+console.log("\nConstraint sections\n");
+const page = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
+["pocketFold", "lengthFold", "tempFold"].forEach(function (id) {
+  assert(page.indexOf('id="' + id + '"') >= 0 && page.indexOf('id="' + id + '" open') === -1, id + " starts collapsed");
+});
+assert(appJs.indexOf("collapseStepFolds(step)") >= 0, "Opening Application constraints closes those sections again");
+assert(appJs.indexOf('id: "pocket"') >= 0 && appJs.indexOf('id: "workL2"') >= 0 && appJs.indexOf('id: "serviceTemp"') >= 0,
+  "A pocket, length or temperature message opens its section");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

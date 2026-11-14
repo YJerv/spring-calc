@@ -41,7 +41,8 @@ assert(pages[1].indexOf(">2. Design mode<") >= 0 && pages[1].indexOf('name="mode
 assert(pages[2].indexOf(">3. Application constraints<") >= 0, "Page 3 is application constraints");
 assert(pages[2].indexOf("Application constraints and design constraints are the same") >= 0, "The heading says the two names once");
 assert(pages[2].indexOf(">Pocket and guide diameters<") >= 0 && pages[2].indexOf(">Working lengths<") >= 0, "Pocket, guide and working lengths are separate blocks");
-assert(pages[2].indexOf('id="pocketFold"') >= 0 && pages[2].indexOf('id="lengthFold"') >= 0, "Those blocks collapse");
+assert(pages[2].indexOf('id="pocketFold"') >= 0 && pages[2].indexOf('id="lengthFold"') >= 0 && pages[2].indexOf('id="tempFold"') >= 0, "Those blocks collapse");
+assert(pages[2].indexOf('id="pocketFold" open') === -1 && pages[2].indexOf('id="lengthFold" open') === -1 && pages[2].indexOf('id="tempFold" open') === -1, "Constraint sections start collapsed");
 assert(pages[2].indexOf('id="workL1"') >= 0 && pages[2].indexOf('id="workL2"') >= 0, "Working lengths are L1 and L2");
 assert(pages[2].indexOf("Blank uses the lighter") === -1 && pages[2].indexOf("Blank uses the loaded") === -1, "The old blank-length sentence is gone");
 assert(pages[2].indexOf('id="serviceTemp"') >= 0 && pages[2].indexOf(">°C<") >= 0, "Service temperature stays on this page");
@@ -51,6 +52,10 @@ assert(appJs.indexOf("suggestedClearance(pocket)") >= 0 && appJs.indexOf("sugges
 assert(appJs.indexOf("Continue without those limits?") >= 0, "An empty constraints page warns before continuing");
 assert(pages[3].indexOf(">4. Design options<") >= 0, "Page 4 is design options");
 assert(pages[3].indexOf('id="ends"') >= 0 && pages[3].indexOf('id="grade"') >= 0 && pages[3].indexOf('id="wind"') >= 0, "Ends, grade and wind are design options");
+assert(/<details class="fold" id="optionsFold">\s*<summary aria-expanded="false">Ends, grade and wind<\/summary>/.test(pages[3]), "Ends, grade and wind start collapsed");
+assert(pages[3].indexOf('id="optionsFold"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('id="wind"') < pages[3].indexOf('id="materialFold"'), "Those three fields sit in the design-options section");
+assert(/<details class="fold" id="materialFold">\s*<summary aria-expanded="false">Material<\/summary>/.test(pages[3]), "Material starts collapsed");
+assert(pages[3].indexOf('id="materialFold"') < pages[3].indexOf('id="material"') && pages[3].indexOf('id="material"') < pages[3].indexOf("</details>", pages[3].indexOf('id="material"')), "The material fields sit in the material section");
 assert(pages[3].indexOf('id="material"') >= 0 && pages[3].indexOf('name="stressMode"') >= 0 && pages[3].indexOf('id="tauAllowDirect"') >= 0, "Material and the stress limit moved here");
 assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");
 assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<") === -1, "Calculate has been renamed");
@@ -78,11 +83,14 @@ assert(pages[6].indexOf('id="particularsFold"') < pages[6].indexOf('id="tolFold"
 assert(/<details class="notes result-fold" id="tolFold">\s*<summary aria-expanded="false">Manufacturing tolerances \(BS EN 15800\)<\/summary>/.test(pages[6]),
   "Manufacturing tolerances are collapsed by default");
 assert(pages[6].indexOf('id="tolFold" open') === -1, "Manufacturing tolerances are not open on arrival");
-assert(appJs.indexOf("function collapseReferenceFolds") >= 0 && appJs.indexOf('["particularsFold", "tolFold"]') >= 0,
-  "Showing Results closes particulars and tolerances again");
-["loadFold", "exportFold", "springFold"].forEach(function (id) {
-  assert(pages[6].indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
+assert(appJs.indexOf("function collapseStepFolds") >= 0 && appJs.indexOf("collapseStepFolds(step)") >= 0,
+  "Showing a page closes every section on it");
+assert(appJs.indexOf("function revealFoldsForMessages") >= 0 && appJs.indexOf('id: "pocket"') >= 0 && appJs.indexOf('id: "G"') >= 0 && appJs.indexOf('id: "workL2"') >= 0,
+  "A message that names a hidden field opens that section");
+["loadFold", "exportFold", "springFold", "particularsFold", "tolFold"].forEach(function (id) {
+  assert(pages[6].indexOf('id="' + id + '" open') === -1, id + " starts collapsed");
 });
+assert(!/<details[^>]*\sopen[\s>]/.test(html), "No collapsible section is open in the page markup");
 assert(pages[6].indexOf(">Drawing export<") >= 0, "The export card is named Drawing export");
 assert(pages[6].indexOf('id="exportFold"') < pages[6].indexOf('id="springFold"'), "The scaled side view sits below the drawing export");
 assert(pages[6].indexOf(">Scaled side view at free length<") >= 0, "The side view keeps its own heading at the bottom");

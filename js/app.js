@@ -43,6 +43,7 @@
       el.textContent = "";
       el.classList.remove("show");
     }
+    revealFoldsForMessages();
   }
 
   function populateMaterials() {
@@ -272,6 +273,7 @@
       html += "<p class=\"lead\">" + esc(report.diameterProposal.statement) + "</p>";
     }
     box.innerHTML = html;
+    revealFoldsForMessages();
   }
 
   function markFeasibilityStale() {
@@ -414,10 +416,9 @@
     $("btnNext").textContent = step === 7 ? "Start again" : (step === 6 ? "Show results" : "Next");
     if (step === 5) alignLengths();
     if (step === 6) renderOptimise();
-    if (step === 7) {
-      collapseReferenceFolds();
-      renderResults();
-    }
+    if (step === 7) renderResults();
+    collapseStepFolds(step);
+    revealFoldsForMessages();
     window.scrollTo(0, 0);
     persist();
   }
@@ -709,6 +710,7 @@
         }).join("");
     }
     setupCoilControls(false);
+    revealFoldsForMessages();
   }
 
   function activeOptWire() {
@@ -823,6 +825,7 @@
         (found.warning ? " " + esc(found.warning) : "") + "</div>";
     }
     setupCoilControls(false);
+    revealFoldsForMessages();
   }
 
   function metric(k, v) {
@@ -881,30 +884,90 @@
     $("tolVerify").textContent = model.verificationNote;
   }
 
-  function syncResultFold(card) {
+  var FOLD_FIELDS = [
+    { id: "pocket", words: ["pocket"] },
+    { id: "clearance", words: ["diametral clearance", "clearance must", "de max"] },
+    { id: "innerMin", words: ["spring guide", "spring-guide", "guide diameter", "guide limit"] },
+    { id: "innerClearance", words: ["guide clearance"] },
+    { id: "workL1", words: ["relaxed working length", "l1", "reduce the rate", "move the lengths"] },
+    { id: "workL2", words: ["compressed working length", "compressed length", "l2", "solid length", "reduce the rate", "move the lengths"] },
+    { id: "serviceTemp", words: ["service temperature", "temperature"] },
+    { id: "G", words: ["modulus", "rigidity"] },
+    { id: "Rm", words: ["tensile strength"] },
+    { id: "tauFactor", words: ["stress factor", "allowable stress factor", "under the limit"] },
+    { id: "tauAllowDirect", words: ["stress limit", "under the limit"] },
+    { id: "L1", words: ["l1", "reduce the rate", "move the lengths"] },
+    { id: "L2", words: ["l2", "solid length", "reduce the rate", "move the lengths"] },
+    { id: "F2", words: ["f2"] },
+    { id: "Rb", words: ["spring rate", "rate must", "reduce the rate"] }
+  ];
+
+  function syncFold(card) {
     var summary = card.querySelector("summary");
     if (summary) summary.setAttribute("aria-expanded", card.open ? "true" : "false");
   }
 
-  function collapseReferenceFolds() {
-    ["particularsFold", "tolFold"].forEach(function (id) {
-      var card = $(id);
-      if (!card) return;
-      card.open = false;
-      syncResultFold(card);
+  function setFoldOpen(card, open) {
+    if (!card) return;
+    card.open = open;
+    syncFold(card);
+  }
+
+  function collapseStepFolds(step) {
+    var sec = $("step-" + step);
+    if (!sec) return;
+    sec.querySelectorAll("details").forEach(function (card) {
+      setFoldOpen(card, false);
+    });
+  }
+
+  function messageIsShown(el) {
+    if (el.classList.contains("hidden")) return false;
+    var node = el.parentElement;
+    while (node) {
+      if (node.tagName === "DETAILS" && !node.open) return false;
+      node = node.parentElement;
+    }
+    return true;
+  }
+
+  function activeMessages() {
+    var bits = [];
+    document.querySelectorAll(".error.show, .status-banner.warning, .status-banner.fail").forEach(function (el) {
+      if (!messageIsShown(el)) return;
+      bits.push(el.textContent || "");
+    });
+    return bits.join("\n").toLowerCase();
+  }
+
+  function messageMentions(text, word) {
+    var escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp("(^|[^a-z0-9])" + escaped + "([^a-z0-9]|$)").test(text);
+  }
+
+  function revealFoldsForMessages() {
+    var text = activeMessages();
+    if (!text) return;
+    FOLD_FIELDS.forEach(function (field) {
+      var hit = field.words.some(function (word) { return messageMentions(text, word); });
+      if (!hit) return;
+      var el = $(field.id);
+      if (!el || !el.closest) return;
+      var node = el.closest("details");
+      while (node) {
+        setFoldOpen(node, true);
+        node = node.parentElement ? node.parentElement.closest("details") : null;
+      }
     });
   }
 
   function bindResultFolds() {
-    document.querySelectorAll("#step-7 details.result-fold").forEach(function (card) {
-      if (card.getAttribute("data-bound") === "1") {
-        syncResultFold(card);
-        return;
-      }
+    document.querySelectorAll("details").forEach(function (card) {
+      if (card.getAttribute("data-bound") === "1") return;
       card.setAttribute("data-bound", "1");
-      syncResultFold(card);
+      syncFold(card);
       card.addEventListener("toggle", function () {
-        syncResultFold(card);
+        syncFold(card);
         if (!card.open || !state.design) return;
         if (card.id === "loadFold") C.renderLoadGraph($("graphSvg"), state.design);
         if (card.id === "springFold") C.renderSpringDiagram($("springSvg"), state.design);
@@ -982,6 +1045,7 @@
       row("Approximate mass", "m", ev.mass ? E.fmt(ev.mass * 1000, 2) + " g" : "—"),
       row("Approximate wire length", "—", E.fmt(ev.wireLength, 1) + " mm")
     ].join("");
+    revealFoldsForMessages();
   }
 
   function loadExample() {
@@ -1284,6 +1348,7 @@
   }
 
   function init() {
+    bindResultFolds();
     populateMaterials();
     setupSettings();
     setupHelp();

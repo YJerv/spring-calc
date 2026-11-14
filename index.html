@@ -88,8 +88,8 @@
           <button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
         <p class="hint lead">Application constraints and design constraints are the same limits. Leave a box blank for no limit.</p>
-        <details class="notes constraint-fold" id="pocketFold" open>
-          <summary>Pocket and guide diameters</summary>
+        <details class="notes constraint-fold" id="pocketFold">
+          <summary aria-expanded="false">Pocket and guide diameters</summary>
           <div class="grid-2">
             <div class="field">
               <label for="pocket">Spring pocket, maximum diameter</label>
@@ -117,8 +117,8 @@
           </div>
           <p class="hint">Suggested clearance uses the same workshop allowance for the pocket and for the guide.</p>
         </details>
-        <details class="notes constraint-fold" id="lengthFold" open>
-          <summary>Working lengths</summary>
+        <details class="notes constraint-fold" id="lengthFold">
+          <summary aria-expanded="false">Working lengths</summary>
           <div class="grid-2">
             <div class="field">
               <label for="workL1">Most relaxed working length, L1</label>
@@ -132,8 +132,8 @@
             </div>
           </div>
         </details>
-        <details class="notes constraint-fold" id="tempFold" open>
-          <summary>Service temperature</summary>
+        <details class="notes constraint-fold" id="tempFold">
+          <summary aria-expanded="false">Service temperature</summary>
           <div class="field">
             <label for="serviceTemp">Service temperature</label>
             <div class="unit-row"><input id="serviceTemp" type="number" inputmode="decimal" step="1"><span class="unit">°C</span></div>
@@ -149,6 +149,8 @@
       <div class="card">
         <h2>4. Design options</h2>
         <p class="lead">Ends, grade, winding, material and the stress limit used for the search.</p>
+        <details class="fold" id="optionsFold">
+          <summary aria-expanded="false">Ends, grade and wind</summary>
         <div class="field">
           <div class="with-info">
             <label for="ends">Ends</label>
@@ -179,6 +181,9 @@
             <option value="left">Left-hand</option>
           </select>
         </div>
+        </details>
+        <details class="fold" id="materialFold">
+          <summary aria-expanded="false">Material</summary>
         <div class="with-info">
           <h3>Material</h3>
           <button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
@@ -223,6 +228,7 @@
             <span class="hint">Uses an indicative EN 10270 curve when a preset is selected.</span>
           </div>
         </div>
+        </details>
         <div class="error" id="err2"></div>
       </div>
     </section>
@@ -331,8 +337,8 @@
         <div id="resultBanner"></div>
       </div>
       <div class="card">
-        <details class="notes result-fold" id="loadFold" open>
-          <summary aria-expanded="true">Load–length characteristic</summary>
+        <details class="notes result-fold" id="loadFold">
+          <summary aria-expanded="false">Load–length characteristic</summary>
           <div class="chart-wrap">
             <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
@@ -376,8 +382,8 @@
         </details>
       </div>
       <div class="card">
-        <details class="notes result-fold" id="exportFold" open>
-          <summary aria-expanded="true">Drawing export</summary>
+        <details class="notes result-fold" id="exportFold">
+          <summary aria-expanded="false">Drawing export</summary>
           <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
           <div class="field no-print">
             <label for="exportName">PDF filename</label>
@@ -389,7 +395,7 @@
             <button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
           </div>
           <details class="notes">
-            <summary>Method, formulae and limitations</summary>
+            <summary aria-expanded="false">Method, formulae and limitations</summary>
             <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire. Manufacturing tolerances follow BS EN 15800 (quality grades 1, 2 and 3), which replaced BS 1726 for cylindrical helical compression spring tolerances. The designer remains responsible for checking the current standards, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>
             <ul>
               <li>Spring index w = D / d</li>
@@ -406,8 +412,8 @@
         </details>
       </div>
       <div class="card">
-        <details class="notes result-fold" id="springFold" open>
-          <summary aria-expanded="true">Scaled side view at free length</summary>
+        <details class="notes result-fold" id="springFold">
+          <summary aria-expanded="false">Scaled side view at free length</summary>
           <div class="chart-wrap">
             <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
