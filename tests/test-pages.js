@@ -73,6 +73,8 @@ console.log("\nResults cards\n");
 assert(/<details class="notes result-fold" id="particularsFold">\s*<summary aria-expanded="false">Spring particulars<\/summary>/.test(pages[6]),
   "Spring particulars are collapsed by default");
 assert(pages[6].indexOf('id="particularsFold" open') === -1, "Spring particulars are not open on arrival");
+assert(pages[6].indexOf('id="particularsFold"') < pages[6].indexOf('id="tolFold"'),
+  "Spring particulars come before manufacturing tolerances");
 ["loadFold", "tolFold", "exportFold", "springFold"].forEach(function (id) {
   assert(pages[6].indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
 });
