@@ -50,16 +50,46 @@
     <span id="p4"></span>
     <span id="p5"></span>
     <span id="p6"></span>
+    <span id="p7"></span>
   </div>
 
   <main>
     <section id="step-1" class="step active" data-step="1">
       <div class="card">
+        <h2>1. Overview</h2>
+        <p class="lead">This app designs a cylindrical helical compression spring of round wire, using BS EN 13906-1, and shows the BS EN 15800 tolerances.</p>
+        <p>Work through the pages in order. Choose how the duty is entered, set the limits and the material, then Check. The next page searches standard wire sizes and mean coil diameters. Results holds the graph, the tolerances and the drawing export.</p>
+      </div>
+    </section>
+
+    <section id="step-2" class="step" data-step="2">
+      <div class="card">
+        <h2>2. Design mode</h2>
+        <p class="lead">Choose how the duty is entered.</p>
+        <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
+          <label id="modeALabel">
+            <input type="radio" name="mode" value="A" checked>
+            <strong>Two points</strong>
+            <small>Two loads and two lengths</small>
+          </label>
+          <label id="modeBLabel">
+            <input type="radio" name="mode" value="B">
+            <strong>Point and rate</strong>
+            <small>One load, one length and the rate</small>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section id="step-3" class="step" data-step="3">
+      <div class="card">
         <div class="with-info">
-          <h2>1. Design constraints</h2>
+          <h2>3. Application constraints</h2>
           <button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
-        <p class="hint lead">Leave a box blank for no limit.</p>
+        <p class="hint lead">Application constraints and design constraints are the same limits. Leave a box blank for no limit.</p>
+        <details class="notes constraint-fold" id="pocketFold" open>
+          <summary>Pocket and guide diameters</summary>
           <div class="grid-2">
             <div class="field">
               <label for="pocket">Spring pocket, maximum diameter</label>
@@ -82,160 +112,83 @@
               <span class="hint">Used only when a spring guide diameter is entered.</span>
             </div>
           </div>
-          <fieldset class="constraints">
-            <legend>Application constraints</legend>
-            <div class="grid-2">
-              <div class="field">
-                <label for="Lcomp">Most compressed working length</label>
-                <div class="unit-row"><input id="Lcomp" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
-                <span class="hint">The shortest length the spring reaches in service. Blank uses the loaded length already entered.</span>
-              </div>
-              <div class="field">
-                <label for="Lrel">Most relaxed working length</label>
-                <div class="unit-row"><input id="Lrel" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
-                <span class="hint">The longest working length. Blank uses the lighter loaded length.</span>
-              </div>
-              <div class="field">
-                <label for="serviceTemp">Service temperature</label>
-                <div class="unit-row"><input id="serviceTemp" type="number" inputmode="decimal" step="1"><span class="unit">°C</span></div>
-                <span class="hint">Blank omits the relaxation note on the drawing.</span>
-              </div>
-            </div>
-          </fieldset>
           <div class="btn-row no-print">
             <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
           </div>
-          <p id="constraintNote" class="lead"></p>
-          <div class="error" id="errConstraints"></div>
+          <p class="hint">Suggested clearance uses the same workshop allowance for the pocket and for the guide.</p>
+        </details>
+        <details class="notes constraint-fold" id="lengthFold" open>
+          <summary>Working lengths</summary>
+          <div class="grid-2">
+            <div class="field">
+              <label for="workL1">Most relaxed working length, L1</label>
+              <div class="unit-row"><input id="workL1" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
+              <span class="hint">The longest length in service.</span>
+            </div>
+            <div class="field">
+              <label for="workL2">Most compressed working length, L2</label>
+              <div class="unit-row"><input id="workL2" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
+              <span class="hint">The shortest length in service.</span>
+            </div>
+          </div>
+        </details>
+        <details class="notes constraint-fold" id="tempFold" open>
+          <summary>Service temperature</summary>
+          <div class="field">
+            <label for="serviceTemp">Service temperature</label>
+            <div class="unit-row"><input id="serviceTemp" type="number" inputmode="decimal" step="1"><span class="unit">°C</span></div>
+            <span class="hint">Blank omits the relaxation note on the drawing.</span>
+          </div>
+        </details>
+        <p id="constraintNote" class="lead"></p>
+        <div class="error" id="errConstraints"></div>
       </div>
     </section>
 
-    <section id="step-2" class="step" data-step="2">
+    <section id="step-4" class="step" data-step="4">
       <div class="card">
+        <h2>4. Design options</h2>
+        <p class="lead">Ends, grade, winding, material and the stress limit used for the search.</p>
+        <div class="field">
+          <div class="with-info">
+            <label for="ends">Ends</label>
+            <button type="button" class="info-btn no-print" data-help="ends" aria-label="Information: end geometry" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          </div>
+          <select id="ends">
+            <option value="closed_ground" selected>Closed and ground</option>
+            <option value="closed">Closed, not ground</option>
+            <option value="open_ground">Open and ground</option>
+            <option value="open">Open, not ground</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="with-info">
+            <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
+            <button type="button" class="info-btn no-print" data-help="grades" aria-label="Information: quality grades" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          </div>
+          <select id="grade">
+            <option value="1">Grade 1</option>
+            <option value="2" selected>Grade 2</option>
+            <option value="3">Grade 3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="wind">Wound direction</label>
+          <select id="wind">
+            <option value="right" selected>Right-hand</option>
+            <option value="left">Left-hand</option>
+          </select>
+        </div>
         <div class="with-info">
-          <h2>2. Working loads and lengths</h2>
-          <button type="button" class="info-btn no-print" data-help="duty" aria-label="Information: working loads and lengths" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
-        <p class="lead">Set the duty either as two load–length points, or as one point plus the required spring rate.</p>
-
-        <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
-          <label id="modeALabel">
-            <input type="radio" name="mode" value="A" checked>
-            <strong>Two points</strong>
-            <small>L1, F1 and L2, F2</small>
-          </label>
-          <label id="modeBLabel">
-            <input type="radio" name="mode" value="B">
-            <strong>Point and rate</strong>
-            <small>One load, one length, R</small>
-          </label>
-        </div>
-
-        <fieldset class="constraints">
-          <legend>Ends, grade and wind</legend>
-          <div class="field">
-            <div class="with-info">
-              <label for="ends">Ends</label>
-              <button type="button" class="info-btn no-print" data-help="ends" aria-label="Information: end geometry" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-            </div>
-            <select id="ends">
-              <option value="closed_ground" selected>Closed and ground</option>
-              <option value="closed">Closed, not ground</option>
-              <option value="open_ground">Open and ground</option>
-              <option value="open">Open, not ground</option>
-            </select>
-          </div>
-          <div class="field">
-            <div class="with-info">
-              <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
-              <button type="button" class="info-btn no-print" data-help="grades" aria-label="Information: quality grades" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-            </div>
-            <select id="grade">
-              <option value="1">Grade 1</option>
-              <option value="2" selected>Grade 2</option>
-              <option value="3">Grade 3</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="wind">Wound direction</label>
-            <select id="wind">
-              <option value="right" selected>Right-hand</option>
-              <option value="left">Left-hand</option>
-            </select>
-          </div>
-        </fieldset>
-
-        <div id="modeAFields">
-          <div class="grid-2">
-            <div class="field">
-              <label for="L1">Length L1</label>
-              <div class="unit-row"><input id="L1" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-            </div>
-            <div class="field">
-              <label for="F1">Load F1</label>
-              <div class="unit-row"><input id="F1" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
-            </div>
-            <div class="field">
-              <label for="L2">Length L2</label>
-              <div class="unit-row"><input id="L2" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-            </div>
-            <div class="field">
-              <label for="F2">Load F2</label>
-              <div class="unit-row"><input id="F2" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
-            </div>
-          </div>
-          <p class="hint lead">L1 is the longer installed length (lighter load). L2 is the shorter working length (heavier load).</p>
-        </div>
-
-        <div id="modeBFields" class="hidden">
-          <div class="grid-2">
-            <div class="field">
-              <label for="Lb">Length L</label>
-              <div class="unit-row"><input id="Lb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
-            </div>
-            <div class="field">
-              <label for="Fb">Load F</label>
-              <div class="unit-row"><input id="Fb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
-            </div>
-            <div class="field">
-              <label for="Rb">Spring rate R</label>
-              <div class="unit-row"><input id="Rb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N/mm</span></div>
-            </div>
-            <div class="field">
-              <label for="modeBPoint">This point is</label>
-              <select id="modeBPoint">
-                <option value="F2">Maximum working load F2 at L2</option>
-                <option value="F1">Initial working load F1 at L1</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="btn-row no-print">
-          <button type="button" class="btn" id="btnCalculate">Calculate</button>
-          <button type="button" class="btn secondary" id="btnExample">Load worked example</button>
-        </div>
-        <div id="calcResult" class="calc-result" aria-live="polite"></div>
-        <dl class="summary" id="loadSummary"></dl>
-        <div class="error" id="err1"></div>
-      </div>
-    </section>
-
-    <section id="step-3" class="step" data-step="3">
-      <div class="card">
-        <div class="with-info">
-          <h2>3. Material</h2>
+          <h3>Material</h3>
           <button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
-        <p class="lead">Choose the material and the stiffness and strength used for the search.</p>
         <dl class="summary" id="geomSummary"></dl>
-
         <div class="field">
           <label for="material">Material</label>
           <select id="material"></select>
         </div>
         <p class="lead" id="matNote"></p>
-
         <div class="grid-2">
           <div class="field">
             <label for="G">Modulus of rigidity G</label>
@@ -270,68 +223,96 @@
             <span class="hint">Uses an indicative EN 10270 curve when a preset is selected.</span>
           </div>
         </div>
-
         <div class="error" id="err2"></div>
-      </div>
-    </section>
-
-    <section id="step-4" class="step" data-step="4">
-      <div class="card">
-        <div class="with-info">
-          <h2>4. Standard wire diameters</h2>
-          <button type="button" class="info-btn no-print" data-help="wire" aria-label="Information: standard wire diameters" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
-        <div id="heatmapPanel" class="heatmap-panel">
-          <p class="heatmap-best" id="heatmapBest"></p>
-          <ul class="heatmap-legend" id="heatmapLegend" aria-label="Heat map legend">
-            <li><span class="swatch good" aria-hidden="true"></span> Well within (τk ≤ 70 % of allowable)</li>
-            <li><span class="swatch amber" aria-hidden="true"></span> Approaching or at the limit (70–100 %)</li>
-            <li><span class="swatch over" aria-hidden="true"></span> Over allowable (τk &gt; 100 %)</li>
-            <li><span class="swatch invalid" aria-hidden="true"></span> Invalid (pocket, spring guide, index 4–16, solid length or coil count)</li>
-          </ul>
-          <div class="heatmap-wrap">
-            <div class="heatmap-scroll" id="heatmapScroll" tabindex="0"></div>
-          </div>
-          <p class="lead hint">Swipe the map sideways to see every standard wire. Highlighted rows give the most viable wire options.</p>
-        </div>
-        <div class="wire-toolbar">
-          <label><input type="checkbox" id="passOnly" checked> Show passing sizes only</label>
-          <span id="wireCount"></span>
-        </div>
-        <div class="wire-list" id="wireList"></div>
-        <div class="error" id="err3"></div>
       </div>
     </section>
 
     <section id="step-5" class="step" data-step="5">
       <div class="card">
-        <h2>5. Optimization</h2>
-        <p class="lead">Pick a standard wire near the selection, then vary D between the index limits (4 to 16) and the pocket. Smaller D lowers stress but needs more coils and a longer solid length.</p>
+        <div class="with-info">
+          <h2>5. Duty</h2>
+          <button type="button" class="info-btn no-print" data-help="duty" aria-label="Information: working loads and lengths" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
+        <p class="lead">Enter the loads and lengths for the mode chosen earlier.</p>
+        <div id="modeAFields">
+          <div class="grid-2">
+            <div class="field">
+              <label for="L1">Length L1</label>
+              <div class="unit-row"><input id="L1" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+            </div>
+            <div class="field">
+              <label for="F1">Load F1</label>
+              <div class="unit-row"><input id="F1" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
+            </div>
+            <div class="field">
+              <label for="L2">Length L2</label>
+              <div class="unit-row"><input id="L2" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+            </div>
+            <div class="field">
+              <label for="F2">Load F2</label>
+              <div class="unit-row"><input id="F2" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
+            </div>
+          </div>
+          <p class="hint lead">L1 is the most relaxed working length. L2 is the most compressed working length. These stay in step with the working lengths on Application constraints.</p>
+        </div>
+        <div id="modeBFields" class="hidden">
+          <div class="grid-2">
+            <div class="field">
+              <label for="Lb">Length L</label>
+              <div class="unit-row"><input id="Lb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">mm</span></div>
+            </div>
+            <div class="field">
+              <label for="Fb">Load F</label>
+              <div class="unit-row"><input id="Fb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N</span></div>
+            </div>
+            <div class="field">
+              <label for="Rb">Spring rate R</label>
+              <div class="unit-row"><input id="Rb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N/mm</span></div>
+            </div>
+            <div class="field">
+              <label for="modeBPoint">This point is</label>
+              <select id="modeBPoint">
+                <option value="F2">Most compressed condition, F2 at L2</option>
+                <option value="F1">Most relaxed condition, F1 at L1</option>
+              </select>
+            </div>
+          </div>
+          <p class="hint lead">The most compressed condition is carried into the working length L2.</p>
+        </div>
         <div class="btn-row no-print">
-          <button type="button" class="btn gold" id="btnOptimise">Auto-optimise</button>
+          <button type="button" class="btn" id="btnCheck">Check</button>
+          <button type="button" class="info-btn no-print" data-help="check" aria-label="Information: check" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          <button type="button" class="btn secondary" id="btnExample">Load worked example</button>
         </div>
-        <div class="field">
-          <label for="optWire">Wire diameter</label>
-          <select id="optWire"></select>
-        </div>
-        <div class="field">
-          <label for="Dslider">Mean coil diameter D = <span id="Dlabel">—</span> mm</label>
-          <input id="Dslider" type="range" min="4" max="16" step="0.01">
-        </div>
-        <div id="optStatus"></div>
-        <div class="metrics" id="optMetrics"></div>
-        <div class="chart-wrap">
-          <svg id="tradeoffSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <p class="lead hint">Stress is the curve labelled “Stress % of allowable”. Solid length is the curve labelled “Solid length Lc”. The dashed line labelled L2 is the shorter working length; solid length must stay below it. Colour supports the labels and is not the only cue.</p>
-        <div class="error" id="err4"></div>
+        <div id="calcResult" class="calc-result" aria-live="polite"></div>
+        <div class="error" id="err1"></div>
       </div>
     </section>
 
     <section id="step-6" class="step" data-step="6">
       <div class="card">
         <div class="with-info">
-          <h2>6. Results</h2>
+          <h2>6. Optimization</h2>
+          <button type="button" class="info-btn no-print" data-help="wire" aria-label="Information: standard wire diameters" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+        </div>
+        <p class="lead">The search tries standard wire sizes at several mean coil diameters inside the guide and pocket limits. The objective is the lowest corrected stress.</p>
+        <div class="field">
+          <label for="optWire">Wire diameter</label>
+          <select id="optWire"></select>
+        </div>
+        <div id="optStatus"></div>
+        <div class="metrics" id="optMetrics"></div>
+        <div class="wire-list" id="optCandidates"></div>
+        <p class="lead hint">Each row is labelled with the mean diameter, the wire and the stress. Colour supports the labels and is not the only cue.</p>
+        <p id="optClearance" class="lead"></p>
+        <div class="error" id="err4"></div>
+      </div>
+    </section>
+
+    <section id="step-7" class="step" data-step="7">
+      <div class="card">
+        <div class="with-info">
+          <h2>7. Results</h2>
           <button type="button" class="info-btn no-print" data-help="graph" aria-label="Information: load graph" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
         </div>
         <div id="resultBanner"></div>
@@ -382,36 +363,41 @@
         </details>
       </div>
       <div class="card">
+        <details class="notes result-fold" id="exportFold" open>
+          <summary aria-expanded="true">Drawing export</summary>
+          <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
+          <div class="field no-print">
+            <label for="exportName">PDF filename</label>
+            <input id="exportName" type="text" disabled autocomplete="off" aria-describedby="exportNameHint">
+            <span class="hint" id="exportNameHint">A paid drawing can be given a filename. This page cannot unlock one, so this box is not used. The drawing number stays separate, and this name is not written into the title block.</span>
+          </div>
+          <div class="btn-row no-print">
+            <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
+            <button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          </div>
+          <details class="notes">
+            <summary>Method, formulae and limitations</summary>
+            <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire. Manufacturing tolerances follow BS EN 15800 (quality grades 1, 2 and 3), which replaced BS 1726 for cylindrical helical compression spring tolerances. The designer remains responsible for checking the current standards, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>
+            <ul>
+              <li>Spring index w = D / d</li>
+              <li>Bergsträsser factor k = (w + 0.5) / (w − 0.75)</li>
+              <li>Uncorrected shear stress τ = 8 D F / (π d³)</li>
+              <li>Corrected stress τk = k τ</li>
+              <li>Rate R = G d⁴ / (8 D³ n)</li>
+              <li>Allowable static screening stress τzul = factor × Rm (default factor 0.5)</li>
+              <li>Closed and ground ends: nt = n + 2, Lc = nt × d</li>
+            </ul>
+            <p>Coil-diameter tolerances are taken from EN 15800 Table 3. Force and length tolerances use the grade factor Q, the coil factor kf and the geometry factor aF. Q, kf, the force and length formulae, squareness, parallelism and the scope limits were checked against published clause values. Table 3 and the aF coefficients were transcribed from a public copy of the standard and are flagged in the results because they were not re-read from a licensed PDF.</p>
+            <p>This tool is a design aid. It is not a substitute for BS EN 13906-1, BS EN 15800, EN 10270 or a drawing office procedure, and it is not affiliated with BSI.</p>
+          </details>
+        </details>
+      </div>
+      <div class="card">
         <details class="notes result-fold" id="springFold" open>
           <summary aria-expanded="true">Scaled side view at free length</summary>
           <div class="chart-wrap">
             <svg id="springSvg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
-        <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
-        <div class="field no-print">
-          <label for="exportName">PDF filename</label>
-          <input id="exportName" type="text" disabled autocomplete="off" aria-describedby="exportNameHint">
-          <span class="hint" id="exportNameHint">A paid drawing can be given a filename. This page cannot unlock one, so this box is not used. The drawing number stays separate, and this name is not written into the title block.</span>
-        </div>
-        <div class="btn-row no-print">
-          <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
-          <button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
-        <details class="notes">
-          <summary>Method, formulae and limitations</summary>
-          <p>Calculations follow the BS EN 13906-1 method for cylindrical helical compression springs of round wire. Manufacturing tolerances follow BS EN 15800 (quality grades 1, 2 and 3), which replaced BS 1726 for cylindrical helical compression spring tolerances. The designer remains responsible for checking the current standards, the material certificate, fatigue if the duty is cyclic, buckling, relaxation and manufacture.</p>
-          <ul>
-            <li>Spring index w = D / d</li>
-            <li>Bergsträsser factor k = (w + 0.5) / (w − 0.75)</li>
-            <li>Uncorrected shear stress τ = 8 D F / (π d³)</li>
-            <li>Corrected stress τk = k τ</li>
-            <li>Rate R = G d⁴ / (8 D³ n)</li>
-            <li>Allowable static screening stress τzul = factor × Rm (default factor 0.5)</li>
-            <li>Closed and ground ends: nt = n + 2, Lc = nt × d</li>
-          </ul>
-          <p>Coil-diameter tolerances are taken from EN 15800 Table 3. Force and length tolerances use the grade factor Q, the coil factor kf and the geometry factor aF. Q, kf, the force and length formulae, squareness, parallelism and the scope limits were checked against published clause values. Table 3 and the aF coefficients were transcribed from a public copy of the standard and are flagged in the results because they were not re-read from a licensed PDF.</p>
-          <p>This tool is a design aid. It is not a substitute for BS EN 13906-1, BS EN 15800, EN 10270 or a drawing office procedure, and it is not affiliated with BSI.</p>
-        </details>
         </details>
       </div>
     </section>
@@ -430,7 +416,7 @@
       </div>
       <fieldset class="settings-fieldset">
         <legend>Appearance</legend>
-        <p class="theme-help" id="themeHelp">System follows the colour setting on this phone or browser, and it updates if that setting changes. Light and Dark stay on this device until you choose System again. Two phones can therefore look different until a choice is saved on each one.</p>
+        <p class="theme-help" id="themeHelp">If your phone is set to dark mode, some screens may not display correctly.</p>
         <div class="theme-options" role="radiogroup" aria-label="Colour theme" aria-describedby="themeHelp">
           <label class="theme-option">
             <input type="radio" name="themeChoice" value="system">
@@ -448,7 +434,7 @@
       </fieldset>
       <section class="settings-later" aria-label="Further settings">
         <h3>Further settings</h3>
-        <p>Further settings will be added here. Appearance does not change the calculation. Complete A3 drawings need Pro, which cannot be bought or restored in this build: the price, Play Billing product and verification server are still open.</p>
+        <p>Further settings will be added here. Complete A3 drawings need Pro, which cannot be bought or restored in this build: the price, Play Billing product and verification server are still open.</p>
       </section>
     </div>
   </div>

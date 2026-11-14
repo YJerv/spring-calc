@@ -279,8 +279,8 @@ assert(html.indexOf("settings-gear") >= 0, "The Settings control uses the round 
 assert(html.indexOf('value="system"') >= 0 && html.indexOf('value="light"') >= 0 && html.indexOf('value="dark"') >= 0,
   "Settings offers System, Light and Dark");
 assert(html.indexOf("Further settings") >= 0, "The settings screen leaves room for later settings");
-assert(html.indexOf("Colour supports the labels") >= 0,
-  "The coil-diameter chart hint does not rely on colour names alone");
+assert(html.indexOf("Colour supports the labels and is not the only cue.") >= 0,
+  "The optimisation list does not rely on colour names alone");
 
 const charts = fs.readFileSync(path.join(__dirname, "..", "js", "charts.js"), "utf8");
 assert(charts.indexOf('"paint-order": "stroke"') === -1,

@@ -372,6 +372,26 @@ const noExtra = E.buildHeatmap(Object.assign({}, openLoads, { innerMin: 10, inne
 const blankExtra = E.buildHeatmap(Object.assign({}, openLoads, { innerMin: 10 }));
 assert(Math.abs(noExtra.Dmin - blankExtra.Dmin) < 1e-9, "Zero guide clearance adds nothing");
 
+console.log("\nOptimisation search and compressed diameter");
+const found = E.searchOptimisation(example);
+assert(found.level === "pass" || found.level === "warning", "The worked example yields a candidate", found.level);
+assert(found.best && found.perDiameter.length > 0, "The search returns an optimum and one candidate per diameter");
+var bestStress = found.best.tauKcomp != null ? Math.max(found.best.tauK, found.best.tauKcomp) : found.best.tauK;
+assert(found.perDiameter.every(function (row) {
+  var stress = row.tauKcomp != null ? Math.max(row.tauK, row.tauKcomp) : row.tauK;
+  return bestStress <= stress + 1e-6;
+}), "The optimum is the lowest stress among the per-diameter candidates");
+const tight = E.searchOptimisation(Object.assign({}, example, { L1: 50, F1: 50, L2: 1, F2: 125, L0: 60, R: 5, Fmax: 125, LmaxLoad: 1 }));
+assert(tight.level === "fail" && tight.best == null && tight.message.indexOf("No options available") === 0,
+  "An impossible compressed length reports that no options are available");
+const growth = E.coilDiameterIncrease(16.5, 2, 25);
+assertClose(growth, 0.1 * (625 - 40 - 0.8) / 16.5, "Coil diameter increase uses the standard deflection formula");
+const grown = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { pocket: 20, clearance: 1.5 });
+assert(grown.flags.some(function (f) { return f.indexOf("pocket clearance") >= 0; }),
+  "A pocket that fitted at free length is flagged when the coil grows");
+const guideStill = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { innerMin: ev.Di - 1, innerClearance: 0.5 });
+assert(guideStill.flags.length === 0, "A guide that fits gets more room when the inside diameter grows");
+
 console.log("    Heat map D range " + hm.Dmin + "–" + hm.Dmax + " mm in " + hm.diameters.length + " steps");
 console.log("    Most options: D = " + hm.bestDiameters.join(", ") + " mm with " + hm.maxViable + " viable wire sizes");
 

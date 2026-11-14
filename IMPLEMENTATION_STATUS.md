@@ -253,7 +253,7 @@ These words describe this branch. They do not change the live WIP Results colour
 | SC-008 | Blocked | Root host and Play app-signing SHA-256 are not available. No statement file was added. The guard is not an association |
 | SC-009 | Partial | Further information buttons, beyond the six agreed topics, are not decided |
 | SC-010 | Cancelled | Not implemented |
-| SC-011 | Blocked | Optimisation objective and search limits are not agreed. No diameter is proposed |
+| SC-011 | Partial | The optimise page now searches for lowest stress. A blank pocket is still not filled in |
 | SC-012 | Green, with two flags | Travel-percent wording, and which diameter to keep when both limits are set |
 | SC-013 | Partial | The page stays unpaid. A paid name is test-fixture only. Whether that name enters the title block is not decided |
 
@@ -272,3 +272,15 @@ Attempt 1. It has not failed. This is on the review branch only. Nothing was mer
 - Auto-optimise tries the standard wires around the selection, then the mean diameter. A candidate must pass the existing checks, stay under the active stress limit at the most compressed working length, and keep both working deflections between 20 % and 80 %. The heat-map matrix is unchanged, still in 1 mm steps. The coil-diameter page is titled Optimization and has a wire-size list.
 - Service temperature, °C, is on the same Application constraints section. If it is blank, the drawing omits the relaxation note. If it is set, note 4 reads “Set for relaxation at X °C”, where X is the service temperature plus 50, on the unpaid sheet and the paid test-fixture sheet.
 - R2-05 is still not done. No suggested-clearance button was added for the spring guide.
+
+## 14 November 2026 — third review, seven pages
+
+Attempt 1. It has not failed. Review branch only. Nothing was merged, deployed, or built for Play.
+
+- The wizard is seven pages: Overview, Design mode, Application constraints, Design options, Duty, Optimization, Results.
+- Application constraints holds the pocket, the guide, both clearances, working lengths L1 and L2, and the service temperature. The suggested-clearance button sits with the guide and fills both clearances. An empty page asks before continuing.
+- Design options holds ends, grade, wind, material and the stress limit.
+- Duty uses Check. The result is green, orange or red, with no wire matrix and without repeating the rate, free length or maximum load.
+- Optimization has no heat map. It searches standard wires at several mean diameters for the lowest stress, first inside 30–70% deflection, then 20–80%, then a stress limit 20% higher. Coil growth under compression is flagged from the EN 13906-1 ΔDe expression.
+- Settings no longer explains Appearance. Help for diameters, loads, ends and grades is shorter. The diameter diagram can be replaced by setting HELP_DIAMETER_IMAGE.
+- Results names the export card Drawing export and puts the scaled side view at the bottom.

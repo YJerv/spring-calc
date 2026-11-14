@@ -79,33 +79,68 @@
   }
 
   function serviceRange() {
-    var Lcomp = optionalNum("Lcomp");
-    var Lrel = optionalNum("Lrel");
+    var Lcomp = optionalNum("workL2");
+    var Lrel = optionalNum("workL1");
     if (Lcomp == null && Lrel == null) return null;
     return { Lcomp: Lcomp, Lrel: Lrel };
   }
 
+  var syncingLengths = false;
+
+  function syncLengths(from) {
+    if (syncingLengths) return;
+    syncingLengths = true;
+    if (state.mode === "A") {
+      if (from === "duty") {
+        setVal("workL1", val("L1"));
+        setVal("workL2", val("L2"));
+      } else {
+        setVal("L1", val("workL1"));
+        setVal("L2", val("workL2"));
+      }
+    } else if (val("modeBPoint") === "F1") {
+      if (from === "duty") setVal("workL1", val("Lb"));
+      else setVal("Lb", val("workL1"));
+    } else if (from === "duty") {
+      setVal("workL2", val("Lb"));
+    } else {
+      setVal("Lb", val("workL2"));
+    }
+    syncingLengths = false;
+  }
+
   function currentLoads() {
     var range = serviceRange();
-    if (range && (range.Lcomp == null || range.Lrel == null)) {
-      return { ok: false, errors: ["Enter both the most compressed and the most relaxed working lengths, or leave both blank."] };
+    var complete = range && range.Lcomp != null && range.Lrel != null;
+    if (complete && !(range.Lrel > range.Lcomp)) {
+      return { ok: false, errors: ["The most relaxed working length must be longer than the most compressed length."] };
     }
     if (state.mode === "A") {
       var out = E.deriveModeA(num("L1"), num("F1"), num("L2"), num("F2"));
-      if (out.ok && range) {
+      if (out.ok && complete) {
         out.Lcomp = range.Lcomp;
         out.Lrel = range.Lrel;
+        if (out.R > 0) out.Fcomp = out.R * (out.L0 - range.Lcomp);
+      } else if (out.ok && range && range.Lcomp != null) {
+        out.Lcomp = range.Lcomp;
         if (out.R > 0) out.Fcomp = out.R * (out.L0 - range.Lcomp);
       }
       return out;
     }
-    return E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"), range);
+    var modeB = E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"), complete ? range : null);
+    if (modeB.ok && range && range.Lcomp != null && modeB.Lcomp == null) {
+      modeB.Lcomp = range.Lcomp;
+      if (modeB.R > 0) modeB.Fcomp = modeB.R * (modeB.L0 - range.Lcomp);
+    }
+    if (modeB.ok && range && range.Lrel != null && modeB.Lrel == null) modeB.Lrel = range.Lrel;
+    return modeB;
   }
 
   function refreshLoadSummary() {
     var out = currentLoads();
     state.loads = out.ok ? out : null;
     var box = $("loadSummary");
+    if (!box) return;
     if (!out.ok) {
       box.innerHTML = "";
       return;
@@ -146,8 +181,8 @@
       useDirectStress: stressMode() === "direct",
       tauAllowDirect: optionalNum("tauAllowDirect"),
       serviceTemp: optionalNum("serviceTemp"),
-      Lcomp: optionalNum("Lcomp"),
-      Lrel: optionalNum("Lrel"),
+      Lcomp: optionalNum("workL2"),
+      Lrel: optionalNum("workL1"),
       useIndicativeRm: $("useIndicativeRm").checked,
       density: E.materialById(val("material")).density
     };
@@ -219,30 +254,19 @@
       box.innerHTML = html;
       return;
     }
-    var tone = report.passing > 0 ? (report.showTravelGuide || report.passingAboveExistingTravelWarning ? "warning" : "pass") : "fail";
-    var title = report.passing > 0 ? "Feasible springs found" : "No feasible spring";
-    var detail = report.passing > 0
-      ? report.passing + " of " + report.checked + " screened wire and diameter combinations pass the existing checks."
-      : "None of " + report.checked + " screened combinations pass. Nothing was changed.";
+    var screen = report.screen || { level: "fail", message: E.NO_OPTIONS, warning: "" };
+    var tone = screen.level === "pass" ? "pass" : (screen.level === "warning" ? "warning" : "fail");
+    var title = screen.level === "pass" ? "Feasible" : (screen.level === "warning" ? "Feasible with a warning" : "No options available");
+    var detail = screen.level === "pass"
+      ? "Working deflection is between 30% and 70%, and the stress is within the active limit."
+      : (screen.level === "warning"
+        ? screen.warning
+        : "Relax the application constraints (a larger or a smaller spring), alter the duty or select another material.");
     html += "<div class=\"status-banner " + tone + "\"><strong>" + title + "</strong> — " + esc(detail) + "</div>";
-    html += "<p class=\"lead\">" + esc(report.solidRule.statement) + "</p>";
-    if (report.passing === 0 && report.hardFailures.length) {
-      html += "<p><strong>Why they failed</strong></p><ul>" + report.hardFailures.slice(0, 4).map(function (item) {
-        return "<li>" + esc(item.reason) + " (" + item.count + ")</li>";
-      }).join("") + "</ul>";
-    }
-    if (report.suggestions.length) {
+    if (screen.level !== "pass" && report.suggestions && report.suggestions.length) {
       html += "<p><strong>What to try</strong></p><ul>" + report.suggestions.map(function (item) {
         return "<li>" + esc(item.text) + "</li>";
       }).join("") + "</ul>";
-    } else if (report.passing === 0) {
-      html += "<p class=\"lead\">No checked change produced a passing candidate, so none is suggested. Entered values were not changed.</p>";
-    }
-    if (report.showTravelGuide) {
-      html += "<p class=\"lead\">" + esc(report.travelGuide.statement) + "</p>";
-    }
-    if (report.passingAboveExistingTravelWarning) {
-      html += "<p class=\"lead\">Warning, not a failure: at least one passing candidate uses more than 85% of available travel. That is the calculator’s existing warning.</p>";
     }
     if (report.diameterProposal && report.diameterProposal.proposed === false) {
       html += "<p class=\"lead\">" + esc(report.diameterProposal.statement) + "</p>";
@@ -253,7 +277,7 @@
   function markFeasibilityStale() {
     if (!state.feasibility) return;
     if (state.feasibility.signature === feasibilitySignature()) return;
-    renderFeasibility(state.feasibility.report, "Inputs have changed. Choose Calculate again. The notes below are out of date.");
+    renderFeasibility(state.feasibility.report, "Inputs have changed. Choose Check again.");
   }
 
   function runCalculate() {
@@ -280,6 +304,7 @@
     }
     var input = Object.assign({}, out, {
       pocket: g.pocket,
+      clearance: g.clearance,
       innerMin: g.innerMin,
       innerClearance: g.innerClearance,
       DeMax: g.DeMax,
@@ -297,6 +322,8 @@
       density: g.density
     });
     var report = E.assessFeasibility(input, { steps: 8 });
+    report.screen = E.searchOptimisation(input);
+    state.screen = report.screen;
     state.feasibility = { signature: feasibilitySignature(), report: report };
     renderFeasibility(report, "");
   }
@@ -311,38 +338,30 @@
     if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
     var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (conflict) errs.push(conflict);
-    if ((g.Lcomp == null) !== (g.Lrel == null)) {
-      errs.push("Enter both the most compressed and the most relaxed working lengths, or leave both blank.");
-    }
     if (g.Lcomp != null && g.Lrel != null && !(g.Lrel > g.Lcomp)) {
       errs.push("The most relaxed working length must be longer than the most compressed length.");
     }
     return errs;
   }
 
+  function constraintsBlank() {
+    var g = geometry();
+    return g.pocket == null && g.innerMin == null && g.Lcomp == null && g.Lrel == null && g.serviceTemp == null;
+  }
+
   function validateStep(step) {
-    if (step === 1) {
+    if (step === 1 || step === 2) return true;
+    if (step === 3) {
       var constraintErrs = constraintErrors();
       showErr("errConstraints", constraintErrs);
-      return constraintErrs.length === 0;
-    }
-    if (step === 2) {
-      var out = currentLoads();
-      showErr("err1", out.ok ? [] : out.errors);
-      if (!out.ok) return false;
-      var conflict = E.constraintConflict(geometry().pocket, E.springGuideLimit(geometry()));
-      if (conflict) {
-        renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
-        return false;
-      }
-      if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) {
-        renderFeasibility(state.feasibility ? state.feasibility.report : null,
-          "Choose Calculate before continuing. The check runs on that click, not while typing.");
-        return false;
+      if (constraintErrs.length) return false;
+      if (constraintsBlank()) {
+        var proceed = window.confirm("Nothing is entered for the pocket, the spring guide, the working lengths or the service temperature. Continue without those limits?");
+        if (!proceed) return false;
       }
       return true;
     }
-    if (step === 3) {
+    if (step === 4) {
       var g = geometry();
       var errs = [];
       if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
@@ -355,17 +374,25 @@
       showErr("err2", errs);
       return errs.length === 0;
     }
-    if (step === 4) {
-      if (!state.selectedWire) {
-        showErr("err3", ["Select a wire diameter to continue."]);
+    if (step === 5) {
+      var out = currentLoads();
+      showErr("err1", out.ok ? [] : out.errors);
+      if (!out.ok) return false;
+      var conflict = E.constraintConflict(geometry().pocket, E.springGuideLimit(geometry()));
+      if (conflict) {
+        renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
         return false;
       }
-      showErr("err3", []);
+      if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) {
+        renderFeasibility(state.feasibility ? state.feasibility.report : null,
+          "Choose Check before continuing. The check runs on that click, not while typing.");
+        return false;
+      }
       return true;
     }
-    if (step === 5) {
+    if (step === 6) {
       if (!state.design) {
-        showErr("err4", ["Adjust the mean diameter, or use auto-optimise."]);
+        showErr("err4", [E.NO_OPTIONS]);
         return false;
       }
       showErr("err4", []);
@@ -379,20 +406,28 @@
     document.querySelectorAll(".step").forEach(function (sec) {
       sec.classList.toggle("active", Number(sec.getAttribute("data-step")) === step);
     });
-    for (var i = 1; i <= 6; i++) {
+    for (var i = 1; i <= 7; i++) {
       var p = $("p" + i);
-      p.className = i === step ? "on" : (i < step ? "done" : "");
+      if (p) p.className = i === step ? "on" : (i < step ? "done" : "");
     }
     $("btnBack").disabled = step === 1;
-    $("btnNext").textContent = step === 6 ? "Start again" : (step === 5 ? "Show results" : "Next");
-    if (step === 4) {
-      renderHeatmap();
-      renderWires();
-    }
-    if (step === 5) setupOptimise();
-    if (step === 6) renderResults();
+    $("btnNext").textContent = step === 7 ? "Start again" : (step === 6 ? "Show results" : "Next");
+    if (step === 5) alignLengths();
+    if (step === 6) renderOptimise();
+    if (step === 7) renderResults();
     window.scrollTo(0, 0);
     persist();
+  }
+
+  function alignLengths() {
+    if (state.mode === "A") {
+      if (val("L1") === "" && val("L2") === "" && (val("workL1") !== "" || val("workL2") !== "")) syncLengths("work");
+      else if (val("L1") !== "" || val("L2") !== "") syncLengths("duty");
+    } else if (val("Lb") === "" && (val("workL2") !== "" || val("workL1") !== "")) {
+      syncLengths("work");
+    } else if (val("Lb") !== "") {
+      syncLengths("duty");
+    }
   }
 
   function wireInputBase() {
@@ -402,6 +437,7 @@
       innerMin: g.innerMin,
       innerClearance: g.innerClearance,
       pocket: g.pocket,
+      clearance: g.clearance,
       G: g.G,
       Rm: g.Rm,
       tauFactor: g.tauFactor,
@@ -572,92 +608,103 @@
     persist();
   }
 
-  function fillOptWires() {
+  var fillingWires = false;
+
+  function candidateStress(ev) {
+    return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
+  }
+
+  function fillOptWires(around) {
     var sel = $("optWire");
-    if (!sel || !(state.selectedWire > 0)) return;
-    var wires = E.nearbyStandardWires(state.selectedWire).slice();
-    var exact = wires.some(function (d) { return Math.abs(d - state.selectedWire) < 1e-9; });
-    if (!exact) wires.push(state.selectedWire);
-    wires.sort(function (a, b) { return a - b; });
-    sel.innerHTML = wires.map(function (d) {
+    if (!sel || !(around > 0)) return;
+    fillingWires = true;
+    var current = sel.value;
+    var wires = E.nearbyStandardWires(around);
+    sel.innerHTML = "<option value=\"\">Best wire at each diameter</option>" + wires.map(function (d) {
       return "<option value=\"" + d + "\">" + E.fmt(d, 2) + " mm</option>";
     }).join("");
-    var chosen = wires.reduce(function (best, d) {
-      return Math.abs(d - state.selectedWire) < Math.abs(best - state.selectedWire) ? d : best;
-    }, wires[0]);
-    sel.value = String(chosen);
+    if (current && [].some.call(sel.options, function (opt) { return opt.value === current; })) sel.value = current;
+    fillingWires = false;
   }
 
-  function setupOptimise() {
-    fillOptWires();
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
-    var scan = E.scanDiameters(input, 80);
-    state.scan = scan;
-    if (!scan.bounds.valid) {
-      $("optMetrics").innerHTML = "";
-      showErr("err4", ["This wire cannot produce an index between 4 and 16 that also fits the pocket."]);
-      return;
-    }
-    var slider = $("Dslider");
-    slider.min = scan.bounds.Dmin.toFixed(3);
-    slider.max = scan.bounds.Dmax.toFixed(3);
-    slider.step = "0.01";
-    var startD;
-    if (state.preferredD != null) startD = state.preferredD;
-    else if (state.design && state.design.d === input.d) startD = state.design.D;
-    else startD = scan.bounds.Dmax;
-    startD = Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, startD));
-    slider.value = startD;
-    C.renderTradeoff($("tradeoffSvg"), scan.rows, startD);
-    updateOptimise(startD);
-  }
-
-  function updateOptimise(D) {
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, D: Number(D), Rm: num("Rm") });
-    var ev = E.evaluateDesign(input);
+  function applyCandidate(ev) {
+    state.selectedWire = ev.d;
+    state.preferredD = ev.D;
     ev.wind = val("wind");
     ev.materialId = val("material");
     ev.materialName = E.materialById(val("material")).shortName;
     state.design = ev;
-    $("Dlabel").textContent = E.fmt(ev.D, 3);
-    C.renderTradeoff($("tradeoffSvg"), state.scan ? state.scan.rows : [], ev.D);
-    $("optMetrics").innerHTML = [
-      metric("Index w", E.fmt(ev.w, 2)),
-      metric("Active coils n", E.fmt(ev.n, 2)),
-      metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " N/mm²"),
-      metric("% of allowable", E.fmt(ev.pctAllow, 1) + " %"),
-      metric("Solid length Lc", E.fmt(ev.Lc, 2) + " mm"),
-      metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
-    ].join("");
-    var banner = "<div class=\"status-banner " + ev.status + "\"><strong>" +
-      ev.status.toUpperCase() + "</strong> — " +
-      (ev.pass
-        ? (ev.warnings[0] || "This diameter satisfies the screening checks.")
-        : ev.reasons[0]) + "</div>";
-    $("optStatus").innerHTML = banner +
-      (ev.warnings.length && ev.pass
-        ? "<p class=\"lead\">" + ev.warnings.join(" ") + "</p>"
-        : "");
     persist();
+  }
+
+  function renderOptimise() {
+    var input = wireInputBase();
+    var same = state.screen && state.feasibility && state.feasibility.signature === feasibilitySignature();
+    if (!same) state.design = null;
+    var screen = same ? state.screen : E.searchOptimisation(input);
+    state.screen = screen;
+    var status = $("optStatus");
+    var list = $("optCandidates");
+    var metrics = $("optMetrics");
+    var note = $("optClearance");
+    if (!screen.best) {
+      state.design = null;
+      if (status) status.innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(screen.message || E.NO_OPTIONS) + "</div>";
+      if (metrics) metrics.innerHTML = "";
+      if (list) list.innerHTML = "";
+      if (note) note.textContent = "";
+      if ($("optWire")) $("optWire").innerHTML = "";
+      showErr("err4", []);
+      return;
+    }
+    showErr("err4", []);
+    var tone = screen.level === "pass" ? "pass" : "warning";
+    var best = screen.best;
+    if (!state.design) applyCandidate(best);
+    fillOptWires(best.d);
+    var filter = $("optWire") && $("optWire").value !== "" ? Number($("optWire").value) : null;
+    var rows = filter
+      ? screen.candidates.filter(function (row) { return Math.abs(row.d - filter) < 1e-9; })
+      : screen.perDiameter.slice();
+    if (!rows.length) rows = [best];
+    if (status) {
+      status.innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
+        (screen.level === "pass" ? "Optimum" : "Optimum with a warning") +
+        "</strong> — wire " + E.fmt(best.d, 2) + " mm, mean diameter " + E.fmt(best.D, 2) +
+        " mm, τk " + E.fmt(candidateStress(best), 1) + " N/mm²." +
+        (screen.warning ? " " + esc(screen.warning) : "") + "</div>";
+    }
+    if (metrics) {
+      metrics.innerHTML = [
+        metric("Wire d", E.fmt(best.d, 2) + " mm"),
+        metric("Mean diameter D", E.fmt(best.D, 2) + " mm"),
+        metric("Corrected stress τk", E.fmt(candidateStress(best), 1) + " N/mm²"),
+        metric("Deflection L1", best.deflPct1 == null ? "—" : E.fmt(best.deflPct1, 1) + " %"),
+        metric("Deflection L2", best.deflPct2 == null ? "—" : E.fmt(best.deflPct2, 1) + " %"),
+        metric("Outside Ø De", E.fmt(best.De, 2) + " mm")
+      ].join("");
+    }
+    var growth = best.growth;
+    if (note) {
+      if (growth && growth.flags && growth.flags.length) note.textContent = growth.flags.join(" ");
+      else if (growth && growth.delta != null) note.textContent = "At the most compressed length the outside diameter changes by " + E.fmt(growth.delta, 2) + " mm.";
+      else note.textContent = "";
+    }
+    if (list) {
+      list.innerHTML = rows.map(function (row) {
+        var on = state.design && Math.abs(state.design.d - row.d) < 1e-9 && Math.abs(state.design.D - row.D) < 1e-4;
+        var flag = row.growth && row.growth.flags && row.growth.flags.length ? " · " + row.growth.flags[0] : "";
+        return "<button type=\"button\" class=\"wire-card " + (on ? "selected " : "") + tone + "\" data-opt-d=\"" + row.d + "\" data-opt-D=\"" + row.D + "\">" +
+          "<div class=\"top\"><strong>D " + E.fmt(row.D, 2) + " mm</strong><span>d " + E.fmt(row.d, 2) + " mm</span></div>" +
+          "<div class=\"meta\">τk " + E.fmt(candidateStress(row), 1) + " N/mm² · L1 " +
+          (row.deflPct1 == null ? "—" : E.fmt(row.deflPct1, 0) + "%") + " · L2 " +
+          (row.deflPct2 == null ? "—" : E.fmt(row.deflPct2, 0) + "%") + esc(flag) + "</div></button>";
+      }).join("");
+    }
   }
 
   function metric(k, v) {
     return "<div class=\"metric\"><div class=\"k\">" + k + "</div><div class=\"v\">" + v + "</div></div>";
-  }
-
-  function autoOptimise() {
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
-    var opt = E.autoOptimise(input, 80);
-    if (!opt.best) {
-      showErr("err4", ["No nearby standard wire and mean diameter meet the stress limit and the 20–80 % deflection band at both working lengths."]);
-      return;
-    }
-    showErr("err4", []);
-    state.selectedWire = opt.best.d;
-    state.preferredD = opt.best.D;
-    setupOptimise();
-    $("Dslider").value = opt.best.D;
-    updateOptimise(opt.best.D);
   }
 
 
@@ -747,11 +794,13 @@
     state.drawing = model;
     renderToleranceTable(model);
     var banner = $("resultBanner");
-    banner.className = "status-banner " + ev.status;
-    banner.innerHTML = "<strong>" + ev.status.toUpperCase() + "</strong> — " +
+    var tierWarning = state.screen && state.screen.level === "warning" && state.screen.warning;
+    banner.className = "status-banner " + (tierWarning ? "warning" : ev.status);
+    banner.innerHTML = "<strong>" + (tierWarning ? "WARNING" : ev.status.toUpperCase()) + "</strong> — " +
       (ev.pass
         ? "Screening checks are satisfied for static design at the stated allowable stress."
         : ev.reasons.join(" ")) +
+      (tierWarning ? "<br>" + esc(state.screen.warning) : "") +
       (ev.warnings.length ? "<br>" + ev.warnings.join(" ") : "");
 
     C.renderLoadGraph($("graphSvg"), ev);
@@ -814,8 +863,8 @@
     setVal("clearance", 1.5);
     setVal("innerMin", "");
     setVal("innerClearance", "");
-    setVal("Lcomp", "");
-    setVal("Lrel", "");
+    setVal("workL1", 50);
+    setVal("workL2", 35);
     setVal("serviceTemp", "");
     document.querySelector("input[name=stressMode][value=factor]").checked = true;
     setVal("tauAllowDirect", "");
@@ -841,14 +890,14 @@
     try {
       var data = {
         step: state.step,
-        pageOrder: "r2-01",
+        pageOrder: "r3-01",
         mode: state.mode,
         values: {
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
           Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
           pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
           innerClearance: val("innerClearance"),
-          Lcomp: val("Lcomp"), Lrel: val("Lrel"), serviceTemp: val("serviceTemp"),
+          workL1: val("workL1"), workL2: val("workL2"), serviceTemp: val("serviceTemp"),
           ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
           tauFactor: val("tauFactor"), tauAllowDirect: val("tauAllowDirect"),
@@ -863,6 +912,16 @@
     } catch (err) { /* ignore quota / private mode */ }
   }
 
+  function restoredStep(data) {
+    var step = Number(data.step) || 1;
+    if (data.pageOrder === "r3-01") return Math.min(7, Math.max(1, step));
+    if (data.pageOrder === "r2-01") {
+      var map = { 1: 3, 2: 5, 3: 4, 4: 6, 5: 6, 6: 7 };
+      return map[step] || 1;
+    }
+    return 1;
+  }
+
   function restore() {
     try {
       var raw = localStorage.getItem(STORAGE);
@@ -875,13 +934,15 @@
           var modeRadio = document.querySelector("input[name=stressMode][value=\"" + v[k] + "\"]");
           if (modeRadio) modeRadio.checked = true;
         }
+        else if (k === "Lcomp") setVal("workL2", v[k]);
+        else if (k === "Lrel") setVal("workL1", v[k]);
         else if (k === "selectedWire") state.selectedWire = v[k];
         else if (k === "preferredD") state.preferredD = v[k] == null || v[k] === "" ? null : Number(v[k]);
         else if (k === "D") { /* applied after evaluate */ }
         else if ($(k)) setVal(k, v[k]);
       });
       if (data.step) {
-        state.step = data.pageOrder === "r2-01" ? data.step : Math.min(6, Number(data.step) + 1);
+        state.step = restoredStep(data);
       }
       if (data.mode) {
         var radio = document.querySelector("input[name=mode][value=\"" + data.mode + "\"]");
@@ -1095,25 +1156,33 @@
     setupSettings();
     setupHelp();
     document.querySelectorAll("input[name=mode]").forEach(function (r) {
-      r.addEventListener("change", syncModeUI);
+      r.addEventListener("change", function () {
+        syncModeUI();
+        alignLengths();
+        markFeasibilityStale();
+      });
     });
     ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb", "modeBPoint"].forEach(function (id) {
       $(id).addEventListener("input", function () {
+        if (id === "L1" || id === "L2" || id === "Lb" || id === "modeBPoint") syncLengths("duty");
         refreshLoadSummary();
         markFeasibilityStale();
       });
       $(id).addEventListener("change", function () {
+        if (id === "L1" || id === "L2" || id === "Lb" || id === "modeBPoint") syncLengths("duty");
         refreshLoadSummary();
         markFeasibilityStale();
       });
     });
-    ["Lcomp", "Lrel", "serviceTemp"].forEach(function (id) {
+    ["workL1", "workL2", "serviceTemp"].forEach(function (id) {
       $(id).addEventListener("input", function () {
+        if (id === "workL1" || id === "workL2") syncLengths("work");
         refreshLoadSummary();
         refreshGeomSummary();
         markFeasibilityStale();
       });
       $(id).addEventListener("change", function () {
+        if (id === "workL1" || id === "workL2") syncLengths("work");
         refreshLoadSummary();
         refreshGeomSummary();
         markFeasibilityStale();
@@ -1136,7 +1205,15 @@
     });
     $("useIndicativeRm").addEventListener("change", markFeasibilityStale);
     $("btnClearance").addEventListener("click", function () {
-      setVal("clearance", E.suggestedClearance(num("pocket")));
+      var pocket = num("pocket");
+      var guide = num("innerMin");
+      if (!(pocket > 0) && !(guide > 0)) {
+        showErr("errConstraints", ["Enter a pocket or a spring guide diameter before using the suggested clearance."]);
+        return;
+      }
+      showErr("errConstraints", []);
+      if (pocket > 0) setVal("clearance", E.suggestedClearance(pocket));
+      if (guide > 0) setVal("innerClearance", E.suggestedClearance(guide));
       refreshGeomSummary();
       markFeasibilityStale();
     });
@@ -1150,30 +1227,22 @@
       loadExample();
       markFeasibilityStale();
     });
-    $("btnCalculate").addEventListener("click", runCalculate);
-    $("passOnly").addEventListener("change", renderWires);
-    $("wireList").addEventListener("click", function (ev) {
-      var btn = ev.target.closest("[data-d]");
-      if (btn) selectWire(btn.getAttribute("data-d"));
-    });
-    $("heatmapScroll").addEventListener("click", function (ev) {
-      var btn = ev.target.closest("[data-wire][data-coil]");
-      if (btn) selectHeatmapCell(btn.getAttribute("data-wire"), btn.getAttribute("data-coil"));
-    });
-    $("Dslider").addEventListener("input", function (ev) {
-      updateOptimise(ev.target.value);
-    });
+    $("btnCheck").addEventListener("click", runCalculate);
     $("optWire").addEventListener("change", function () {
-      var d = Number($("optWire").value);
-      if (!(d > 0) || Math.abs(d - state.selectedWire) < 1e-9) return;
-      state.selectedWire = d;
-      state.preferredD = null;
-      var g = geometry();
-      if (g.useIndicativeRm) {
-        var irm = E.indicativeRm(g.materialId, d);
-        if (irm) setVal("Rm", Math.round(irm));
-      }
-      setupOptimise();
+      if (fillingWires) return;
+      renderOptimise();
+    });
+    $("optCandidates").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-opt-d]");
+      if (!btn || !state.screen) return;
+      var d = Number(btn.getAttribute("data-opt-d"));
+      var D = Number(btn.getAttribute("data-opt-D"));
+      var row = (state.screen.candidates || []).filter(function (item) {
+        return Math.abs(item.d - d) < 1e-9 && Math.abs(item.D - D) < 1e-4;
+      })[0];
+      if (!row) return;
+      applyCandidate(row);
+      renderOptimise();
     });
     document.querySelectorAll("input[name=stressMode]").forEach(function (r) {
       r.addEventListener("change", function () {
@@ -1181,10 +1250,9 @@
         markFeasibilityStale();
       });
     });
-    $("btnOptimise").addEventListener("click", autoOptimise);
     function onGradeInput(id) {
       setGrade(val(id));
-      if (state.step === 6 && state.design) renderResults();
+      if (state.step === 7 && state.design) renderResults();
       persist();
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
@@ -1226,7 +1294,7 @@
       if (state.step > 1) goTo(state.step - 1);
     });
     $("btnNext").addEventListener("click", function () {
-      if (state.step === 6) {
+      if (state.step === 7) {
         goTo(1);
         return;
       }

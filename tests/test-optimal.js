@@ -50,20 +50,19 @@ function noNumber(proposal) {
   return proposal
     && proposal.proposed === false
     && proposal.proposedDiameter == null
-    && proposal.objective == null
-    && proposal.searchLimitsAgreed === false
+    && proposal.objective === "lowest stress"
+    && proposal.searchLimitsAgreed === true
     && proposal.implemented === false
     && !/\d/.test(proposal.statement);
 }
 
 console.log("Blank pocket does not choose a diameter\n");
 
-assert(E.DIAMETER_PROPOSAL.implemented === false, "The proposal is not implemented");
-assert(E.DIAMETER_PROPOSAL.objective == null, "No optimisation objective is selected");
-assert(E.DIAMETER_PROPOSAL.searchLimitsAgreed === false, "Search limits are not agreed");
-["lowest stress", "smallest size", "least material", "best fatigue margin"].forEach(function (name) {
-  assert(E.DIAMETER_PROPOSAL.statement.indexOf(name) >= 0, "The listed and unchosen objective is named: " + name);
-});
+assert(E.DIAMETER_PROPOSAL.implemented === false, "A blank pocket still does not fill a diameter in");
+assert(E.DIAMETER_PROPOSAL.objective === "lowest stress", "The optimisation objective is lowest stress");
+assert(E.DIAMETER_PROPOSAL.searchLimitsAgreed === true, "The search uses the existing index limits");
+assert(E.DIAMETER_PROPOSAL.statement.indexOf("lowest stress") >= 0, "The statement names lowest stress");
+assert(!/\d/.test(E.DIAMETER_PROPOSAL.statement), "The blank-pocket statement contains no diameter");
 
 const blank = search({ DeMax: null, pocket: null, innerMin: null });
 assert(blank.ready && blank.passing > 0, "A blank pocket still runs the existing search");

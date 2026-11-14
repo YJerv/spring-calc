@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * SC-006 page contents. The wire page markup is fixed here so a later edit is visible.
- * Run: node tests/test-pages.js
+ * Page order after R3-01. Run: node tests/test-pages.js
  */
 "use strict";
 
@@ -31,101 +30,54 @@ function section(html, id) {
 }
 
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-const page1 = section(html, "step-1");
-const page2 = section(html, "step-2");
-const page3 = section(html, "step-3");
-
-const page4 = section(html, "step-4");
-
-console.log("Page order after the design-constraints swap\n");
-
-assert(page1.indexOf(">1. Design constraints<") >= 0, "The first page is design constraints");
-assert(page1.indexOf('id="pocket"') >= 0 && page1.indexOf('id="innerMin"') >= 0 && page1.indexOf('id="clearance"') >= 0,
-  "The first page has the diameter limits");
-assert(page1.indexOf(">Spring guide diameter<") >= 0 && page1.indexOf('id="innerClearance"') >= 0,
-  "The first page has a spring guide diameter and its clearance");
-assert(page1.indexOf("Used only when a spring guide diameter is entered.") >= 0,
-  "The guide clearance hint says when it is used");
-assert(page1.indexOf(">Application constraints<") >= 0, "Page 1 has an application constraints section");
-assert(page1.indexOf('id="Lcomp"') >= 0 && page1.indexOf('id="Lrel"') >= 0,
-  "Page 1 has the most compressed and most relaxed working lengths");
-assert(page1.indexOf('id="serviceTemp"') >= 0 && page1.indexOf(">°C<") >= 0,
-  "Page 1 has a service temperature in °C");
-assert(page3.indexOf('name="stressMode"') >= 0 && page3.indexOf('id="tauAllowDirect"') >= 0,
-  "The material page can enter a stress limit directly");
-assert(page3.indexOf('id="stressActive"') >= 0, "The material page states which stress limit is active");
-const page5 = section(html, "step-5");
-assert(page5.indexOf(">5. Optimization<") >= 0, "The mean-diameter page is labelled Optimization");
-assert(page5.indexOf('id="optWire"') >= 0 && page5.indexOf('id="Dslider"') >= 0,
-  "Optimization offers a wire-size picker and the diameter slider");
-assert(page1.indexOf("Suggested clearance is a typical workshop allowance") === -1,
-  "The suggested-clearance paragraph is not left on the constraints page");
-assert(page1.indexOf('data-help="diameters"') >= 0, "The diameter help button is on the first page");
-["L1", "ends", "grade", "wind", "material"].forEach(function (id) {
-  assert(page1.indexOf('id="' + id + '"') === -1, "The first page does not contain " + id);
-});
-
-assert(page2.indexOf(">2. Working loads and lengths<") >= 0, "The second page is working loads and lengths");
-assert(page2.indexOf('id="L1"') >= 0 && page2.indexOf('id="btnCalculate"') >= 0, "The second page has the loads and Calculate");
-assert(page2.indexOf('data-help="duty"') >= 0, "The working-loads help button is on the second page");
-assert(page2.indexOf('id="ends"') >= 0 && page2.indexOf('id="grade"') >= 0 && page2.indexOf('id="wind"') >= 0,
-  "Ends, grade and wind stay with the loads, before Calculate");
-["pocket", "innerMin", "clearance", "innerClearance", "material"].forEach(function (id) {
-  assert(page2.indexOf('id="' + id + '"') === -1, "The second page does not contain " + id);
-});
-
-console.log("\nMaterial is the third page\n");
-
-assert(page3.indexOf(">3. Material<") >= 0, "The third page is titled Material");
-assert(page3.indexOf('id="material"') >= 0, "The third page has the material choice");
-assert(page3.indexOf('id="G"') >= 0 && page3.indexOf('id="Rm"') >= 0, "The third page has G and Rm");
-["ends", "grade", "wind", "pocket", "innerMin", "clearance"].forEach(function (id) {
-  assert(page3.indexOf('id="' + id + '"') === -1, "The material page does not contain " + id);
-});
-
-console.log("\nEnds, grade and wind are off the wire page\n");
-
-["ends", "grade", "wind", "material", "pocket"].forEach(function (id) {
-  assert(page4.indexOf('id="' + id + '"') === -1, "The wire page does not contain " + id);
-});
-
-const wirePage = [
-  "<h2>4. Standard wire diameters</h2>",
-  'id="heatmapLegend"',
-  "Well within (τk ≤ 70 % of allowable)",
-  "Invalid (pocket, spring guide, index 4–16, solid length or coil count)",
-  'id="heatmapScroll"',
-  "Swipe the map sideways to see every standard wire.",
-  'id="passOnly"',
-  "Show passing sizes only",
-  'id="wireList"'
-];
-wirePage.forEach(function (phrase) {
-  assert(page4.indexOf(phrase) >= 0, "Wire page still contains: " + phrase.slice(0, 60));
-});
-const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
-assert(helpJs.indexOf("The heat map compares mean coil diameter D") >= 0, "The heat-map explanation is in the help window");
 const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
-const renderAt = appJs.indexOf("function renderHeatmap()");
-const renderFn = appJs.slice(renderAt, appJs.indexOf("function selectHeatmapCell"));
-assert(renderFn.indexOf("buildHeatmap(input)") >= 0, "The page builds the heat map from the current limits");
-assert(renderFn.indexOf("input.DeMax == null) {") === -1, "A blank pocket does not skip the heat map");
-assert(renderFn.indexOf("No pocket or spring guide is set") >= 0, "The open map explains the 1 mm to 100 mm range");
-assert(helpJs.indexOf("Tap a cell to select that D and d.") >= 0, "The heat-map instruction is in the help window");
-assert(page4.indexOf('id="wireIntro"') === -1, "The wire page has no D max summary box");
-const page6 = section(html, "step-6");
-assert(/<details class="notes result-fold" id="particularsFold">\s*<summary aria-expanded="false">Spring particulars<\/summary>/.test(page6),
+const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
+const pages = [1, 2, 3, 4, 5, 6, 7].map(function (n) { return section(html, "step-" + n); });
+
+console.log("Seven-page order\n");
+
+assert(pages[0].indexOf(">1. Overview<") >= 0, "Page 1 is the overview");
+assert(pages[1].indexOf(">2. Design mode<") >= 0 && pages[1].indexOf('name="mode"') >= 0, "Page 2 chooses two points or point and rate");
+assert(pages[2].indexOf(">3. Application constraints<") >= 0, "Page 3 is application constraints");
+assert(pages[2].indexOf("Application constraints and design constraints are the same") >= 0, "The heading says the two names once");
+assert(pages[2].indexOf(">Pocket and guide diameters<") >= 0 && pages[2].indexOf(">Working lengths<") >= 0, "Pocket, guide and working lengths are separate blocks");
+assert(pages[2].indexOf('id="pocketFold"') >= 0 && pages[2].indexOf('id="lengthFold"') >= 0, "Those blocks collapse");
+assert(pages[2].indexOf('id="workL1"') >= 0 && pages[2].indexOf('id="workL2"') >= 0, "Working lengths are L1 and L2");
+assert(pages[2].indexOf("Blank uses the lighter") === -1 && pages[2].indexOf("Blank uses the loaded") === -1, "The old blank-length sentence is gone");
+assert(pages[2].indexOf('id="serviceTemp"') >= 0 && pages[2].indexOf(">°C<") >= 0, "Service temperature stays on this page");
+assert(pages[2].indexOf('id="btnClearance"') > pages[2].indexOf('id="innerClearance"'), "Suggested clearance sits with the guide inputs");
+assert(pages[2].indexOf("same workshop allowance for the pocket and for the guide") >= 0, "The button is described for both clearances");
+assert(appJs.indexOf("suggestedClearance(pocket)") >= 0 && appJs.indexOf("suggestedClearance(guide)") >= 0, "The button fills both clearances");
+assert(appJs.indexOf("Continue without those limits?") >= 0, "An empty constraints page warns before continuing");
+assert(pages[3].indexOf(">4. Design options<") >= 0, "Page 4 is design options");
+assert(pages[3].indexOf('id="ends"') >= 0 && pages[3].indexOf('id="grade"') >= 0 && pages[3].indexOf('id="wind"') >= 0, "Ends, grade and wind are design options");
+assert(pages[3].indexOf('id="material"') >= 0 && pages[3].indexOf('name="stressMode"') >= 0 && pages[3].indexOf('id="tauAllowDirect"') >= 0, "Material and the stress limit moved here");
+assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");
+assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<") === -1, "Calculate has been renamed");
+assert(pages[4].indexOf('id="loadSummary"') === -1, "Rate, free length and maximum load are not repeated under Check");
+assert(pages[4].indexOf('data-help="check"') >= 0, "The Check explanation is an information window");
+assert(pages[5].indexOf(">6. Optimization<") >= 0 && pages[5].indexOf('id="optWire"') >= 0 && pages[5].indexOf('id="optCandidates"') >= 0, "Page 6 is Optimization with a wire picker and candidates");
+assert(pages[5].indexOf("heatmap") === -1 && html.indexOf('id="heatmapScroll"') === -1, "The heat map is gone");
+assert(pages[6].indexOf(">7. Results<") >= 0, "Page 7 is results");
+assert(html.indexOf('id="p7"') >= 0, "The progress marks seven pages");
+
+console.log("\nResults cards\n");
+
+assert(/<details class="notes result-fold" id="particularsFold">\s*<summary aria-expanded="false">Spring particulars<\/summary>/.test(pages[6]),
   "Spring particulars are collapsed by default");
-assert(page6.indexOf('id="particularsFold" open') === -1, "Spring particulars are not open on arrival");
-["loadFold", "tolFold", "springFold"].forEach(function (id) {
-  assert(page6.indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
+assert(pages[6].indexOf('id="particularsFold" open') === -1, "Spring particulars are not open on arrival");
+["loadFold", "tolFold", "exportFold", "springFold"].forEach(function (id) {
+  assert(pages[6].indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
 });
-const appJsFolds = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
-assert(appJsFolds.indexOf('summary.setAttribute("aria-expanded"') >= 0, "Result cards expose aria-expanded");
-assert(appJsFolds.indexOf('card.id === "loadFold"') >= 0 && appJsFolds.indexOf("renderLoadGraph($(\"graphSvg\")") >= 0,
-  "Opening the load card redraws the graph");
-assert(page6.indexOf('id="gradeResult"') === -1, "The results page has no tolerance grade menu");
-assert(page4.indexOf('id="heatmapScroll"') >= 0, "The wire matrix stays");
+assert(pages[6].indexOf(">Drawing export<") >= 0, "The export card is named Drawing export");
+assert(pages[6].indexOf('id="exportFold"') < pages[6].indexOf('id="springFold"'), "The scaled side view sits below the drawing export");
+assert(pages[6].indexOf(">Scaled side view at free length<") >= 0, "The side view keeps its own heading at the bottom");
+assert(appJs.indexOf('summary.setAttribute("aria-expanded"') >= 0, "Result cards expose aria-expanded");
+assert(appJs.indexOf('card.id === "loadFold"') >= 0 && appJs.indexOf("renderLoadGraph($(\"graphSvg\")") >= 0, "Opening the load card redraws the graph");
+assert(pages[6].indexOf('id="gradeResult"') === -1, "The results page has no tolerance grade menu");
+assert(html.indexOf("If your phone is set to dark mode, some screens may not display correctly.") >= 0, "Settings uses the short dark-mode line");
+assert(html.indexOf("Two phones can therefore look different") === -1, "Settings no longer explains Appearance");
+assert(helpJs.indexOf("HELP_DIAMETER_IMAGE") >= 0, "The diameter diagram has a hook for a replacement image");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

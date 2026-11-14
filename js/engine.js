@@ -689,6 +689,190 @@
     return { bounds: bounds, rows: best ? [best] : [], best: best, wires: wires };
   }
 
+  /* EN 13906-1 increase of the outside diameter when the spring is deflected by s.
+     Mean diameter grows by the same amount, so the inside diameter grows with it. */
+  function coilDiameterIncrease(D, d, s) {
+    D = Number(D);
+    d = Number(d);
+    s = Number(s);
+    if (!(D > 0) || !isFinite(d) || !isFinite(s)) return null;
+    return 0.1 * (s * s - 0.8 * s * d - 0.2 * d * d) / D;
+  }
+
+  function compressedClearance(ev, input) {
+    input = input || {};
+    var flags = [];
+    if (!ev) return { delta: null, outside: null, inside: null, flags: flags };
+    var s = ev.s2 != null && isFinite(Number(ev.s2)) ? Number(ev.s2) : null;
+    if (s == null && ev.L0 != null && ev.LmaxLoad != null) s = Number(ev.L0) - Number(ev.LmaxLoad);
+    var delta = coilDiameterIncrease(ev.D, ev.d, s);
+    if (delta == null) return { delta: null, outside: null, inside: null, flags: flags };
+    var outside = ev.De + delta;
+    var inside = ev.Di + delta;
+    var pocket = input.pocket != null && input.pocket !== "" ? Number(input.pocket) : null;
+    var clearance = input.clearance != null && input.clearance !== "" ? Number(input.clearance) : 0;
+    if (pocket != null && isFinite(pocket) && pocket > 0) {
+      var need = clearance > 0 ? clearance : 0;
+      if (pocket - outside + 1e-6 < need) {
+        flags.push("Compressed outside diameter leaves less than the pocket clearance.");
+      }
+    }
+    var guide = input.innerMin != null && input.innerMin !== "" ? Number(input.innerMin) : null;
+    var guideClear = input.innerClearance != null && input.innerClearance !== "" ? Number(input.innerClearance) : 0;
+    if (guide != null && isFinite(guide) && guide > 0) {
+      var needG = guideClear > 0 ? guideClear : 0;
+      if (inside - guide + 1e-6 < needG) {
+        flags.push("Compressed inside diameter leaves less than the guide clearance.");
+      }
+    }
+    return { delta: delta, outside: outside, inside: inside, flags: flags };
+  }
+
+  var NO_OPTIONS = "No options available – relax the application constraints (a larger or a smaller spring), alter the duty or select another material.";
+
+  function deflectionPercents(ev) {
+    var out = [];
+    if (ev.deflPct1 != null && isFinite(ev.deflPct1)) out.push(ev.deflPct1);
+    if (ev.deflPct2 != null && isFinite(ev.deflPct2)) out.push(ev.deflPct2);
+    return out;
+  }
+
+  function percentsInBand(pcts, lo, hi) {
+    if (!pcts.length) return false;
+    for (var i = 0; i < pcts.length; i++) {
+      if (pcts[i] < lo - 1e-6 || pcts[i] > hi + 1e-6) return false;
+    }
+    return true;
+  }
+
+  function stressWithin(ev, factor) {
+    if (!(ev.tauAllow > 0)) return false;
+    var limit = ev.tauAllow * factor;
+    if (!(ev.tauK <= limit + 1e-6)) return false;
+    if (ev.tauKcomp != null && isFinite(ev.tauKcomp) && !(ev.tauKcomp <= limit + 1e-6)) return false;
+    return true;
+  }
+
+  function diameterSamples(bounds) {
+    var values = steppedValues(bounds.Dmin, bounds.Dmax, 1);
+    function push(D) {
+      if (!(D > 0)) return;
+      for (var i = 0; i < values.length; i++) {
+        if (Math.abs(values[i] - D) < 1e-6) return;
+      }
+      values.push(D);
+    }
+    push(bounds.Dmin);
+    push(bounds.Dmax);
+    values.sort(function (a, b) { return a - b; });
+    return values;
+  }
+
+  function searchOptimisation(input) {
+    input = input || {};
+    var wires = input.wires || STANDARD_WIRES;
+    var all = [];
+    var sawOverTravel = false;
+    var anyWithinRaisedStress = false;
+    var i;
+    var j;
+    for (i = 0; i < wires.length; i++) {
+      var d = wires[i];
+      var rm = input.Rm;
+      if (input.useIndicativeRm && input.materialId) {
+        var irm = indicativeRm(input.materialId, d);
+        if (irm) rm = irm;
+      }
+      var bounds = diameterBounds(d, input.DeMax, springGuideLimit(input));
+      if (!bounds.valid) continue;
+      var diameters = diameterSamples(bounds);
+      for (j = 0; j < diameters.length; j++) {
+        var ev = evaluateDesign(Object.assign({}, input, { d: d, D: diameters[j], Rm: rm }));
+        if (!ev.ok) continue;
+        var compressed = ev.deflPct2 != null ? ev.deflPct2 : null;
+        if (compressed != null && compressed > 100 + 1e-6) sawOverTravel = true;
+        if (!geometricOk(ev)) continue;
+        ev.deflPercents = deflectionPercents(ev);
+        ev.growth = compressedClearance(ev, input);
+        if (stressWithin(ev, 1.2)) anyWithinRaisedStress = true;
+        all.push(ev);
+      }
+    }
+    var tiers = [
+      { id: "strict", lo: 30, hi: 70, factor: 1, warning: "" },
+      {
+        id: "deflection",
+        lo: 20,
+        hi: 80,
+        factor: 1,
+        warning: "Working deflection is outside 30–70 % of available travel. These candidates are between 20 % and 80 %."
+      },
+      {
+        id: "stress",
+        lo: 20,
+        hi: 80,
+        factor: 1.2,
+        warning: "No candidate met the stress limit inside the deflection band. These candidates allow a stress limit 20 % higher than the one set."
+      }
+    ];
+    var tier = null;
+    var pool = [];
+    for (i = 0; i < tiers.length; i++) {
+      pool = [];
+      for (j = 0; j < all.length; j++) {
+        if (percentsInBand(all[j].deflPercents, tiers[i].lo, tiers[i].hi) && stressWithin(all[j], tiers[i].factor)) {
+          pool.push(all[j]);
+        }
+      }
+      if (pool.length) {
+        tier = tiers[i];
+        break;
+      }
+    }
+    if (!tier) {
+      return {
+        level: "fail",
+        tier: null,
+        warning: "",
+        message: NO_OPTIONS,
+        hardBreach: sawOverTravel || !anyWithinRaisedStress,
+        best: null,
+        perDiameter: [],
+        candidates: []
+      };
+    }
+    function stressOf(ev) {
+      return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
+    }
+    pool.sort(function (a, b) {
+      var ds = stressOf(a) - stressOf(b);
+      if (Math.abs(ds) > 1e-6) return ds;
+      return a.d - b.d;
+    });
+    var best = pool[0];
+    var byD = {};
+    var order = [];
+    for (i = 0; i < pool.length; i++) {
+      var key = pool[i].D.toFixed(3);
+      if (!byD[key] || stressOf(pool[i]) < stressOf(byD[key]) - 1e-9) {
+        if (!byD[key]) order.push(key);
+        byD[key] = pool[i];
+      }
+    }
+    var perDiameter = order.map(function (key) { return byD[key]; });
+    perDiameter.sort(function (a, b) { return a.D - b.D; });
+    return {
+      level: tier.id === "strict" ? "pass" : "warning",
+      tier: tier.id,
+      warning: tier.warning,
+      message: tier.id === "strict" ? "" : tier.warning,
+      hardBreach: false,
+      best: best,
+      perDiameter: perDiameter,
+      candidates: pool
+    };
+  }
+
   function geometricOk(ev) {
     if (!ev || !ev.ok) return false;
     for (var i = 0; i < ev.reasons.length; i++) {
@@ -927,10 +1111,10 @@
 
   var DIAMETER_PROPOSAL = {
     implemented: false,
-    objective: null,
+    objective: "lowest stress",
     proposedDiameter: null,
-    searchLimitsAgreed: false,
-    statement: "No diameter is proposed. A blank pocket does not choose one, because the optimisation objective and the search limits are not agreed. The examples listed and not chosen are lowest stress, smallest size, least material and best fatigue margin. An inside-diameter limit is still applied when one is entered. Type a pocket diameter to set an outside limit. Nothing was filled in."
+    searchLimitsAgreed: true,
+    statement: "No pocket diameter is filled in. A blank pocket does not choose an outside limit. The optimisation page uses lowest stress inside the existing index limits. An inside-diameter limit is still applied when one is entered. Nothing was filled in."
   };
 
   function diameterProposalFor(input) {
@@ -938,8 +1122,8 @@
     return {
       proposed: false,
       proposedDiameter: null,
-      objective: null,
-      searchLimitsAgreed: false,
+      objective: DIAMETER_PROPOSAL.objective,
+      searchLimitsAgreed: DIAMETER_PROPOSAL.searchLimitsAgreed,
       implemented: false,
       statement: DIAMETER_PROPOSAL.statement
     };
@@ -1175,6 +1359,10 @@
     autoOptimise: autoOptimise,
     nearbyStandardWires: nearbyStandardWires,
     serviceHardOk: serviceHardOk,
+    coilDiameterIncrease: coilDiameterIncrease,
+    compressedClearance: compressedClearance,
+    searchOptimisation: searchOptimisation,
+    NO_OPTIONS: NO_OPTIONS,
     geometricOk: geometricOk,
     heatmapBand: heatmapBand,
     steppedValues: steppedValues,
