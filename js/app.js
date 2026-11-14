@@ -414,7 +414,10 @@
     $("btnNext").textContent = step === 7 ? "Start again" : (step === 6 ? "Show results" : "Next");
     if (step === 5) alignLengths();
     if (step === 6) renderOptimise();
-    if (step === 7) renderResults();
+    if (step === 7) {
+      collapseReferenceFolds();
+      renderResults();
+    }
     window.scrollTo(0, 0);
     persist();
   }
@@ -883,8 +886,17 @@
     if (summary) summary.setAttribute("aria-expanded", card.open ? "true" : "false");
   }
 
+  function collapseReferenceFolds() {
+    ["particularsFold", "tolFold"].forEach(function (id) {
+      var card = $(id);
+      if (!card) return;
+      card.open = false;
+      syncResultFold(card);
+    });
+  }
+
   function bindResultFolds() {
-    document.querySelectorAll("#step-6 details.result-fold").forEach(function (card) {
+    document.querySelectorAll("#step-7 details.result-fold").forEach(function (card) {
       if (card.getAttribute("data-bound") === "1") {
         syncResultFold(card);
         return;

@@ -75,7 +75,12 @@ assert(/<details class="notes result-fold" id="particularsFold">\s*<summary aria
 assert(pages[6].indexOf('id="particularsFold" open') === -1, "Spring particulars are not open on arrival");
 assert(pages[6].indexOf('id="particularsFold"') < pages[6].indexOf('id="tolFold"'),
   "Spring particulars come before manufacturing tolerances");
-["loadFold", "tolFold", "exportFold", "springFold"].forEach(function (id) {
+assert(/<details class="notes result-fold" id="tolFold">\s*<summary aria-expanded="false">Manufacturing tolerances \(BS EN 15800\)<\/summary>/.test(pages[6]),
+  "Manufacturing tolerances are collapsed by default");
+assert(pages[6].indexOf('id="tolFold" open') === -1, "Manufacturing tolerances are not open on arrival");
+assert(appJs.indexOf("function collapseReferenceFolds") >= 0 && appJs.indexOf('["particularsFold", "tolFold"]') >= 0,
+  "Showing Results closes particulars and tolerances again");
+["loadFold", "exportFold", "springFold"].forEach(function (id) {
   assert(pages[6].indexOf('id="' + id + '" open') >= 0, id + " starts expanded");
 });
 assert(pages[6].indexOf(">Drawing export<") >= 0, "The export card is named Drawing export");
