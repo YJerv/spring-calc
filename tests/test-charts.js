@@ -327,6 +327,26 @@ labelBoxes.forEach(function (box) {
   assert(nearest >= 4, "Label “" + box.text + "” stays 4px clear of the lines (" + nearest.toFixed(1) + "px)");
 });
 
+console.log("\nStress against mean diameter\n");
+
+const tradeInput = {
+  G: 81500, Rm: 1800, tauFactor: 0.5, R: 5, L0: 60,
+  L1: 50, F1: 50, L2: 35, F2: 125, Fmax: 125, LmaxLoad: 35,
+  DeMax: 18.5, ends: "closed_ground", d: 2
+};
+const tradeRows = [12, 14, 16].map(function (D) {
+  return E.evaluateDesign(Object.assign({}, tradeInput, { D: D }));
+});
+const trade = fakeSvg();
+C.renderTradeoff(trade, tradeRows, 14);
+assert(trade.innerHTML.indexOf("Stress % of allowable") >= 0, "The coil graph names the stress curve");
+assert(trade.innerHTML.indexOf("Solid length Lc") >= 0, "The coil graph names the solid-length curve");
+assert(trade.innerHTML.indexOf("Mean coil diameter D (mm)") >= 0, "The coil graph names the mean-diameter axis");
+assert(trade.innerHTML.indexOf("<polyline") >= 0, "The coil graph draws the stress curve");
+assert(/stroke-dasharray/.test(trade.innerHTML), "The coil graph draws the stress-limit line");
+const markerAt = trade.innerHTML.indexOf('stroke="var(--chart-ink)"');
+assert(markerAt >= 0, "The coil graph marks the selected diameter");
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

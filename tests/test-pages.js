@@ -58,6 +58,11 @@ assert(pages[4].indexOf('id="loadSummary"') === -1, "Rate, free length and maxim
 assert(pages[4].indexOf('data-help="check"') >= 0, "The Check explanation is an information window");
 assert(pages[5].indexOf(">6. Optimization<") >= 0 && pages[5].indexOf('id="optWire"') >= 0 && pages[5].indexOf('id="optCandidates"') >= 0, "Page 6 is Optimization with a wire picker and candidates");
 assert(pages[5].indexOf("heatmap") === -1 && html.indexOf('id="heatmapScroll"') === -1, "The heat map is gone");
+assert(pages[5].indexOf('id="optCandidates"') < pages[5].indexOf('id="btnOptimise"'), "Optimise sits below the wire list");
+assert(pages[5].indexOf(">Optimise<") >= 0 && pages[5].indexOf('id="Dslider"') >= 0 && pages[5].indexOf('id="tradeoffSvg"') >= 0, "The diameter slider and stress graph are on Optimization");
+assert(pages[5].indexOf('id="Dslider"') < pages[5].indexOf('id="tradeoffSvg"'), "The stress graph sits under the slider");
+assert(appJs.indexOf("C.renderTradeoff") >= 0 && appJs.indexOf("paintCoil") >= 0, "Moving the slider redraws the stress graph");
+assert(appJs.indexOf("wires: [d]") >= 0, "Optimise searches mean diameters for the selected wire");
 assert(pages[6].indexOf(">7. Results<") >= 0, "Page 7 is results");
 assert(html.indexOf('id="p7"') >= 0, "The progress marks seven pages");
 

@@ -381,6 +381,11 @@ assert(found.perDiameter.every(function (row) {
   var stress = row.tauKcomp != null ? Math.max(row.tauK, row.tauKcomp) : row.tauK;
   return bestStress <= stress + 1e-6;
 }), "The optimum is the lowest stress among the per-diameter candidates");
+const oneWire = E.searchOptimisation(Object.assign({}, example, { wires: [2] }));
+assert(oneWire.best && Math.abs(oneWire.best.d - 2) < 1e-9, "Optimising one standard wire keeps that wire");
+assert(oneWire.perDiameter.length > 0 && oneWire.perDiameter.every(function (row) {
+  return Math.abs(row.d - 2) < 1e-9;
+}), "Each diameter for that wire uses the selected wire");
 const tight = E.searchOptimisation(Object.assign({}, example, { L1: 50, F1: 50, L2: 1, F2: 125, L0: 60, R: 5, Fmax: 125, LmaxLoad: 1 }));
 assert(tight.level === "fail" && tight.best == null && tight.message.indexOf("No options available") === 0,
   "An impossible compressed length reports that no options are available");

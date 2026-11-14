@@ -305,6 +305,19 @@
         <div class="wire-list" id="optCandidates"></div>
         <p class="lead hint">Each row is labelled with the mean diameter, the wire and the stress. Colour supports the labels and is not the only cue.</p>
         <p id="optClearance" class="lead"></p>
+        <div class="btn-row no-print">
+          <button type="button" class="btn gold" id="btnOptimise">Optimise</button>
+        </div>
+        <div class="field">
+          <label for="Dslider">Mean coil diameter D = <span id="Dlabel">—</span> mm</label>
+          <input id="Dslider" type="range" min="4" max="16" step="0.01">
+        </div>
+        <div id="coilStatus"></div>
+        <div class="metrics" id="coilMetrics"></div>
+        <div class="chart-wrap">
+          <svg id="tradeoffSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <p class="lead hint">Stress is the curve labelled “Stress % of allowable”. The dashed stress line is the active limit. Solid length is the curve labelled “Solid length Lc”. The dashed line labelled L2 is the shorter working length; solid length must stay below it. Colour supports the labels and is not the only cue.</p>
         <div class="error" id="err4"></div>
       </div>
     </section>

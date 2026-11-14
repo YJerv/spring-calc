@@ -640,7 +640,11 @@
   function renderOptimise() {
     var input = wireInputBase();
     var same = state.screen && state.feasibility && state.feasibility.signature === feasibilitySignature();
-    if (!same) state.design = null;
+    if (!same) {
+      state.design = null;
+      state.coilChosen = false;
+      state.coilNote = "";
+    }
     var screen = same ? state.screen : E.searchOptimisation(input);
     state.screen = screen;
     var status = $("optStatus");
@@ -699,8 +703,123 @@
           "<div class=\"meta\">τk " + E.fmt(candidateStress(row), 1) + " N/mm² · L1 " +
           (row.deflPct1 == null ? "—" : E.fmt(row.deflPct1, 0) + "%") + " · L2 " +
           (row.deflPct2 == null ? "—" : E.fmt(row.deflPct2, 0) + "%") + esc(flag) + "</div></button>";
-      }).join("");
+        }).join("");
     }
+    setupCoilControls(false);
+  }
+
+  function activeOptWire() {
+    var sel = $("optWire");
+    if (sel && sel.value !== "" && Number(sel.value) > 0) return Number(sel.value);
+    if (state.selectedWire > 0) return state.selectedWire;
+    if (state.screen && state.screen.best) return state.screen.best.d;
+    return null;
+  }
+
+  function bandNote(ev) {
+    if (!ev || !ev.ok || !E.geometricOk(ev)) return "";
+    var pcts = [];
+    if (ev.deflPct1 != null && isFinite(ev.deflPct1)) pcts.push(ev.deflPct1);
+    if (ev.deflPct2 != null && isFinite(ev.deflPct2)) pcts.push(ev.deflPct2);
+    function inBand(lo, hi) {
+      return pcts.length && pcts.every(function (p) { return p >= lo - 1e-6 && p <= hi + 1e-6; });
+    }
+    var limit = ev.tauAllow;
+    var stress = candidateStress(ev);
+    var within = limit > 0 && stress <= limit + 1e-6;
+    var raised = limit > 0 && stress <= limit * 1.2 + 1e-6;
+    if (inBand(30, 70) && within) return "";
+    if (inBand(20, 80) && within) {
+      return "Working deflection is outside 30–70 % of available travel. These candidates are between 20 % and 80 %.";
+    }
+    if (inBand(20, 80) && raised) {
+      return "No candidate met the stress limit inside the deflection band. These candidates allow a stress limit 20 % higher than the one set.";
+    }
+    return "";
+  }
+
+  function setupCoilControls(fromUser) {
+    var d = activeOptWire();
+    var slider = $("Dslider");
+    var svg = $("tradeoffSvg");
+    if (!slider || !svg || !(d > 0)) return;
+    var input = Object.assign(wireInputBase(), { d: d, Rm: num("Rm") });
+    var scan = E.scanDiameters(input, 80);
+    state.coilScan = scan;
+    if (!scan.bounds.valid) {
+      svg.innerHTML = "";
+      if ($("coilMetrics")) $("coilMetrics").innerHTML = "";
+      return;
+    }
+    slider.min = scan.bounds.Dmin.toFixed(3);
+    slider.max = scan.bounds.Dmax.toFixed(3);
+    slider.step = "0.01";
+    var startD = null;
+    if (state.design && Math.abs(state.design.d - d) < 1e-9) startD = state.design.D;
+    else if (state.preferredD != null) startD = state.preferredD;
+    else startD = scan.bounds.Dmax;
+    startD = Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, Number(startD)));
+    slider.value = startD;
+    paintCoil(startD, fromUser);
+  }
+
+  function paintCoil(D, fromUser) {
+    var d = activeOptWire();
+    if (!(d > 0)) return;
+    var input = Object.assign(wireInputBase(), { d: d, D: Number(D), Rm: num("Rm") });
+    var ev = E.evaluateDesign(input);
+    ev.wind = val("wind");
+    ev.materialId = val("material");
+    ev.materialName = E.materialById(val("material")).shortName;
+    ev.growth = E.compressedClearance(ev, input);
+    state.selectedWire = d;
+    state.preferredD = ev.D;
+    state.design = ev;
+    if (fromUser || state.coilChosen) {
+      state.coilChosen = true;
+      state.coilNote = bandNote(ev);
+    }
+    if ($("Dlabel")) $("Dlabel").textContent = E.fmt(ev.D, 3);
+    if ($("tradeoffSvg")) C.renderTradeoff($("tradeoffSvg"), state.coilScan ? state.coilScan.rows : [], ev.D);
+    if ($("coilMetrics")) {
+      $("coilMetrics").innerHTML = [
+        metric("Index w", E.fmt(ev.w, 2)),
+        metric("Active coils n", E.fmt(ev.n, 2)),
+        metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " N/mm²"),
+        metric("% of allowable", E.fmt(ev.pctAllow, 1) + " %"),
+        metric("Solid length Lc", E.fmt(ev.Lc, 2) + " mm"),
+        metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
+      ].join("");
+    }
+    persist();
+  }
+
+  function optimiseCoil() {
+    var d = activeOptWire();
+    if (!(d > 0)) {
+      showErr("err4", ["Pick a standard wire, then optimise its mean diameter."]);
+      return;
+    }
+    var found = E.searchOptimisation(Object.assign(wireInputBase(), { wires: [d], Rm: num("Rm") }));
+    if (!found.best) {
+      showErr("err4", [found.message || E.NO_OPTIONS]);
+      if ($("coilStatus")) {
+        $("coilStatus").innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(found.message || E.NO_OPTIONS) + "</div>";
+      }
+      return;
+    }
+    showErr("err4", []);
+    state.coilChosen = true;
+    state.coilNote = found.warning || "";
+    applyCandidate(found.best);
+    if ($("coilStatus")) {
+      var tone = found.level === "pass" ? "pass" : "warning";
+      $("coilStatus").innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
+        (found.level === "pass" ? "Optimum for this wire" : "Optimum for this wire, with a warning") +
+        "</strong> — D " + E.fmt(found.best.D, 2) + " mm, τk " + E.fmt(candidateStress(found.best), 1) + " N/mm²." +
+        (found.warning ? " " + esc(found.warning) : "") + "</div>";
+    }
+    setupCoilControls(false);
   }
 
   function metric(k, v) {
@@ -794,13 +913,14 @@
     state.drawing = model;
     renderToleranceTable(model);
     var banner = $("resultBanner");
-    var tierWarning = state.screen && state.screen.level === "warning" && state.screen.warning;
+    var tierText = state.coilChosen ? (state.coilNote || "") : (state.screen && state.screen.level === "warning" ? state.screen.warning : "");
+    var tierWarning = !!tierText;
     banner.className = "status-banner " + (tierWarning ? "warning" : ev.status);
     banner.innerHTML = "<strong>" + (tierWarning ? "WARNING" : ev.status.toUpperCase()) + "</strong> — " +
       (ev.pass
         ? "Screening checks are satisfied for static design at the stated allowable stress."
         : ev.reasons.join(" ")) +
-      (tierWarning ? "<br>" + esc(state.screen.warning) : "") +
+      (tierWarning ? "<br>" + esc(tierText) : "") +
       (ev.warnings.length ? "<br>" + ev.warnings.join(" ") : "");
 
     C.renderLoadGraph($("graphSvg"), ev);
@@ -1232,6 +1352,10 @@
       if (fillingWires) return;
       renderOptimise();
     });
+    $("Dslider").addEventListener("input", function (ev) {
+      paintCoil(ev.target.value, true);
+    });
+    $("btnOptimise").addEventListener("click", optimiseCoil);
     $("optCandidates").addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-opt-d]");
       if (!btn || !state.screen) return;
