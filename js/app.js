@@ -767,19 +767,43 @@
       if ($("coilMetrics")) $("coilMetrics").innerHTML = "";
       return;
     }
-    slider.min = scan.bounds.Dmin.toFixed(3);
-    slider.max = scan.bounds.Dmax.toFixed(3);
-    slider.step = "0.01";
     var startD = null;
     if (state.design && Math.abs(state.design.d - d) < 1e-9) startD = state.design.D;
     else if (state.preferredD != null) startD = state.preferredD;
     else startD = scan.bounds.Dmax;
-    startD = Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, Number(startD)));
+    var span = E.passingDiameterSpan(scan.rows, startD);
+    var lo = scan.bounds.Dmin;
+    var hi = scan.bounds.Dmax;
+    if (span) { lo = span.min; hi = span.max; }
+    lo = Math.ceil(lo * 1000 - 1e-9) / 1000;
+    hi = Math.floor(hi * 1000 + 1e-9) / 1000;
+    if (span && Number(startD) >= span.min - 1e-6 && Number(startD) <= span.max + 1e-6) {
+      if (Number(startD) < lo) lo = Number(Number(startD).toFixed(3));
+      if (Number(startD) > hi) hi = Number(Number(startD).toFixed(3));
+    }
+    if (!(hi >= lo)) {
+      var mid = Number((Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, Number(startD)))).toFixed(3));
+      lo = mid;
+      hi = mid;
+    }
+    state.coilSpan = { min: lo, max: hi };
+    slider.min = lo.toFixed(3);
+    slider.max = hi.toFixed(3);
+    slider.step = "0.01";
+    startD = Math.min(hi, Math.max(lo, Number(startD)));
     slider.value = startD;
     paintCoil(startD, fromUser);
   }
 
+  function clampCoilD(D) {
+    var n = Number(D);
+    var span = state.coilSpan;
+    if (!span || !isFinite(n)) return n;
+    return Math.min(span.max, Math.max(span.min, n));
+  }
+
   function paintCoil(D, fromUser) {
+    D = clampCoilD(D);
     var d = activeOptWire();
     if (!(d > 0)) return;
     var input = Object.assign(wireInputBase(), { d: d, D: Number(D), Rm: num("Rm") });
@@ -1441,7 +1465,9 @@
       renderOptimise();
     });
     $("Dslider").addEventListener("input", function (ev) {
-      paintCoil(ev.target.value, true);
+      var clamped = clampCoilD(ev.target.value);
+      if (Math.abs(Number(ev.target.value) - clamped) > 5e-4) ev.target.value = clamped;
+      paintCoil(clamped, true);
     });
     $("btnOptimise").addEventListener("click", optimiseCoil);
     $("optCandidates").addEventListener("click", function (ev) {

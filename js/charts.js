@@ -290,6 +290,19 @@
     }
 
     var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" })];
+    var span = E.passingDiameterSpan ? E.passingDiameterSpan(rows, currentD != null ? currentD : Dmax) : null;
+    if (span && span.failBands) {
+      span.failBands.forEach(function (band) {
+        var x1 = xOf(band.from);
+        var x2 = xOf(band.to);
+        if (x2 < x1) { var swap = x1; x1 = x2; x2 = swap; }
+        if (x2 - x1 < 0.4) return;
+        parts.push(empty("rect", {
+          x: x1.toFixed(1), y: pad.t, width: (x2 - x1).toFixed(1), height: H - pad.t - pad.b,
+          fill: "var(--fail)", opacity: 0.18, "data-fail-band": "1"
+        }));
+      });
+    }
     var stressLabelX = 13;
     var stressLabelY = pad.t + (H - pad.t - pad.b) / 2;
     parts.push(el("text", {

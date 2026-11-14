@@ -353,6 +353,32 @@ assert(/stroke-dasharray/.test(trade.innerHTML), "The coil graph draws the stres
 const markerAt = trade.innerHTML.indexOf('stroke="var(--chart-ink)"');
 assert(markerAt >= 0, "The coil graph marks the selected diameter");
 
+const bandRows = [
+  { D: 10, pctAllow: 140, Lc: 40, LmaxLoad: 35 },
+  { D: 12, pctAllow: 90, Lc: 30, LmaxLoad: 35 },
+  { D: 14, pctAllow: 80, Lc: 28, LmaxLoad: 35 },
+  { D: 16, pctAllow: 95, Lc: 26, LmaxLoad: 35 },
+  { D: 18, pctAllow: 130, Lc: 24, LmaxLoad: 35 }
+];
+const bandSpan = E.passingDiameterSpan(bandRows, 14);
+assert(Math.abs(bandSpan.min - 11.6) < 1e-6, "The left stop is the first of the stress and solid-length crossings", bandSpan.min);
+assert(Math.abs(bandSpan.max - (16 + (5 / 35) * 2)) < 1e-6, "The right stop is where stress crosses 100%", bandSpan.max);
+const otherIsland = [
+  { D: 10, pctAllow: 80, Lc: 20, LmaxLoad: 35 },
+  { D: 12, pctAllow: 130, Lc: 20, LmaxLoad: 35 },
+  { D: 14, pctAllow: 70, Lc: 20, LmaxLoad: 35 },
+  { D: 16, pctAllow: 75, Lc: 20, LmaxLoad: 35 },
+  { D: 18, pctAllow: 140, Lc: 20, LmaxLoad: 35 }
+];
+const kept = E.passingDiameterSpan(otherIsland, 15);
+assert(kept.min >= 12 && kept.max <= 18 && kept.min <= 15 && kept.max >= 15, "A split passing range keeps the one around the current diameter", kept.min + "–" + kept.max);
+const shaded = fakeSvg();
+C.renderTradeoff(shaded, bandRows, 14);
+const bandAt = shaded.innerHTML.indexOf('data-fail-band="1"');
+const curveAt = shaded.innerHTML.indexOf("<polyline");
+assert(bandAt >= 0 && bandAt < curveAt, "Failing diameters are shaded behind the curves");
+assert(shaded.innerHTML.indexOf('fill="var(--fail)"') >= 0 && shaded.innerHTML.indexOf('opacity="0.18"') >= 0, "The failing band is translucent red");
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

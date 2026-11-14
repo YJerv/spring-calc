@@ -630,6 +630,100 @@
     return { bounds: bounds, rows: rows };
   }
 
+  function limitLength(row) {
+    if (!row) return null;
+    if (row.LmaxLoad != null && row.LmaxLoad !== "" && isFinite(Number(row.LmaxLoad))) return Number(row.LmaxLoad);
+    if (row.L2 != null && row.L2 !== "" && isFinite(Number(row.L2))) return Number(row.L2);
+    return null;
+  }
+
+  function diameterSampleFails(row) {
+    var pct = Number(row.pctAllow);
+    var stressFail = !(pct <= 100 + 1e-6);
+    var L2 = limitLength(row);
+    var solidFail = L2 != null && isFinite(Number(row.Lc)) && Number(row.Lc) > L2 + 1e-6;
+    return stressFail || solidFail;
+  }
+
+  /* First limit met walking from a passing sample toward a failing one. */
+  function firstLimitCrossing(pass, fail) {
+    var dp = Number(pass.D);
+    var df = Number(fail.D);
+    var dir = df - dp;
+    if (!(Math.abs(dir) > 0)) return dp;
+    var ts = [];
+    var pPct = Number(pass.pctAllow);
+    var fPct = Number(fail.pctAllow);
+    if (isFinite(pPct) && isFinite(fPct) && pPct !== fPct && (pPct - 100) * (fPct - 100) <= 0) {
+      ts.push((100 - pPct) / (fPct - pPct));
+    }
+    var L2 = limitLength(pass);
+    if (L2 == null) L2 = limitLength(fail);
+    var pLc = Number(pass.Lc);
+    var fLc = Number(fail.Lc);
+    if (L2 != null && isFinite(pLc) && isFinite(fLc) && pLc !== fLc && (pLc - L2) * (fLc - L2) <= 0) {
+      ts.push((L2 - pLc) / (fLc - pLc));
+    }
+    var t = null;
+    for (var i = 0; i < ts.length; i++) {
+      if (ts[i] < -1e-9 || ts[i] > 1 + 1e-9) continue;
+      if (t == null || ts[i] < t) t = ts[i];
+    }
+    if (t == null || t < 0) t = 0;
+    if (t > 1) t = 1;
+    return dp + t * dir;
+  }
+
+  function passingDiameterSpan(rows, anchorD) {
+    if (!rows || !rows.length) return null;
+    var sorted = rows.slice().sort(function (a, b) { return Number(a.D) - Number(b.D); });
+    var Dmin = Number(sorted[0].D);
+    var Dmax = Number(sorted[sorted.length - 1].D);
+    var anchor = Number(anchorD);
+    if (!isFinite(anchor)) anchor = Dmax;
+    if (anchor < Dmin) anchor = Dmin;
+    if (anchor > Dmax) anchor = Dmax;
+    var runs = [];
+    var start = -1;
+    var i;
+    for (i = 0; i < sorted.length; i++) {
+      var fails = diameterSampleFails(sorted[i]);
+      if (!fails && start < 0) start = i;
+      if ((fails || i === sorted.length - 1) && start >= 0) {
+        var end = fails ? i - 1 : i;
+        if (end >= start) {
+          var left = start === 0 ? Dmin : firstLimitCrossing(sorted[start], sorted[start - 1]);
+          var right = end === sorted.length - 1 ? Dmax : firstLimitCrossing(sorted[end], sorted[end + 1]);
+          if (right < left) { var swap = left; left = right; right = swap; }
+          runs.push({ min: left, max: right });
+        }
+        start = -1;
+      }
+    }
+    var failBands = [];
+    var cursor = Dmin;
+    for (i = 0; i < runs.length; i++) {
+      if (runs[i].min > cursor + 1e-6) failBands.push({ from: cursor, to: runs[i].min });
+      cursor = runs[i].max;
+    }
+    if (Dmax > cursor + 1e-6) failBands.push({ from: cursor, to: Dmax });
+    var chosen = null;
+    for (i = 0; i < runs.length; i++) {
+      if (anchor >= runs[i].min - 1e-6 && anchor <= runs[i].max + 1e-6) chosen = runs[i];
+    }
+    if (!chosen && runs.length) {
+      var bestDist = Infinity;
+      for (i = 0; i < runs.length; i++) {
+        var dist = anchor < runs[i].min ? runs[i].min - anchor : anchor - runs[i].max;
+        if (dist < bestDist) { bestDist = dist; chosen = runs[i]; }
+      }
+    }
+    if (!chosen) {
+      return { min: anchor, max: anchor, failBands: [{ from: Dmin, to: Dmax }] };
+    }
+    return { min: chosen.min, max: chosen.max, failBands: failBands };
+  }
+
   function nearbyStandardWires(selected) {
     var sizes = STANDARD_WIRES;
     var target = Number(selected);
@@ -1413,6 +1507,7 @@
     evaluateDesign: evaluateDesign,
     listWires: listWires,
     scanDiameters: scanDiameters,
+    passingDiameterSpan: passingDiameterSpan,
     autoOptimise: autoOptimise,
     nearbyStandardWires: nearbyStandardWires,
     serviceHardOk: serviceHardOk,

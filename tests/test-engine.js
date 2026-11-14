@@ -415,6 +415,32 @@ assert(grown.flags.some(function (f) { return f.indexOf("pocket clearance") >= 0
 const guideStill = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { innerMin: ev.Di - 1, innerClearance: 0.5 });
 assert(guideStill.flags.length === 0, "A guide that fits gets more room when the inside diameter grows");
 
+console.log("\nPassing diameter range\n");
+
+const spanRows = [
+  { D: 10, pctAllow: 140, Lc: 40, LmaxLoad: 35 },
+  { D: 12, pctAllow: 90, Lc: 30, LmaxLoad: 35 },
+  { D: 14, pctAllow: 80, Lc: 28, LmaxLoad: 35 },
+  { D: 16, pctAllow: 95, Lc: 26, LmaxLoad: 35 },
+  { D: 18, pctAllow: 130, Lc: 24, LmaxLoad: 35 }
+];
+const span = E.passingDiameterSpan(spanRows, 14);
+assert(Math.abs(span.min - 11.6) < 1e-6, "Stress crosses 100% before solid length crosses L2 on the low side", span.min);
+assert(Math.abs(span.max - (16 + 2 * 5 / 35)) < 1e-6, "The high side stops where stress reaches 100%", span.max);
+assert(span.failBands.length === 2, "Both failing ends are marked", span.failBands.length);
+const lowIsland = E.passingDiameterSpan([
+  { D: 10, pctAllow: 80, Lc: 20, L2: 35 },
+  { D: 12, pctAllow: 130, Lc: 20, L2: 35 },
+  { D: 14, pctAllow: 60, Lc: 20, L2: 35 },
+  { D: 16, pctAllow: 70, Lc: 20, L2: 35 }
+], 10.2);
+assert(lowIsland.max <= 12 && lowIsland.min <= 10.2 && lowIsland.max >= 10.2, "The range containing the current diameter is kept", lowIsland.min + "–" + lowIsland.max);
+const optFit = E.searchOptimisation(Object.assign({}, example, { wires: [2] }));
+const optScan = E.scanDiameters(Object.assign({}, example, { d: optFit.best.d }), 80);
+const optSpan = E.passingDiameterSpan(optScan.rows, optFit.best.D);
+assert(optFit.best && optFit.best.D >= optSpan.min - 1e-6 && optFit.best.D <= optSpan.max + 1e-6,
+  "The optimised diameter sits inside the passing range", optFit.best && (optFit.best.D + " in " + optSpan.min + "–" + optSpan.max));
+
 console.log("    Heat map D range " + hm.Dmin + "–" + hm.Dmax + " mm in " + hm.diameters.length + " steps");
 console.log("    Most options: D = " + hm.bestDiameters.join(", ") + " mm with " + hm.maxViable + " viable wire sizes");
 
