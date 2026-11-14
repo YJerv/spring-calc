@@ -241,6 +241,12 @@ legend.with-info { width: 100%; padding-right: 0; }
 .help-body p, .help-keep { margin: 0 0 10px; font-size: 0.92rem; }
 .help-body h3 { margin: 12px 0 6px; font-size: 0.98rem; }
 .help-keep { color: var(--muted); font-size: 0.82rem; }
+.help-diagram {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.help-zoom { display: block; }
 .help-svg {
   width: 100%;
   height: auto;

@@ -11,69 +11,37 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  function dutyDiagram() {
-    var charts = null;
-    if (typeof SpringCharts !== "undefined") charts = SpringCharts;
-    else if (typeof require === "function") charts = require("./charts.js");
-    if (charts && typeof charts.dutyIllustration === "function") return charts.dutyIllustration();
-    return "";
-  }
+  /* Root-relative so the raw.githack preview and the installed page load the same file. */
+  var HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png";
+  var HELP_LENGTHS_IMAGE = "assets/help/help-working-lengths.png";
 
-  /* DIAMETER_DIAGRAM_HOOK: set HELP_DIAMETER_IMAGE to a root-relative path
-     when Yuan's replacement diagram is supplied. Null keeps the built-in sketch. */
-  var HELP_DIAMETER_IMAGE = null;
+  function helpImage(src, alt, id) {
+    var idAttr = id ? ' id="' + id + '"' : "";
+    return '<a class="help-zoom" href="' + src + '" target="_blank" rel="noopener">' +
+      '<img class="help-diagram"' + idAttr + ' alt="' + alt + '" src="' + src + '">' +
+      '</a>';
+  }
 
   function diameterDiagram() {
-    if (HELP_DIAMETER_IMAGE) {
-      return '<img class="help-diagram" id="diameterDiagram" alt="Pocket, clearance and spring guide" src="' + HELP_DIAMETER_IMAGE + '">';
-    }
-    return '' +
-      '<svg class="help-svg" id="diameterDiagram" viewBox="0 0 360 200" role="img" aria-label="End view: pocket around the spring, diametral clearance, and a spring guide through the inside.">' +
-      '<circle cx="100" cy="100" r="86" class="help-pocket"/>' +
-      '<circle cx="100" cy="100" r="68" class="help-wire"/>' +
-      '<circle cx="100" cy="100" r="40" class="help-wire"/>' +
-      '<circle cx="100" cy="100" r="24" class="help-rod"/>' +
-      '<text x="198" y="36">Pocket</text>' +
-      '<text x="198" y="52">maximum outside</text>' +
-      '<text x="198" y="84">Clearance</text>' +
-      '<text x="198" y="100">pocket minus spring</text>' +
-      '<text x="198" y="132">Spring guide</text>' +
-      '<text x="198" y="148">plus its clearance</text>' +
-      '<text x="198" y="180">Blank box = no limit</text>' +
-      '</svg>';
+    return helpImage(HELP_DIAMETER_IMAGE, "Pocket, clearance and spring guide", "diameterDiagram");
   }
 
-  function endSketch(title, kind) {
-    var closed = kind === "closed_ground" || kind === "closed";
-    var ground = kind === "closed_ground" || kind === "open_ground";
-    var coils = "";
-    var i;
-    for (i = 0; i < 5; i++) {
-      var y = 36 + i * 16;
-      var tight = closed && (i === 0 || i === 4);
-      if (!closed && (i === 0 || i === 4)) {
-        coils += '<path d="M' + (i === 0 ? "24 34 C44 22 64 34 70 34" : "18 100 C40 112 64 100 70 100") + '" class="help-wire"/>';
-      } else {
-        coils += '<ellipse cx="44" cy="' + y + '" rx="26" ry="' + (tight ? 3.5 : 7) + '" class="help-wire"/>';
-      }
-    }
-    var top = ground ? '<line x1="16" y1="22" x2="72" y2="22" class="help-solid"/>' : "";
-    var bottom = ground ? '<line x1="16" y1="114" x2="72" y2="114" class="help-solid"/>' : "";
+  function endPhoto(title, file) {
+    var src = "assets/help/" + file;
     return '<figure><figcaption>' + title + '</figcaption>' +
-      '<svg class="help-svg" viewBox="0 0 88 132" role="img" aria-label="' + title + '">' +
-      top + coils + bottom + '</svg></figure>';
+      helpImage(src, title) + '</figure>';
   }
 
   var TOPICS = {
     duty: {
       title: "Working loads and lengths",
       body: function () {
-        return dutyDiagram() +
+        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths L0, L1, L2 and Lc") +
+        "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>" +
         "<h3>What the letters mean</h3>" +
         "<p>L0: Free length (zero load).</p>" +
         "<p>L1: Most relaxed working length.</p>" +
         "<p>L2: Most compressed working length.</p>" +
-        "<p>Ln: Permissible length. The shortest length the spring should be compressed to in use if the coils are not to clash. This app places Ln at 85% of available travel, which is the free length minus the solid length.</p>" +
         "<p>Lc: Closed (solid) length.</p>" +
         "<p>F1 and F2 are the loads at L1 and L2. A load is not necessarily a dead weight. Two points uses both pairs. Point and rate uses one pair and the rate, and the other end is worked out from that rate.</p>";
       }
@@ -103,10 +71,10 @@
     ends: {
       title: "End geometry",
       body: '<div class="end-grid">' +
-        endSketch("Closed and ground", "closed_ground") +
-        endSketch("Closed, not ground", "closed") +
-        endSketch("Open and ground", "open_ground") +
-        endSketch("Open, not ground", "open") +
+        endPhoto("Closed and ground", "help-ends-closed-ground.png") +
+        endPhoto("Closed, not ground", "help-ends-closed-not-ground.png") +
+        endPhoto("Open and ground", "help-ends-open-ground.png") +
+        endPhoto("Open, not ground", "help-ends-open-not-ground.png") +
         "</div>" +
         "<p>The diagrams show the four end types. Ends change the solid length.</p>"
     },

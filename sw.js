@@ -1,5 +1,5 @@
 /* Helical Spring Designer service worker — cache app shell for offline use */
-const CACHE = "spring-calc-v35";
+const CACHE = "spring-calc-v36";
 const ASSETS = [
   "./",
   "./index.html",
@@ -19,7 +19,13 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-192.png",
-  "./icons/icon-maskable-512.png"
+  "./icons/icon-maskable-512.png",
+  "./assets/help/help-diameter-limits.png",
+  "./assets/help/help-working-lengths.png",
+  "./assets/help/help-ends-closed-ground.png",
+  "./assets/help/help-ends-closed-not-ground.png",
+  "./assets/help/help-ends-open-ground.png",
+  "./assets/help/help-ends-open-not-ground.png"
 ];
 
 self.addEventListener("install", function (event) {

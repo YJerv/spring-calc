@@ -69,28 +69,24 @@ console.log("\nAgreed content, in original words\n");
 
 const duty = Help.topic("duty").body;
 ["L0: Free length (zero load)", "L1: Most relaxed working length", "L2: Most compressed working length",
-  "Ln: Permissible length", "Lc: Closed (solid) length", "not necessarily a dead weight", "<svg"].forEach(function (phrase) {
+  "Lc: Closed (solid) length", "not necessarily a dead weight",
+  "assets/help/help-working-lengths.png",
+  "Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln."].forEach(function (phrase) {
   assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
 });
 const check = Help.topic("check").body;
 ["Green", "30%", "70%", "Orange", "20%", "80%", "Red", "solid length"].forEach(function (phrase) {
   assert(check.indexOf(phrase) >= 0, "Check help includes: " + phrase);
 });
-assert(duty.indexOf("L1 / F1") >= 0 && duty.indexOf("L2 / F2") >= 0, "Duty help marks L1 and L2 on the graph");
-assert(duty.indexOf(">Load, F<") >= 0 && duty.indexOf(">Deflection, S<") >= 0, "Duty help names the axes");
-["L0", "L1", "L2"].forEach(function (id) {
-  assert(duty.indexOf('data-spring="' + id + '"') >= 0, "Duty help draws the " + id + " spring");
-  assert(duty.indexOf('data-guide="' + id + '"') >= 0, "Duty help drops a dotted line to " + id);
-});
-const dutySvg = duty.slice(duty.indexOf("<svg"), duty.indexOf("</svg>") + 6);
-assert(dutySvg.toLowerCase().indexOf("shorter") === -1, "The duty picture does not say shorter");
-assert(dutySvg.toLowerCase().indexOf("compression") === -1, "The duty picture does not say compression");
-assert(dutySvg.indexOf("data-strand=\"front\"") >= 0, "The duty springs are helical coils");
+assert(duty.indexOf("<svg") === -1, "Duty help uses Yuan's working-length diagram");
 const diameters = Help.topic("diameters").body;
-["Pocket", "Clearance", "spring guide", "Leave a box blank for no limit", "<svg", "id=\"diameterDiagram\""].forEach(function (phrase) {
+["Pocket", "Clearance", "spring guide", "Leave a box blank for no limit",
+  "assets/help/help-diameter-limits.png", "id=\"diameterDiagram\""].forEach(function (phrase) {
   assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
 });
-assert(helpSrc.indexOf("HELP_DIAMETER_IMAGE") >= 0, "The diameter diagram can be swapped for Yuan's image");
+assert(diameters.indexOf("<svg") === -1, "Diameter help uses Yuan's diagram");
+assert(helpSrc.indexOf('HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png"') >= 0,
+  "HELP_DIAMETER_IMAGE points at Yuan's diameter diagram");
 assert(Help.topic("wire").body.indexOf("lowest corrected stress") >= 0, "Wire help explains the optimisation search");
 assert(Help.topic("wire").body.indexOf("heat map") === -1, "Wire help no longer describes the heat map");
 assert(Help.topic("graph").body.indexOf("85 %") >= 0, "Graph help explains the stations");
@@ -107,8 +103,22 @@ const ends = Help.topic("ends").body;
 ["Closed and ground", "Closed, not ground", "Open and ground", "Open, not ground", "solid length"].forEach(function (phrase) {
   assert(ends.indexOf(phrase) >= 0, "End help includes: " + phrase);
 });
-assert((ends.match(/<svg/g) || []).length === 4, "End help has four pictures");
+["help-ends-closed-ground.png", "help-ends-closed-not-ground.png", "help-ends-open-ground.png", "help-ends-open-not-ground.png"].forEach(function (file) {
+  assert(ends.indexOf("assets/help/" + file) >= 0, "End help shows " + file);
+});
+assert((ends.match(/<img/g) || []).length === 4, "End help has four pictures");
+assert(ends.indexOf("<svg") === -1, "End help uses Yuan's photographs");
 assert(ends.indexOf("The diagrams show the four end types.") >= 0, "End help leaves the explanation to the diagrams");
+assert(ends.indexOf('class="help-zoom"') >= 0 && diameters.indexOf('class="help-zoom"') >= 0,
+  "A tap opens the full diagram");
+const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
+["help-diameter-limits.png", "help-working-lengths.png", "help-ends-closed-ground.png",
+  "help-ends-closed-not-ground.png", "help-ends-open-ground.png", "help-ends-open-not-ground.png"].forEach(function (file) {
+  assert(sw.indexOf("./assets/help/" + file) >= 0, "The service worker precaches " + file);
+});
+const css = fs.readFileSync(path.join(root, "css/app.css"), "utf8");
+assert(css.indexOf(".help-diagram") >= 0 && css.indexOf("max-width: 100%") >= 0 && css.indexOf("height: auto") >= 0,
+  "Help images scale to the window width");
 const materials = Help.topic("materials").body;
 ["EN 10270-1 DH", "EN 10270-1 SH", "EN 10270-1 SM", "VDSiCr", "1.4310", "Custom", "certificate", "rusts"].forEach(function (phrase) {
   assert(materials.indexOf(phrase) >= 0, "Material help includes: " + phrase);
