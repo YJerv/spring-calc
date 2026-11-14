@@ -66,6 +66,9 @@ assert(pages[5].indexOf("heatmap") === -1 && html.indexOf('id="heatmapScroll"') 
 assert(pages[5].indexOf('id="optCandidates"') < pages[5].indexOf('id="btnOptimise"'), "Optimise sits below the wire list");
 assert(pages[5].indexOf(">Optimise<") >= 0 && pages[5].indexOf('id="Dslider"') >= 0 && pages[5].indexOf('id="tradeoffSvg"') >= 0, "The diameter slider and stress graph are on Optimization");
 assert(pages[5].indexOf('id="Dslider"') < pages[5].indexOf('id="tradeoffSvg"'), "The stress graph sits under the slider");
+assert(pages[5].indexOf('id="coilTune"') >= 0 && pages[5].indexOf('id="coilTune"') < pages[5].indexOf('id="btnOptimise"') && pages[5].indexOf('id="tradeoffSvg"') < pages[5].indexOf("</div>\n        <div class=\"error\" id=\"err4\">"), "Optimise, the slider and the graph are one block");
+assert(pages[5].indexOf("No spring will work for this duty") >= 0 && pages[5].indexOf('id="optNone" class="status-banner fail hidden"') >= 0, "The no-option banner is ready and hidden");
+assert(appJs.indexOf("setCoilTune(false, screen.message || E.NO_OPTIONS)") >= 0 && appJs.indexOf("setCoilTune(true)") >= 0, "No options hides the tuning controls, and a feasible search shows them again");
 assert(appJs.indexOf("C.renderTradeoff") >= 0 && appJs.indexOf("paintCoil") >= 0, "Moving the slider redraws the stress graph");
 assert(appJs.indexOf("wires: [d]") >= 0, "Optimise searches mean diameters for the selected wire");
 assert(appJs.indexOf("screen.message || E.NO_OPTIONS") >= 0, "A failed check shows the specific hint");

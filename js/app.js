@@ -662,9 +662,11 @@
       if (list) list.innerHTML = "";
       if (note) note.textContent = "";
       if ($("optWire")) $("optWire").innerHTML = "";
+      setCoilTune(false, screen.message || E.NO_OPTIONS);
       showErr("err4", []);
       return;
     }
+    setCoilTune(true);
     showErr("err4", []);
     var tone = screen.level === "pass" ? "pass" : "warning";
     var best = screen.best;
@@ -711,6 +713,15 @@
     }
     setupCoilControls(false);
     revealFoldsForMessages();
+  }
+
+  function setCoilTune(available, hint) {
+    var tune = $("coilTune");
+    var none = $("optNone");
+    var line = $("optNoneHint");
+    if (tune) tune.classList.toggle("hidden", !available);
+    if (none) none.classList.toggle("hidden", !!available);
+    if (line && !available) line.textContent = hint || E.NO_OPTIONS;
   }
 
   function activeOptWire() {
