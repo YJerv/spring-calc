@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+/**
+ * SC-009 contextual help: agreed topics only, closable window, original wording.
+ * Run: node tests/test-help.js
+ */
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+const Help = require("../js/help.js");
+
+let passed = 0;
+let failed = 0;
+const failures = [];
+
+function assert(cond, name, detail) {
+  if (cond) {
+    passed += 1;
+    console.log("  PASS  " + name);
+  } else {
+    failed += 1;
+    const msg = "  FAIL  " + name + (detail ? " — " + detail : "");
+    failures.push(msg);
+    console.log(msg);
+  }
+}
+
+function section(html, id) {
+  const start = html.indexOf('<section id="' + id + '"');
+  const end = html.indexOf("</section>", start);
+  return html.slice(start, end);
+}
+
+const root = path.join(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const helpSrc = fs.readFileSync(path.join(root, "js/help.js"), "utf8");
+
+const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export"];
+assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the agreed subjects");
+
+console.log("\nButtons sit on the agreed questions only\n");
+
+const buttons = html.match(/class="info-btn[^"]*"/g) || [];
+assert(buttons.length === 10, "There are ten circled information buttons", String(buttons.length));
+expected.forEach(function (id) {
+  assert(html.indexOf('data-help="' + id + '"') >= 0, "A button opens " + id);
+  const topic = Help.topic(id);
+  assert(topic && topic.title && topic.body.indexOf("<") >= 0, id + " has a title and a body");
+});
+assert(Help.topic("wind") === null, "Wound direction has no help topic");
+assert(section(html, "step-6").indexOf('data-help="wire"') >= 0, "Optimization opens the wire explanation");
+assert(section(html, "step-6").indexOf("auto-optimise") === -1, "Optimization does not add the unapproved auto-optimise essay");
+assert(section(html, "step-7").indexOf('data-help="graph"') >= 0, "The results page opens the graph explanation");
+const windAt = html.indexOf('id="wind"');
+const windField = html.slice(html.lastIndexOf("<div class=\"field\">", windAt), html.indexOf("</div>", windAt));
+assert(windField.indexOf("info-btn") === -1, "The wind control has no information button");
+["G", "Rm"].forEach(function (id) {
+  const at = html.indexOf('id="' + id + '"');
+  const field = html.slice(html.lastIndexOf("<div class=\"field\">", at), html.indexOf("</select>", at) === -1 ? html.indexOf("</div>", html.indexOf("</div>", at) + 1) : at);
+  assert(field.indexOf("info-btn") === -1, "The " + id + " control has no information button");
+});
+assert(html.indexOf("More info") === -1, "Help is not a More info link");
+assert(html.indexOf('id="helpDialog"') >= 0 && html.indexOf('id="btnHelpClose"') >= 0, "The help window has a Close control");
+assert(html.indexOf('id="helpDialog" class="settings-backdrop" hidden') >= 0, "The help window starts closed");
+assert(html.indexOf("does not change what you have typed") >= 0, "The window says typed values stay");
+
+console.log("\nAgreed content, in original words\n");
+
+const duty = Help.topic("duty").body;
+["L0: Free length (zero load)", "L1: Most relaxed working length", "L2: Most compressed working length",
+  "Lc: Closed (solid) length", "not necessarily a dead weight",
+  "assets/help/help-working-lengths.png",
+  "Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln."].forEach(function (phrase) {
+  assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
+});
+const check = Help.topic("check").body;
+["Green", "30%", "70%", "Orange", "20%", "80%", "Red", "solid length"].forEach(function (phrase) {
+  assert(check.indexOf(phrase) >= 0, "Check help includes: " + phrase);
+});
+assert(duty.indexOf("<svg") === -1, "Duty help uses Yuan's working-length diagram");
+const diameters = Help.topic("diameters").body;
+["Pocket", "Clearance", "spring guide", "Leave a box blank for no limit",
+  "assets/help/help-diameter-limits.png", "id=\"diameterDiagram\""].forEach(function (phrase) {
+  assert(diameters.indexOf(phrase) >= 0, "Diameter help includes: " + phrase);
+});
+assert(diameters.indexOf("<svg") === -1, "Diameter help uses Yuan's diagram");
+assert(helpSrc.indexOf('HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png"') >= 0,
+  "HELP_DIAMETER_IMAGE points at Yuan's diameter diagram");
+assert(Help.topic("wire").body.indexOf("lowest corrected stress") >= 0, "Wire help explains the optimisation search");
+assert(Help.topic("wire").body.indexOf("heat map") === -1, "Wire help no longer describes the heat map");
+assert(Help.topic("graph").body.indexOf("85 %") >= 0, "Graph help explains the stations");
+assert(Help.topic("export").body.indexOf("Upgrade to release drawing table") >= 0, "Export help keeps the unpaid warning");
+const grades = Help.topic("grades").body;
+["Grade 1 – tightest tolerances; use only when the duty requires it",
+  "Grade 2 – standard general engineering",
+  "Grade 3 – widest tolerances, lowest cost",
+  "BS EN 15800", "does not change the rate"].forEach(function (phrase) {
+  assert(grades.indexOf(phrase) >= 0, "Grade help includes: " + phrase);
+});
+assert(html.indexOf("Grade 1 —") === -1 && html.indexOf(">Grade 1<") >= 0, "Grade menus show the label only");
+const ends = Help.topic("ends").body;
+["Closed and ground", "Closed, not ground", "Open and ground", "Open, not ground", "solid length"].forEach(function (phrase) {
+  assert(ends.indexOf(phrase) >= 0, "End help includes: " + phrase);
+});
+["help-ends-closed-ground.png", "help-ends-closed-not-ground.png", "help-ends-open-ground.png", "help-ends-open-not-ground.png"].forEach(function (file) {
+  assert(ends.indexOf("assets/help/" + file) >= 0, "End help shows " + file);
+});
+assert((ends.match(/<img/g) || []).length === 4, "End help has four pictures");
+assert(ends.indexOf("<svg") === -1, "End help uses Yuan's photographs");
+assert(ends.indexOf("The diagrams show the four end types.") >= 0, "End help leaves the explanation to the diagrams");
+assert(ends.indexOf('class="help-zoom"') >= 0 && diameters.indexOf('class="help-zoom"') >= 0,
+  "A tap opens the full diagram");
+const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
+["help-diameter-limits.png", "help-working-lengths.png", "help-ends-closed-ground.png",
+  "help-ends-closed-not-ground.png", "help-ends-open-ground.png", "help-ends-open-not-ground.png"].forEach(function (file) {
+  assert(sw.indexOf("./assets/help/" + file) >= 0, "The service worker precaches " + file);
+});
+const css = fs.readFileSync(path.join(root, "css/app.css"), "utf8");
+assert(css.indexOf(".help-diagram") >= 0 && css.indexOf("max-width: 100%") >= 0 && css.indexOf("height: auto") >= 0,
+  "Help images scale to the window width");
+const materials = Help.topic("materials").body;
+["EN 10270-1 DH", "EN 10270-1 SH", "EN 10270-1 SM", "VDSiCr", "1.4310", "Custom", "certificate", "rusts"].forEach(function (phrase) {
+  assert(materials.indexOf(phrase) >= 0, "Material help includes: " + phrase);
+});
+const stress = Help.topic("stress").body;
+["Bergsträsser", "correction", "Allowable stress factor", "0.5", "0.2", "0.8", "not a certified", "inside"].forEach(function (phrase) {
+  assert(stress.indexOf(phrase) >= 0, "Stress help includes: " + phrase);
+});
+
+console.log("\nBoundaries\n");
+
+assert(helpSrc.indexOf("can only be achieved") === -1, "Grade text is not a copied British Standard sentence");
+assert(helpSrc.toLowerCase().indexOf("kilogram") === -1, "Help does not add a kilogram load");
+assert(helpSrc.indexOf("localStorage") === -1, "Help does not touch saved calculator state");
+assert(app.indexOf("function setupHelp") >= 0, "The page opens and closes the help window");
+assert(app.indexOf('ev.key === "Escape"') >= 0, "Escape is handled");
+const helpFn = app.slice(app.indexOf("function setupHelp"), app.indexOf("function init"));
+assert(helpFn.indexOf("setVal") === -1 && helpFn.indexOf(".value") === -1, "Opening help does not write input values");
+
+console.log("\n" + passed + " passed, " + failed + " failed");
+if (failed) {
+  console.log("\nFailures:");
+  failures.forEach(function (f) { console.log(f); });
+  process.exit(1);
+}
+console.log("All help tests passed.");

@@ -174,6 +174,45 @@ assert(!!opt.best, "Auto-optimise returns a candidate");
 assert(opt.best.D >= opt.bounds.Dmin - 1e-9, "Optimum D at or above Dmin (w = 4)");
 assert(opt.best.D <= opt.bounds.Dmax + 1e-9, "Optimum D at or below Dmax");
 assert(opt.best.De <= 18.5 + 1e-6, "Optimum still fits the pocket");
+assert(opt.wires.indexOf(2) >= 0, "Auto-optimise trials the standard sizes around 2 mm");
+assert(opt.best.pass, "The chosen optimum still passes the screening checks");
+const optPct = [opt.best.deflPct1, opt.best.deflPct2].filter(function (p) { return p != null; });
+assert(optPct.length === 2 && optPct.every(function (p) { return p >= 20 - 1e-6 && p <= 80 + 1e-6; }),
+  "Auto-optimise keeps both working deflections between 20 % and 80 %");
+
+const near4 = E.nearbyStandardWires(4);
+assert(near4.join(",") === "3,3.2,3.5,4,4.5,5,5.5", "A 4 mm selection trials the nearby standard wires", near4.join(","));
+
+const direct = E.evaluateDesign(Object.assign({}, example, {
+  useDirectStress: true,
+  tauAllowDirect: 700,
+  Rm: 0
+}));
+assert(direct.stressSource === "direct" && Math.abs(direct.tauAllow - 700) < 1e-9,
+  "A direct stress limit replaces the Rm factor");
+assert(direct.reasons.some(function (r) { return r.indexOf("700 N/mm²") >= 0; }) === (direct.tauK > 700),
+  "The direct limit is the one named in the stress check");
+
+const factorStill = E.evaluateDesign(example);
+assert(factorStill.stressSource === "factor" && Math.abs(factorStill.tauAllow - 900) < 1e-6,
+  "Without the direct choice the allowable stays 0.5 × Rm");
+
+const ranged = E.deriveModeB(125, 40, 5, "F2", { Lcomp: 30, Lrel: 48 });
+assert(ranged.ok && Math.abs(ranged.L2 - 30) < 1e-9 && Math.abs(ranged.L1 - 48) < 1e-9,
+  "A working-length range sets the compressed and relaxed lengths");
+assert(Math.abs(ranged.F2 - 125) < 1e-6 && Math.abs(ranged.F1 - (125 - 5 * 18)) < 1e-6,
+  "The entered load stays on the selected point and the other load follows the rate");
+const rangedEv = E.evaluateDesign(Object.assign({}, example, ranged, { d: 2, D: 16.5, DeMax: 18.5 }));
+assert(rangedEv.tauKcomp != null && Math.abs(rangedEv.Fmax - ranged.F2) < 1e-6,
+  "The range makes the most compressed load the screened working load");
+const hotter = E.evaluateDesign(Object.assign({}, example, { Lcomp: 20, Lrel: 50 }));
+assert(hotter.tauK <= hotter.tauAllow + 1e-6 && hotter.tauKcomp > hotter.tauAllow,
+  "A shorter service length can exceed the limit while the stated F2 does not");
+assert(hotter.reasons.some(function (r) { return r.indexOf("most compressed working length") >= 0; }),
+  "Stress is checked at the most compressed working length as well as at Fmax");
+const plainB = E.deriveModeB(125, 35, 5, "F2");
+assert(plainB.ok && plainB.L1 == null && Math.abs(plainB.L0 - 60) < 1e-9,
+  "Point and rate without a range is unchanged");
 
 const bounds = E.diameterBounds(2, 18.5);
 assertClose(bounds.Dmin, 8, "Dmin at w = 4");
@@ -217,15 +256,15 @@ const hmInput = {
   LmaxLoad: loads.LmaxLoad,
   ends: "closed_ground"
 };
-const hm = E.buildHeatmap(hmInput, { step: 0.5 });
-assert(hm.step === 0.5, "Heat map uses 0.5 mm steps");
+const hm = E.buildHeatmap(hmInput);
+assert(hm.step === 1, "Heat map uses 1 mm steps");
 assert(hm.wires.indexOf(2) >= 0, "Heat map includes 2.00 mm wire");
 assert(hm.wires.every(function (d) { return d < 18.5; }), "Heat map omits wires thicker than De max");
 assert(hm.diameters.length > 4, "Heat map has a range of mean diameters");
-assertClose(hm.diameters[1] - hm.diameters[0], 0.5, "Mean diameters step by 0.5 mm");
-assert(hm.Dmin >= 4 * hm.wires[0] - 1e-9, "D axis starts at a sensible minimum (w ≥ 4 on the finest wire)");
-assert(hm.Dmax <= 18.5 - hm.wires[0] + 1e-9, "D axis stops at D max from the pocket");
-assert(hm.diameters.indexOf(16.5) >= 0, "Worked-example D = 16.5 mm is on the grid");
+assertClose(hm.diameters[1] - hm.diameters[0], 1, "Mean diameters step by 1 mm");
+assert(Math.abs(hm.Dmin - 1) < 1e-9, "A pocket-only map still starts at 1 mm");
+assert(hm.Dmax <= 18.5 - Math.min.apply(null, hm.wires) + 1e-9, "D axis stops at max OD minus the thinnest wire");
+assert(hm.diameters.indexOf(16) >= 0, "D = 16 mm is on the 1 mm grid");
 
 function hmCell(grid, D, d) {
   const row = grid.rows.find(function (r) { return Math.abs(r.D - D) < 1e-9; });
@@ -233,29 +272,30 @@ function hmCell(grid, D, d) {
   return row.cells.find(function (c) { return Math.abs(c.d - d) < 1e-9; }) || null;
 }
 
-const cellEx = hmCell(hm, 16.5, 2);
-assert(!!cellEx, "Finds the worked-example cell D = 16.5 mm, d = 2 mm");
+const cellEx = hmCell(hm, 16, 2);
+assert(!!cellEx, "Finds the cell D = 16 mm, d = 2 mm");
 assert(cellEx.viable && cellEx.geometricOk, "Worked-example cell is viable");
-assertClose(cellEx.pctAllow, ev.pctAllow, "Heat-map stress matches evaluateDesign", 1e-6);
+const cellDesign = E.evaluateDesign(Object.assign({}, hmInput, { d: 2, D: 16 }));
+assertClose(cellEx.pctAllow, cellDesign.pctAllow, "Heat-map stress matches evaluateDesign", 1e-6);
 assert(cellEx.band === "amber" || cellEx.band === "good", "Worked-example cell is coloured by stress, not grey");
 
-const cellThin = hmCell(hm, 16.5, 0.5);
-assert(!!cellThin, "Includes a fine-wire cell at D = 16.5 mm");
+const cellThin = hmCell(hm, 16, 0.5);
+assert(!!cellThin, "Includes a fine-wire cell at D = 16 mm");
 assert(!cellThin.geometricOk && !cellThin.viable, "Fine wire at large D fails the index check");
 assert(cellThin.band === "invalid", "Index failure is greyed out");
 
-const cellPocket = hmCell(hm, 16.5, 3);
-assert(!!cellPocket, "Includes 3.00 mm at D = 16.5 mm");
+const cellPocket = hmCell(hm, 16, 3);
+assert(!!cellPocket, "Includes 3.00 mm at D = 16 mm");
 assert(!cellPocket.geometricOk && cellPocket.band === "invalid", "De above the pocket is greyed out");
 
 const cellIndex = hmCell(hm, 6, 2);
 assert(!!cellIndex, "Includes D = 6.0 mm, d = 2 mm");
 assert(!cellIndex.geometricOk && cellIndex.band === "invalid", "Index below 4 is greyed out");
 
-const cellOver = hmCell(hm, 16.5, 1.8);
-assert(!!cellOver, "Includes D = 16.5 mm, d = 1.8 mm");
-assert(cellOver.geometricOk, "1.8 mm at D = 16.5 mm is geometrically valid");
-assert(!cellOver.viable, "1.8 mm at D = 16.5 mm exceeds allowable stress");
+const cellOver = hmCell(hm, 16, 1.8);
+assert(!!cellOver, "Includes D = 16 mm, d = 1.8 mm");
+assert(cellOver.geometricOk, "1.8 mm at D = 16 mm is geometrically valid");
+assert(!cellOver.viable, "1.8 mm at D = 16 mm exceeds allowable stress");
 assert(cellOver.band === "over", "Stress above allowable is coloured red, not grey");
 assert(cellOver.pctAllow > 100, "Over-stress cell has τk above 100 % of allowable");
 
@@ -287,6 +327,93 @@ assert(emptyHm.rows.length === 0 && emptyHm.maxViable === 0, "Empty or invalid i
 const customHm = E.buildHeatmap(Object.assign({}, hmInput, { wires: [2, 1.8, 2.2] }), { step: 0.5 });
 assert(customHm.wires.length === 3, "Custom wire list is honoured");
 assert(customHm.wires.indexOf(1) === -1, "Custom list does not inject extra standard sizes");
+
+console.log("\nHeat map bounds\n");
+const openLoads = {
+  G: 81500, Rm: 1800, tauFactor: 0.5,
+  R: loads.R, L0: loads.L0, L1: loads.L1, F1: loads.F1,
+  L2: loads.L2, F2: loads.F2, Fmax: loads.Fmax, LmaxLoad: loads.LmaxLoad,
+  ends: "closed_ground"
+};
+const tOpen = Date.now();
+const openHm = E.buildHeatmap(openLoads);
+const openMs = Date.now() - tOpen;
+assert(openMs < 500, "A map with no constraints builds quickly", openMs + " ms");
+assert(openHm.step === 1 && openHm.diameters.length === 100, "No constraints: D is 1 mm to 100 mm in 1 mm steps");
+assert(Math.abs(openHm.diameters[0] - 1) < 1e-9 && Math.abs(openHm.diameters[openHm.diameters.length - 1] - 100) < 1e-9,
+  "No constraints: the rows run from 1 mm to 100 mm");
+assert(openHm.wires[0] === 0.2 && openHm.wires[openHm.wires.length - 1] === 12,
+  "No constraints: wires run from 0.2 mm to 12 mm");
+console.log("    No-constraint heat map built in " + openMs + " ms (" + openHm.rows.length + " × " + openHm.wires.length + ")");
+
+const guideOnly = E.buildHeatmap(Object.assign({}, openLoads, { innerMin: 10, innerClearance: 2 }));
+const guideThin = Math.min.apply(null, guideOnly.wires);
+assert(guideOnly.Dmin + 1e-9 >= 12 + guideThin && guideOnly.Dmin < 12 + guideThin + guideOnly.step,
+  "Guide only: bottom row is the first step at guide + clearance + thinnest wire", guideOnly.Dmin);
+assert(Math.abs(guideOnly.diameters[guideOnly.diameters.length - 1] - 100) < 1e-9, "Guide only: the top stays at 100 mm");
+const guideLow = hmCell(guideOnly, guideOnly.Dmin, 2);
+assert(guideLow && guideLow.reasons.some(function (r) { return r.indexOf("Inside diameter is below") === 0; }),
+  "A thicker wire on the bottom row is below the spring guide");
+const guideOk = hmCell(guideOnly, 20, 2);
+assert(guideOk && guideOk.reasons.every(function (r) { return r.indexOf("Inside diameter is below") !== 0; }),
+  "D = 20 mm, d = 2 mm clears a 12 mm spring guide");
+
+const bothHm = E.buildHeatmap(Object.assign({}, openLoads, { DeMax: 18.5, innerMin: 8, innerClearance: 2 }));
+const bothThin = Math.min.apply(null, bothHm.wires);
+assert(bothHm.Dmin + 1e-9 >= 10 + bothThin && bothHm.Dmin < 10 + bothThin + bothHm.step,
+  "Both limits: bottom row is the first step at guide + clearance + thinnest wire", bothHm.Dmin);
+assert(bothHm.Dmax <= 18.5 - bothThin + 1e-9, "Both limits: top row uses max OD minus the thinnest wire");
+assert(bothHm.wires.every(function (d) { return d < 18.5 && 10 + d <= 18.5 - d + 1e-9; }),
+  "Both limits: only wires that can fit are listed");
+const bothGrey = hmCell(bothHm, bothHm.Dmin, bothHm.wires[bothHm.wires.length - 1]);
+assert(bothGrey && !bothGrey.geometricOk, "A wire that misses the spring guide on that row is grey");
+
+const noExtra = E.buildHeatmap(Object.assign({}, openLoads, { innerMin: 10, innerClearance: 0 }));
+const blankExtra = E.buildHeatmap(Object.assign({}, openLoads, { innerMin: 10 }));
+assert(Math.abs(noExtra.Dmin - blankExtra.Dmin) < 1e-9, "Zero guide clearance adds nothing");
+
+console.log("\nOptimisation search and compressed diameter");
+const found = E.searchOptimisation(example);
+assert(found.level === "pass" || found.level === "warning", "The worked example yields a candidate", found.level);
+assert(found.best && found.perDiameter.length > 0, "The search returns an optimum and one candidate per diameter");
+var bestStress = found.best.tauKcomp != null ? Math.max(found.best.tauK, found.best.tauKcomp) : found.best.tauK;
+assert(found.perDiameter.every(function (row) {
+  var stress = row.tauKcomp != null ? Math.max(row.tauK, row.tauKcomp) : row.tauK;
+  return bestStress <= stress + 1e-6;
+}), "The optimum is the lowest stress among the per-diameter candidates");
+const oneWire = E.searchOptimisation(Object.assign({}, example, { wires: [2] }));
+assert(oneWire.best && Math.abs(oneWire.best.d - 2) < 1e-9, "Optimising one standard wire keeps that wire");
+assert(oneWire.perDiameter.length > 0 && oneWire.perDiameter.every(function (row) {
+  return Math.abs(row.d - 2) < 1e-9;
+}), "Each diameter for that wire uses the selected wire");
+const tight = E.searchOptimisation(Object.assign({}, example, { L1: 50, F1: 50, L2: 1, F2: 125, L0: 60, R: 5, Fmax: 125, LmaxLoad: 1 }));
+assert(tight.level === "fail" && tight.best == null && tight.message === E.FAIL_HINTS.solid,
+  "A solid length past L2 says to lengthen L2 or use a thinner wire");
+const highRate = E.searchOptimisation(Object.assign({}, example, {
+  L1: 50, F1: 10, L2: 49, F2: 500, L0: 51, R: 490, Fmax: 500, LmaxLoad: 49
+}));
+assert(highRate.level === "fail" && highRate.message === E.FAIL_HINTS.rate,
+  "A rate no wire can meet says to bring the loads closer or the lengths further apart");
+const highStress = E.searchOptimisation(Object.assign({}, example, {
+  L1: 80, F1: 100, L2: 40, F2: 4000, L0: 90, R: 97.5, Fmax: 4000, LmaxLoad: 40, DeMax: 40
+}));
+assert(highStress.level === "fail" && highStress.message === E.FAIL_HINTS.stress,
+  "Stress above the raised limit says to reduce F2 or lengthen L2");
+const offBand = E.searchOptimisation(Object.assign({}, example, {
+  L1: 58, F1: 20, L2: 40, F2: 80, L0: 60, R: 3, Fmax: 80, LmaxLoad: 40, DeMax: 40
+}));
+assert(offBand.level === "fail" && offBand.message === E.FAIL_HINTS.deflection,
+  "A deflection band no geometry can meet says to move L1 or L2");
+const tightPocket = E.searchOptimisation(Object.assign({}, example, { DeMax: 0.5 }));
+assert(tightPocket.level === "fail" && tightPocket.message === E.FAIL_HINTS.diameter,
+  "A pocket no wire can enter says to widen the pocket or ease the guide");
+const growth = E.coilDiameterIncrease(16.5, 2, 25);
+assertClose(growth, 0.1 * (625 - 40 - 0.8) / 16.5, "Coil diameter increase uses the standard deflection formula");
+const grown = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { pocket: 20, clearance: 1.5 });
+assert(grown.flags.some(function (f) { return f.indexOf("pocket clearance") >= 0; }),
+  "A pocket that fitted at free length is flagged when the coil grows");
+const guideStill = E.compressedClearance(Object.assign({}, ev, { s2: 25 }), { innerMin: ev.Di - 1, innerClearance: 0.5 });
+assert(guideStill.flags.length === 0, "A guide that fits gets more room when the inside diameter grows");
 
 console.log("    Heat map D range " + hm.Dmin + "–" + hm.Dmax + " mm in " + hm.diameters.length + " steps");
 console.log("    Most options: D = " + hm.bestDiameters.join(", ") + " mm with " + hm.maxViable + " viable wire sizes");

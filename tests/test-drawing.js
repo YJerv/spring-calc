@@ -93,15 +93,19 @@ assert(model.table1.title.indexOf("TABLE 1") >= 0 && model.table1.title.indexOf(
 assert(model.table2.title.indexOf("TABLE 2") >= 0 && model.table2.mark === "REFERENCE ONLY",
   "Table 2 is marked REFERENCE ONLY");
 
-const l0 = findRow(model.table1, "L0");
-assert(l0 && l0.value.indexOf("REFERENCE ONLY") >= 0, "Two specified loads put L0 on the particulars as reference only");
+const l0 = findRow(model.table2, "L0");
+assert(l0 && l0.value.indexOf("REFERENCE ONLY") >= 0, "Two specified loads put L0 on the reference table as reference only");
 assert(l0.value.indexOf("±") === -1, "Reference L0 is not given a manufacturing ± tolerance");
+assert(!findRow(model.table1, "L0"), "Free length has moved off Table 1");
 const de = findRow(model.table1, "De");
-assert(de && de.value.indexOf("± 0.45 mm") >= 0, "Outside diameter carries the grade 2 Table 3 tolerance");
+assert(de && de.value.indexOf("mm") >= 0 && de.value.indexOf("±") === -1, "A set outer limit keeps De on Table 1 without the deleted tolerance row");
+assert(findRow(model.table2, "Di"), "The other diameter goes to Table 2");
 const f1 = findRow(model.table1, "F1");
 const f2 = findRow(model.table1, "F2");
 assert(f1 && f1.value.indexOf("50.000 N") >= 0 && f1.value.indexOf("±") >= 0, "F1 is toleranced at L1");
 assert(f2 && f2.value.indexOf("125.000 N") >= 0 && f2.value.indexOf("±") >= 0, "F2 is toleranced at L2");
+assert(findRow(model.table1, "L1") && findRow(model.table1, "L2"), "Lengths at F1 and F2 are on Table 1");
+assert(!findRow(model.table2, "L1") && !findRow(model.table2, "L2"), "Those lengths are not repeated on Table 2");
 assert(findRow(model.table1, "—") || model.table1.rows.some(function (r) {
   return r.particular === "Coil hand" && r.value.indexOf("RH") >= 0;
 }), "Coil hand is on the particulars");
@@ -114,29 +118,55 @@ assert(findRow(model.table1, "e2").value.indexOf("≤") === 0, "Parallelism e2 i
 assert(model.table1.rows.some(function (r) { return r.value.indexOf("EN 10270") >= 0; }),
   "Wire-diameter tolerance is referred to the material standard");
 
-["L0", "Lc", "L1", "L2", "Ln", "s1", "s2", "sc", "τk0", "τk1", "τk2", "τkn", "τkc", "τzul", "G", "Rm", "R", "D", "w", "k", "Sa"].forEach(function (sym) {
+["L0", "Lc", "s1", "s2", "τk1", "τk2", "τkn", "τkc", "τzul", "G", "Rm", "R", "D", "w", "k", "Sa", "Fn"].forEach(function (sym) {
   const found = findRow(model.table2, sym);
   assert(!!found && found.value !== "—" && found.value !== "", "Reference table includes " + sym, found && found.value);
 });
+["Ln", "sc", "τk0", "Lw", "AL0"].forEach(function (sym) {
+  assert(!findRow(model.table1, sym) && !findRow(model.table2, sym), sym + " is deleted from the drawing");
+});
+assert(!model.table1.rows.some(function (r) { return r.particular.indexOf("Coil diameter tolerance") >= 0 || r.particular === "Scope"; }),
+  "Coil diameter tolerance and scope are deleted from Table 1");
+assert(!model.table2.rows.some(function (r) { return r.particular.indexOf("clearance") >= 0 || r.particular.indexOf("mass") >= 0 || r.particular.indexOf("Wire length") >= 0; }),
+  "Clearance, mass and wire length are deleted from Table 2");
+assert(findRow(model.table2, "s1").value.indexOf("% of available travel") >= 0, "Deflection at F1 still carries the provisional travel percent");
+assert(model.travelPercentOnDeflection === "provisional", "The travel percent is flagged as not confirmed");
+assert(model.diameterPlacement.bothSet === false, "The worked example sets only the outer limit");
+const innerOnly = Drawing.build(example, { grade: 2, date: "05 Nov 2026", outerLimit: false, innerLimit: true });
+assert(findRow(innerOnly.table1, "Di") && !findRow(innerOnly.table1, "De"), "An inner limit puts Di on Table 1");
+assert(findRow(innerOnly.table2, "De") && !findRow(innerOnly.table2, "Di"), "The outside diameter then goes to Table 2");
+const neither = Drawing.build(example, { grade: 2, date: "05 Nov 2026", outerLimit: false, innerLimit: false });
+assert(findRow(neither.table1, "De") && findRow(neither.table2, "Di"), "Blank limits show De on Table 1 and Di on Table 2");
+const both = Drawing.build(example, { grade: 2, date: "05 Nov 2026", outerLimit: true, innerLimit: true });
+assert(findRow(both.table1, "De") && findRow(both.table1, "Di") && both.diameterPlacement.bothSetNote.indexOf("Not specified") >= 0,
+  "Both limits keep both diameters on Table 1 and record that the source did not choose one");
 assert(findRow(model.table2, "τkc").value.indexOf("N/mm²") >= 0, "Corrected stress at solid length is numeric");
-assert(findRow(model.table2, "—") && findRow(model.table2, "—").particular === "Pocket diametral clearance"
-  ? true
-  : model.table2.rows.some(function (r) { return r.particular.indexOf("clearance") >= 0 && r.value.indexOf("1.500 mm") >= 0; }),
-  "Diametral clearance is shown when it was supplied");
 assert(model.table2.rows.some(function (r) { return r.value.indexOf("BS EN 13906-1") >= 0; }),
   "Reference table cites BS EN 13906-1");
-assert(findRow(model.table2, "Lw").value.indexOf("mm") >= 0, "Wire length is on the reference table");
-assert(model.table2.rows.some(function (r) { return r.particular.indexOf("mass") >= 0 && r.value.indexOf("g") >= 0; }),
-  "Mass is on the reference table");
-const al0 = findRow(model.table2, "AL0");
-assert(al0 && al0.value.indexOf("not a limit") >= 0, "Indicative AL0 is kept off the acceptance limits when two loads are given");
+assert(model.table2.rows.some(function (r) { return r.particular === "Material"; }), "Material has moved to Table 2");
+assert(model.notes.length === 3 && model.notes[0].text.indexOf("ASME Y14.5") >= 0, "Notes 1 to 3 are still the three existing notes");
+assert(!model.notes.some(function (n) { return n.text.indexOf("relaxation") >= 0; }),
+  "A blank service temperature omits the relaxation note");
+const hot = Drawing.build(Object.assign({}, example, { serviceTemp: 80 }), { grade: 2, date: "05 Nov 2026" });
+assert(hot.notes.length === 4 && hot.notes[3].text === "Set for relaxation at 130 °C",
+  "The drawing notes relaxation at service temperature plus 50");
+assert(hot.notes[0].text === model.notes[0].text, "The first three notes stay when the relaxation note is added");
+const directDraw = Drawing.build(Object.assign({}, example, { stressSource: "direct", tauAllow: 700 }), { grade: 2, date: "05 Nov 2026" });
+assert(findRow(directDraw.table2, "τzul").value.indexOf("entered directly") >= 0,
+  "A direct stress limit is labelled as entered directly");
+assert(model.layout.side.x > model.layout.table.x + model.layout.table.w, "The side view is to the right of the tables");
+assert(model.layout.end.y >= model.layout.side.y + model.layout.side.h - 0.1, "Third angle places the end view under the side view");
+assert(Math.abs((model.layout.end.x + model.layout.end.w / 2) - model.layout.axisX) < 0.2,
+  "The end-view centre line is the spring axis");
+assert(model.layout.end.y + model.layout.end.h <= model.layout.notes.y + 0.1, "The end view stays above the notes");
+assert(model.layout.notes.y + model.layout.notes.h <= model.layout.title.y + 0.1, "Notes sit above the title block");
 assert(model.verificationNote.indexOf("transcribed") >= 0 || model.verificationNote.indexOf("not re-read") >= 0,
   "Drawing carries the verification caveat for Table 3 and aF");
 
 const single = E.evaluateDesign(Object.assign({}, example, { L1: null, F1: null }));
 single.materialName = example.materialName;
 const one = Drawing.build(single, { grade: 1, date: "05 Nov 2026" });
-const oneL0 = findRow(one.table1, "L0");
+const oneL0 = findRow(one.table2, "L0");
 assert(oneL0.value.indexOf("REFERENCE ONLY") === -1, "One specified load does not mark L0 reference-only");
 assert(oneL0.value.indexOf("±") >= 0, "One specified load tolerances L0 with AL0");
 assert(one.grade === 1, "Grade 1 is carried onto the drawing");
@@ -156,6 +186,23 @@ assert(buf.length > 4000, "PDF is more than an empty shell", "bytes " + buf.leng
 assertClose(built.doc.internal.pageSize.getWidth(), 420, "jsPDF page width is 420 mm");
 assertClose(built.doc.internal.pageSize.getHeight(), 297, "jsPDF page height is 297 mm");
 assert(built.doc.internal.getNumberOfPages() === 1, "Drawing is a single sheet");
+const drawn = built.model.layout.drawn;
+const border = built.model.layout.border;
+function inside(box) {
+  return box.x >= border.x && box.y >= border.y &&
+    box.x + box.w <= border.x + border.w + 0.2 &&
+    box.y + box.h <= border.y + border.h + 0.2;
+}
+assert(inside(drawn.table1) && inside(drawn.table2) && inside(drawn.disclaimer),
+  "Tables and the disclaimer stay on the sheet",
+  JSON.stringify(drawn));
+assert(Math.abs(drawn.gaps.top - drawn.gaps.between) < 0.05 &&
+  Math.abs(drawn.gaps.between - drawn.gaps.bottom) < 0.05,
+  "The three left-hand gaps are equal",
+  JSON.stringify(drawn.gaps));
+assert(drawn.table1.x === drawn.table2.x && drawn.table1.w === drawn.table2.w, "The two tables share a left edge and width");
+assert(drawn.disclaimer.x + drawn.disclaimer.w <= built.model.layout.title.x + 0.2,
+  "The disclaimer stays left of the title block");
 assert(built.model.generalNote.indexOf("ASME Y14.5") >= 0, "PDF model still carries the ASME note");
 
 [1, 2, 3].forEach(function (grade) {

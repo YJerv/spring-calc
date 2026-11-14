@@ -48,19 +48,19 @@
 
   function loadGraphStations(design) {
     var stations = [
-      { id: "L0", L: design.L0, F: 0, colour: "#1b4f72" }
+      { id: "L0", L: design.L0, F: 0, colour: "var(--series-l0)" }
     ];
     if (design.L1 != null && design.F1 != null) {
-      stations.push({ id: "L1", L: design.L1, F: design.F1, colour: "#2e7d4f" });
+      stations.push({ id: "L1", L: design.L1, F: design.F1, colour: "var(--series-l1)" });
     }
     if (design.L2 != null && design.F2 != null) {
-      stations.push({ id: "L2", L: design.L2, F: design.F2, colour: "#8a4b08" });
+      stations.push({ id: "L2", L: design.L2, F: design.F2, colour: "var(--series-l2)" });
     }
     if (design.Ln != null && design.Fn != null) {
-      stations.push({ id: "Ln", L: design.Ln, F: design.Fn, colour: "#6b4c9a" });
+      stations.push({ id: "Ln", L: design.Ln, F: design.Fn, colour: "var(--series-ln)" });
     }
     if (design.Lc != null && design.Fc != null) {
-      stations.push({ id: "Lc", L: design.Lc, F: design.Fc, colour: "#8b1e1e" });
+      stations.push({ id: "Lc", L: design.Lc, F: design.Fc, colour: "var(--series-lc)" });
     }
     stations.forEach(function (s) {
       s.travelPct = travelPercent(design, s.L);
@@ -82,7 +82,7 @@
     var L0 = design.L0;
     var Lc = design.Lc;
     var span = Math.max(L0 - Lc, 1);
-    var Lleft = L0 + 0.06 * span;
+    var Lleft = L0;
     var Lright = Lc - 0.08 * span;
     var stations = loadGraphStations(design);
     var Ftop = 1;
@@ -99,25 +99,25 @@
     }
 
     var parts = [];
-    parts.push(empty("rect", { x: 0, y: 0, width: W, height: H, fill: "#fbf8f1" }));
+    parts.push(empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" }));
 
     parts.push(empty("line", {
       x1: pad.l, y1: pad.t, x2: pad.l, y2: H - pad.b,
-      stroke: "#0b1f33", "stroke-width": 1.2
+      stroke: "var(--chart-ink)", "stroke-width": 1.2
     }));
     parts.push(empty("line", {
       x1: pad.l, y1: H - pad.b, x2: W - pad.r, y2: H - pad.b,
-      stroke: "#0b1f33", "stroke-width": 1.2
+      stroke: "var(--chart-ink)", "stroke-width": 1.2
     }));
     parts.push(el("text", {
-      x: 12, y: 16, fill: "#0b1f33", "font-size": 11,
+      x: 12, y: 16, fill: "var(--chart-ink)", "font-size": 11,
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Load F (N)"]));
     parts.push(el("text", {
-      x: pad.l + (W - pad.l - pad.r) / 2, y: H - 8, fill: "#0b1f33", "font-size": 10,
+      x: pad.l + (W - pad.l - pad.r) / 2, y: H - 8, fill: "var(--chart-ink)", "font-size": 10,
       "text-anchor": "middle",
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
-    }, ["Length L (mm)  →  shorter"]));
+    }, ["Deflection, S"]));
 
     var x0 = xOf(L0);
     var y0 = yOf(0);
@@ -130,14 +130,11 @@
     }
     parts.push(empty("line", {
       x1: x0, y1: y0, x2: xc, y2: yc,
-      stroke: "#0b1f33", "stroke-width": 2
+      stroke: "var(--chart-ink)", "stroke-width": 2
     }));
 
-    function haloText(attrs, children) {
+    function labelText(attrs, children) {
       attrs = Object.assign({
-        stroke: "#fbf8f1",
-        "stroke-width": 3,
-        "paint-order": "stroke",
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, attrs);
       return el("text", attrs, children);
@@ -175,12 +172,12 @@
       }
       var y1 = above ? y - 15 : y + 12;
       var y2 = above ? y - 6 : y + 21;
-      parts.push(haloText({
+      parts.push(labelText({
         x: tx, y: y1, "text-anchor": "middle", fill: s.colour,
         "font-size": 8, "font-weight": 700
       }, [txt(line1)]));
       if (line2) {
-        parts.push(haloText({
+        parts.push(labelText({
           x: tx, y: y2, "text-anchor": "middle", fill: s.colour,
           "font-size": 8, "font-weight": 650
         }, [txt(line2)]));
@@ -209,12 +206,12 @@
         });
       }
       parts.push(empty("circle", {
-        cx: x, cy: yLoad, r: 4.2, fill: s.colour, stroke: "#fbf8f1", "stroke-width": 1.4
+        cx: x, cy: yLoad, r: 4.2, fill: s.colour, stroke: "var(--chart-paper)", "stroke-width": 1.4
       }));
     });
     svg._markerGeom = markerGeom;
 
-    var yLabelItems = [{ F: 0, colour: "#1b4f72", id: "F0" }].concat(loaded.map(function (s) {
+    var yLabelItems = [{ F: 0, colour: "var(--series-l0)", id: "F0" }].concat(loaded.map(function (s) {
       return { F: s.F, colour: s.colour, id: s.id };
     }));
     yLabelItems.sort(function (a, b) { return a.F - b.F; });
@@ -252,7 +249,7 @@
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, [txt(s.id)]));
       parts.push(el("text", {
-        x: xAnchor, y: yVal, "text-anchor": anchor, fill: "#5c564c",
+        x: xAnchor, y: yVal, "text-anchor": anchor, fill: "var(--chart-muted)",
         "font-size": 8,
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, [txt(E.fmt(s.L, 1) + " mm")]));
@@ -292,13 +289,13 @@
       return pad.t + (1 - L / LcMax) * (H - pad.t - pad.b);
     }
 
-    var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "#fbf8f1" })];
+    var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" })];
     parts.push(el("text", {
-      x: pad.l, y: 14, fill: "#8a4b08", "font-size": 9, "font-weight": 700,
+      x: pad.l, y: 14, fill: "var(--series-l2)", "font-size": 9, "font-weight": 700,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["Stress % of allowable"]));
     parts.push(el("text", {
-      x: W - pad.r, y: 14, fill: "#1b4f72", "font-size": 9, "font-weight": 700,
+      x: W - pad.r, y: 14, fill: "var(--series-l0)", "font-size": 9, "font-weight": 700,
       "text-anchor": "end",
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["Solid length Lc"]));
@@ -310,33 +307,33 @@
       ptsLc.push(xOf(r.D).toFixed(1) + "," + yLc(r.Lc).toFixed(1));
     });
     parts.push(empty("polyline", {
-      points: ptsPct.join(" "), fill: "none", stroke: "#8a4b08", "stroke-width": 1.8
+      points: ptsPct.join(" "), fill: "none", stroke: "var(--series-l2)", "stroke-width": 1.8
     }));
     parts.push(empty("polyline", {
-      points: ptsLc.join(" "), fill: "none", stroke: "#1b4f72", "stroke-width": 1.8
+      points: ptsLc.join(" "), fill: "none", stroke: "var(--series-l0)", "stroke-width": 1.8
     }));
     if (L2) {
       parts.push(empty("line", {
         x1: pad.l, y1: yLc(L2), x2: W - pad.r, y2: yLc(L2),
-        stroke: "#8b1e1e", "stroke-width": 1, "stroke-dasharray": "4 3"
+        stroke: "var(--series-lc)", "stroke-width": 1, "stroke-dasharray": "4 3"
       }));
       parts.push(el("text", {
-        x: W - pad.r, y: yLc(L2) - 4, "text-anchor": "end", fill: "#8b1e1e",
+        x: W - pad.r, y: yLc(L2) - 4, "text-anchor": "end", fill: "var(--series-lc)",
         "font-size": 8, "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, ["L2"]));
     }
     parts.push(empty("line", {
       x1: pad.l, y1: yPct(100), x2: W - pad.r, y2: yPct(100),
-      stroke: "#8a4b08", "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.6
+      stroke: "var(--series-l2)", "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.6
     }));
     if (currentD != null) {
       parts.push(empty("line", {
         x1: xOf(currentD), y1: pad.t, x2: xOf(currentD), y2: H - pad.b,
-        stroke: "#0b1f33", "stroke-width": 1
+        stroke: "var(--chart-ink)", "stroke-width": 1
       }));
     }
     parts.push(el("text", {
-      x: W / 2, y: H - 8, "text-anchor": "middle", fill: "#5c564c", "font-size": 9,
+      x: W / 2, y: H - 8, "text-anchor": "middle", fill: "var(--chart-muted)", "font-size": 9,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["Mean coil diameter D (mm)"]));
 
@@ -360,17 +357,17 @@
     var yTop = margin.t + (innerH - L0 * scale) / 2;
     var stroke = Math.max(1.2, d * scale);
 
-    var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "#fbf8f1" })];
+    var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" })];
 
     /* Ground seats */
     var half = (De * scale) / 2;
     parts.push(empty("line", {
       x1: cx - half, y1: yTop, x2: cx + half, y2: yTop,
-      stroke: "#0b1f33", "stroke-width": 2
+      stroke: "var(--chart-ink)", "stroke-width": 2
     }));
     parts.push(empty("line", {
       x1: cx - half, y1: yTop + L0 * scale, x2: cx + half, y2: yTop + L0 * scale,
-      stroke: "#0b1f33", "stroke-width": 2
+      stroke: "var(--chart-ink)", "stroke-width": 2
     }));
 
     var turns = Math.max(nt, 2);
@@ -401,7 +398,7 @@
         if (back.length) {
           parts.push(empty("polyline", {
             points: back.join(" "), fill: "none",
-            stroke: "#8a9aab", "stroke-width": stroke,
+            stroke: "var(--coil-back)", "stroke-width": stroke,
             "stroke-linecap": "round", "stroke-linejoin": "round"
           }));
           back = [];
@@ -411,7 +408,7 @@
         if (front.length) {
           parts.push(empty("polyline", {
             points: front.join(" "), fill: "none",
-            stroke: "#0b1f33", "stroke-width": stroke,
+            stroke: "var(--chart-ink)", "stroke-width": stroke,
             "stroke-linecap": "round", "stroke-linejoin": "round"
           }));
           front = [];
@@ -422,14 +419,14 @@
     if (back.length) {
       parts.push(empty("polyline", {
         points: back.join(" "), fill: "none",
-        stroke: "#8a9aab", "stroke-width": stroke,
+        stroke: "var(--coil-back)", "stroke-width": stroke,
         "stroke-linecap": "round", "stroke-linejoin": "round"
       }));
     }
     if (front.length) {
       parts.push(empty("polyline", {
         points: front.join(" "), fill: "none",
-        stroke: "#0b1f33", "stroke-width": stroke,
+        stroke: "var(--chart-ink)", "stroke-width": stroke,
         "stroke-linecap": "round", "stroke-linejoin": "round"
       }));
     }
@@ -438,20 +435,20 @@
     var dimX = margin.l - 28;
     parts.push(empty("line", {
       x1: dimX, y1: yTop, x2: dimX, y2: yTop + L0 * scale,
-      stroke: "#6b4c9a", "stroke-width": 1
+      stroke: "var(--series-ln)", "stroke-width": 1
     }));
     parts.push(empty("line", {
       x1: dimX - 6, y1: yTop, x2: dimX + 6, y2: yTop,
-      stroke: "#6b4c9a", "stroke-width": 1
+      stroke: "var(--series-ln)", "stroke-width": 1
     }));
     parts.push(empty("line", {
       x1: dimX - 6, y1: yTop + L0 * scale, x2: dimX + 6, y2: yTop + L0 * scale,
-      stroke: "#6b4c9a", "stroke-width": 1
+      stroke: "var(--series-ln)", "stroke-width": 1
     }));
     parts.push(el("text", {
       x: dimX - 10, y: yTop + (L0 * scale) / 2,
       transform: "rotate(-90 " + (dimX - 10) + " " + (yTop + (L0 * scale) / 2) + ")",
-      fill: "#6b4c9a", "font-size": 11, "text-anchor": "middle", "font-weight": 600,
+      fill: "var(--series-ln)", "font-size": 11, "text-anchor": "middle", "font-weight": 600,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["L0 = " + E.fmt(L0, 2) + " mm"]));
 
@@ -459,29 +456,29 @@
     var yDe = yTop + L0 * scale + 22;
     parts.push(empty("line", {
       x1: cx - half, y1: yDe, x2: cx + half, y2: yDe,
-      stroke: "#1b4f72", "stroke-width": 1
+      stroke: "var(--series-l0)", "stroke-width": 1
     }));
     parts.push(empty("line", {
       x1: cx - half, y1: yDe - 5, x2: cx - half, y2: yDe + 5,
-      stroke: "#1b4f72", "stroke-width": 1
+      stroke: "var(--series-l0)", "stroke-width": 1
     }));
     parts.push(empty("line", {
       x1: cx + half, y1: yDe - 5, x2: cx + half, y2: yDe + 5,
-      stroke: "#1b4f72", "stroke-width": 1
+      stroke: "var(--series-l0)", "stroke-width": 1
     }));
     parts.push(el("text", {
-      x: cx, y: yDe + 16, "text-anchor": "middle", fill: "#1b4f72",
+      x: cx, y: yDe + 16, "text-anchor": "middle", fill: "var(--series-l0)",
       "font-size": 11, "font-weight": 600,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["De = " + E.fmt(De, 2) + " mm"]));
 
     parts.push(el("text", {
-      x: W - margin.r, y: 18, "text-anchor": "end", fill: "#5c564c",
+      x: W - margin.r, y: 18, "text-anchor": "end", fill: "var(--chart-muted)",
       "font-size": 10,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["d = " + E.fmt(d, 2) + " mm   ·   " + (design.wind === "left" ? "LH" : "RH") + " wound"]));
     parts.push(el("text", {
-      x: W / 2, y: H - 12, "text-anchor": "middle", fill: "#5c564c",
+      x: W / 2, y: H - 12, "text-anchor": "middle", fill: "var(--chart-muted)",
       "font-size": 10,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["Side view at free length  ·  scale " + E.fmt(scale, 2) + " px/mm"]));
@@ -492,13 +489,192 @@
     svg.innerHTML = parts.join("");
   }
 
+  function dutyIllustration() {
+    /* 390 user units is the design width the coil strokes are sized for. */
+    var W = 390;
+    var pad = { l: 48, r: 14, t: 26 };
+    var plotW = W - pad.l - pad.r;
+    var plotH = 98;
+    var ox = pad.l;
+    var oy = 124;
+    var radius = 16;
+    var frontW = 5.7;
+    var backW = 3.75;
+    var turns = 9;
+    var gap = 6;
+    var xFix = 368;
+    var font = "ui-sans-serif, system-ui, sans-serif";
+    var labelW = {
+      "Load, F": 50,
+      "Deflection, S": 86,
+      "L0": 20,
+      "L1": 20,
+      "L2": 20,
+      "L1 / F1": 48,
+      "L2 / F2": 48
+    };
+    var ascent = 10;
+    var descent = 3;
+    function r1(n) { return Math.round(n * 10) / 10; }
+    function xOf(u) { return ox + u * plotW; }
+    function yOf(f) { return oy - f * plotH; }
+
+    var u1 = 0.36;
+    var u2 = 0.68;
+    var x1 = xOf(u1);
+    var y1 = yOf(u1);
+    var x2 = xOf(u2);
+    var y2 = yOf(u2);
+    var cy2 = 172;
+    var cy1 = 218;
+    var cy0 = 264;
+    var H = cy0 + radius + frontW + 8;
+
+    var parts = [];
+    parts.push(empty("rect", {
+      x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)"
+    }));
+    parts.push(empty("line", {
+      x1: r1(ox), y1: pad.t, x2: r1(ox), y2: r1(oy),
+      stroke: "var(--chart-ink)", "stroke-width": 1.2, "data-axis": "y"
+    }));
+    parts.push(empty("line", {
+      x1: r1(ox), y1: r1(oy), x2: W - pad.r, y2: r1(oy),
+      stroke: "var(--chart-ink)", "stroke-width": 1.2, "data-axis": "x"
+    }));
+
+    function addLabel(text, x, baseline, anchor, fill) {
+      var w = labelW[text];
+      var left = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
+      var box = { x: r1(left), y: r1(baseline - ascent), w: w, h: ascent + descent };
+      parts.push(el("text", {
+        x: r1(x), y: r1(baseline), fill: fill, "font-size": 11, "font-weight": 700,
+        "text-anchor": anchor, "font-family": font,
+        "data-box": box.x + "," + box.y + "," + box.w + "," + box.h
+      }, [text]));
+    }
+
+    addLabel("Load, F", 8, 14, "start", "var(--chart-ink)");
+    addLabel("Deflection, S", (x1 + x2) / 2, oy + gap + ascent + 1, "middle", "var(--chart-ink)");
+
+    var xEnd = xOf(0.9);
+    var yEnd = yOf(0.9);
+    parts.push(empty("line", {
+      x1: r1(ox), y1: r1(oy), x2: r1(xEnd), y2: r1(yEnd),
+      stroke: "var(--chart-ink)", "stroke-width": 2, "data-spring-line": "1"
+    }));
+
+    function hGuide(x, y, colour) {
+      parts.push(empty("line", {
+        x1: r1(ox), y1: r1(y), x2: r1(x), y2: r1(y),
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3"
+      }));
+    }
+    function vGuide(id, x, yFrom, yTo, colour) {
+      parts.push(empty("line", {
+        x1: r1(x), y1: r1(yFrom), x2: r1(x), y2: r1(yTo),
+        stroke: colour, "stroke-width": 1.15, "stroke-dasharray": "3 3",
+        "data-guide": id
+      }));
+    }
+    hGuide(x1, y1, "var(--series-l1)");
+    hGuide(x2, y2, "var(--series-l2)");
+    vGuide("L1", x1, y1, cy1 - radius, "var(--series-l1)");
+    vGuide("L2", x2, y2, cy2 - radius, "var(--series-l2)");
+    vGuide("L0", ox, oy + 3, cy0 - radius, "var(--series-l0)");
+
+    parts.push(empty("circle", {
+      cx: r1(x1), cy: r1(y1), r: 4.2, fill: "var(--series-l1)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    parts.push(empty("circle", {
+      cx: r1(x2), cy: r1(y2), r: 4.2, fill: "var(--series-l2)",
+      stroke: "var(--chart-paper)", "stroke-width": 1.4
+    }));
+    addLabel("L0", ox - gap - 1, oy - gap - descent - 1, "end", "var(--series-l0)");
+    addLabel("L1 / F1", x1 - gap - 5, y1 - gap - descent - 1, "end", "var(--series-l1)");
+    addLabel("L2 / F2", x2 - gap - 5, y2 - gap - descent - 1, "end", "var(--series-l2)");
+
+    function addHelix(id, x0, cy, colour) {
+      var steps = turns * 36;
+      var back = [];
+      var front = [];
+      function flush(buf, stroke, width, strand) {
+        if (buf.length < 2) { buf.length = 0; return; }
+        parts.push(empty("polyline", {
+          points: buf.join(" "),
+          fill: "none",
+          stroke: stroke,
+          "stroke-width": width,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          "data-spring": id,
+          "data-strand": strand,
+          "data-cy": String(cy)
+        }));
+        buf.length = 0;
+      }
+      var i;
+      var prevFront = null;
+      for (i = 0; i <= steps; i++) {
+        var t = i / steps;
+        var ang = t * turns * 2 * Math.PI;
+        var x = x0 + t * (xFix - x0);
+        var y = cy + radius * Math.sin(ang);
+        var pt = r1(x) + "," + r1(y);
+        var isFront = Math.cos(ang) >= 0;
+        if (prevFront !== null && isFront !== prevFront) {
+          if (isFront) {
+            back.push(pt);
+            flush(back, "var(--coil-back)", backW, "back");
+            front.push(pt);
+          } else {
+            front.push(pt);
+            flush(front, "var(--chart-ink)", frontW, "front");
+            back.push(pt);
+          }
+        } else if (isFront) front.push(pt);
+        else back.push(pt);
+        prevFront = isFront;
+      }
+      flush(back, "var(--coil-back)", backW, "back");
+      flush(front, "var(--chart-ink)", frontW, "front");
+      [x0, xFix].forEach(function (seatX) {
+        parts.push(empty("line", {
+          x1: r1(seatX), y1: r1(cy - radius), x2: r1(seatX), y2: r1(cy + radius),
+          stroke: "var(--chart-ink)", "stroke-width": 2.2,
+          "data-seat": id
+        }));
+      });
+      addLabel(id, 8, cy + (ascent - descent) / 2, "start", colour);
+    }
+
+    /* L2 (shortest) on top, then L1, then L0. Fixed end on the right. */
+    addHelix("L2", x2, cy2, "var(--series-l2)");
+    addHelix("L1", x1, cy1, "var(--series-l1)");
+    addHelix("L0", ox, cy0, "var(--series-l0)");
+
+    return el("svg", {
+      class: "help-svg duty-graph",
+      viewBox: "0 0 " + W + " " + H,
+      xmlns: "http://www.w3.org/2000/svg",
+      role: "img",
+      "data-coil-radius": String(radius),
+      "data-front-stroke": String(frontW),
+      "data-back-stroke": String(backW),
+      "data-turns": String(turns),
+      "aria-label": "Load, F against deflection, S, with horizontal springs at L0, L1 and L2"
+    }, parts);
+  }
+
   root.SpringCharts = {
     renderLoadGraph: renderLoadGraph,
     renderTradeoff: renderTradeoff,
     renderSpringDiagram: renderSpringDiagram,
     loadGraphStations: loadGraphStations,
     travelPercent: travelPercent,
-    stressAtLoad: stressAtLoad
+    stressAtLoad: stressAtLoad,
+    dutyIllustration: dutyIllustration
   };
   if (typeof module === "object" && module.exports) {
     module.exports = root.SpringCharts;
