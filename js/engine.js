@@ -266,16 +266,48 @@
     };
   }
 
-  function deriveModeB(F, L, R, asPoint) {
+  function deriveModeB(F, L, R, asPoint, range) {
     F = Number(F);
     L = Number(L);
     R = Number(R);
     asPoint = asPoint || "F2";
     var errors = [];
     if (!(F >= 0)) errors.push("Load must be zero or greater.");
-    if (!(L > 0)) errors.push("Length must be greater than zero.");
     if (!(R > 0)) errors.push("Spring rate must be greater than zero.");
+    var Lcomp = range && range.Lcomp != null && range.Lcomp !== "" ? Number(range.Lcomp) : null;
+    var Lrel = range && range.Lrel != null && range.Lrel !== "" ? Number(range.Lrel) : null;
+    var ranged = Lcomp != null && Lrel != null && isFinite(Lcomp) && isFinite(Lrel);
+    if (!ranged && !(L > 0)) errors.push("Length must be greater than zero.");
+    if (ranged && !(Lrel > Lcomp)) {
+      errors.push("The most relaxed working length must be longer than the most compressed length.");
+    }
     if (errors.length) return { ok: false, errors: errors };
+    if (ranged) {
+      var atCompressed = asPoint !== "F1";
+      var Lpoint = atCompressed ? Lcomp : Lrel;
+      var span = Lrel - Lcomp;
+      var F1 = atCompressed ? F - R * span : F;
+      var F2 = atCompressed ? F : F + R * span;
+      if (!(F1 >= 0)) {
+        return { ok: false, errors: ["The load at the relaxed length would be below zero. Check the rate and the length range."] };
+      }
+      return {
+        ok: true,
+        mode: "B",
+        R: R,
+        L0: Lpoint + F / R,
+        L1: Lrel,
+        F1: F1,
+        L2: Lcomp,
+        F2: F2,
+        Fmax: F2,
+        LmaxLoad: Lcomp,
+        Lcomp: Lcomp,
+        Lrel: Lrel,
+        Fcomp: F2,
+        errors: []
+      };
+    }
     var L0 = L + F / R;
     var out = {
       ok: true,
@@ -354,6 +386,7 @@
     var G = Number(input.G);
     var Rm = Number(input.Rm);
     var tauFactor = input.tauFactor == null ? 0.5 : Number(input.tauFactor);
+    var useDirectStress = input.useDirectStress === true && Number(input.tauAllowDirect) > 0;
     var Rreq = Number(input.R);
     var L0 = Number(input.L0);
     var L1 = input.L1 == null || input.L1 === "" ? null : Number(input.L1);
@@ -385,7 +418,8 @@
     var Di = D - d;
     var tau = uncorrectedStress(D, d, Fmax);
     var tauK = k * tau;
-    var tauAllow = tauFactor * Rm;
+    var tauAllow = useDirectStress ? Number(input.tauAllowDirect) : tauFactor * Rm;
+    var stressSource = useDirectStress ? "direct" : "factor";
     var pctAllow = tauAllow > 0 ? (100 * tauK) / tauAllow : Infinity;
     var p = pitch(L0, n, d, e);
     var sc = L0 - Lc;
@@ -416,8 +450,20 @@
     if (!(Di > 0)) reasons.push("Inside diameter is not positive.");
     if (!(n + 1e-9 >= N_MIN)) reasons.push("Fewer than two active coils.");
     if (n > N_MAX) reasons.push("More than 30 active coils (consider a larger mean diameter).");
+    var limitText = stressSource === "direct"
+      ? Number(tauAllow).toFixed(0) + " N/mm²"
+      : (100 * tauFactor).toFixed(0) + " % of Rm";
     if (!(tauK <= tauAllow + 1e-6)) {
-      reasons.push("Corrected stress exceeds the allowable (τk > " + (100 * tauFactor).toFixed(0) + " % of Rm).");
+      reasons.push("Corrected stress exceeds the allowable (τk > " + limitText + ").");
+    }
+    var LcompIn = input.Lcomp != null && input.Lcomp !== "" ? Number(input.Lcomp) : null;
+    var tauKcomp = null;
+    if (LcompIn != null && isFinite(LcompIn)) {
+      var Fcomp = Rreq * (L0 - LcompIn);
+      tauKcomp = k * uncorrectedStress(D, d, Fcomp);
+      if (Fcomp > Fmax + 1e-6 && !(tauKcomp <= tauAllow + 1e-6)) {
+        reasons.push("Corrected stress at the most compressed working length exceeds the allowable (τk > " + limitText + ").");
+      }
     }
     if (!(Lc < LmaxLoad - 1e-9)) {
       reasons.push("Solid length is not shorter than the maximum working length.");
@@ -482,6 +528,8 @@
       Rm: Rm,
       tauFactor: tauFactor,
       tauAllow: tauAllow,
+      stressSource: stressSource,
+      tauKcomp: tauKcomp,
       tau: tau,
       tauK: tauK,
       tau1: tau1,
@@ -504,6 +552,10 @@
       wireLength: wireLength,
       slenderness: slenderness,
       DeMax: DeMax,
+      Lcomp: LcompIn,
+      serviceTemp: input.serviceTemp == null || input.serviceTemp === "" || !isFinite(Number(input.serviceTemp))
+        ? null
+        : Number(input.serviceTemp),
       ends: e.id,
       endsLabel: e.label,
       score: score,
@@ -578,14 +630,63 @@
     return { bounds: bounds, rows: rows };
   }
 
-  function autoOptimise(input, steps) {
-    var scan = scanDiameters(input, steps == null ? 80 : steps);
-    var best = null;
-    for (var i = 0; i < scan.rows.length; i++) {
-      var row = scan.rows[i];
-      if (!best || row.score > best.score) best = row;
+  function nearbyStandardWires(selected) {
+    var sizes = STANDARD_WIRES;
+    var target = Number(selected);
+    var idx = 0;
+    var best = Infinity;
+    var i;
+    for (i = 0; i < sizes.length; i++) {
+      var dist = Math.abs(sizes[i] - target);
+      if (dist < best) { best = dist; idx = i; }
     }
-    return { bounds: scan.bounds, rows: scan.rows, best: best };
+    return sizes.slice(Math.max(0, idx - 3), Math.min(sizes.length, idx + 4));
+  }
+
+  function travelPercentAt(ev, L) {
+    if (!ev || L == null || !(ev.sc > 0) || !isFinite(Number(L))) return null;
+    return 100 * (ev.L0 - Number(L)) / ev.sc;
+  }
+
+  function serviceHardOk(ev, input) {
+    if (!ev || !ev.ok || !ev.pass) return false;
+    var Lcomp = input && input.Lcomp != null && input.Lcomp !== "" ? Number(input.Lcomp) : ev.L2;
+    var Lrel = input && input.Lrel != null && input.Lrel !== "" ? Number(input.Lrel) : ev.L1;
+    var pcts = [];
+    var compressed = travelPercentAt(ev, Lcomp);
+    var relaxed = travelPercentAt(ev, Lrel);
+    if (compressed != null) pcts.push(compressed);
+    if (relaxed != null) pcts.push(relaxed);
+    var i;
+    for (i = 0; i < pcts.length; i++) {
+      if (pcts[i] < 20 - 1e-6 || pcts[i] > 80 + 1e-6) return false;
+    }
+    if (Lcomp != null && isFinite(Number(Lcomp))) {
+      var tauK = ev.k * uncorrectedStress(ev.D, ev.d, ev.R * (ev.L0 - Number(Lcomp)));
+      if (!(tauK <= ev.tauAllow + 1e-6)) return false;
+    }
+    return true;
+  }
+
+  function autoOptimise(input, steps) {
+    steps = steps == null ? 40 : steps;
+    var wires = nearbyStandardWires(input.d);
+    var best = null;
+    var bounds = null;
+    var i;
+    var j;
+    for (i = 0; i < wires.length; i++) {
+      var scan = scanDiameters(Object.assign({}, input, { d: wires[i] }), steps);
+      if (Math.abs(wires[i] - Number(input.d)) < 1e-9) bounds = scan.bounds;
+      for (j = 0; j < scan.rows.length; j++) {
+        var row = scan.rows[j];
+        if (!serviceHardOk(row, input)) continue;
+        if (!best || row.score > best.score) best = row;
+      }
+    }
+    if (best) bounds = diameterBounds(best.d, input.DeMax, springGuideLimit(input));
+    if (!bounds) bounds = diameterBounds(input.d, input.DeMax, springGuideLimit(input));
+    return { bounds: bounds, rows: best ? [best] : [], best: best, wires: wires };
   }
 
   function geometricOk(ev) {
@@ -873,7 +974,8 @@
       });
     }
     var outerInvalid = !outerIsBlank(input.DeMax) && !(Number(input.DeMax) > 0);
-    if (outerInvalid || !(Number(input.G) > 0) || !(Number(input.Rm) > 0)) {
+    var strengthReady = Number(input.Rm) > 0 || (input.useDirectStress === true && Number(input.tauAllowDirect) > 0);
+    if (outerInvalid || !(Number(input.G) > 0) || !strengthReady) {
       return finishFeasibility(input, {
         ready: false,
         blocked: "pocket-or-material",
@@ -1071,6 +1173,8 @@
     listWires: listWires,
     scanDiameters: scanDiameters,
     autoOptimise: autoOptimise,
+    nearbyStandardWires: nearbyStandardWires,
+    serviceHardOk: serviceHardOk,
     geometricOk: geometricOk,
     heatmapBand: heatmapBand,
     steppedValues: steppedValues,

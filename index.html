@@ -82,6 +82,26 @@
               <span class="hint">Used only when a spring guide diameter is entered.</span>
             </div>
           </div>
+          <fieldset class="constraints">
+            <legend>Application constraints</legend>
+            <div class="grid-2">
+              <div class="field">
+                <label for="Lcomp">Most compressed working length</label>
+                <div class="unit-row"><input id="Lcomp" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
+                <span class="hint">The shortest length the spring reaches in service. Blank uses the loaded length already entered.</span>
+              </div>
+              <div class="field">
+                <label for="Lrel">Most relaxed working length</label>
+                <div class="unit-row"><input id="Lrel" type="number" inputmode="decimal" step="0.1" min="0"><span class="unit">mm</span></div>
+                <span class="hint">The longest working length. Blank uses the lighter loaded length.</span>
+              </div>
+              <div class="field">
+                <label for="serviceTemp">Service temperature</label>
+                <div class="unit-row"><input id="serviceTemp" type="number" inputmode="decimal" step="1"><span class="unit">°C</span></div>
+                <span class="hint">Blank omits the relaxation note on the drawing.</span>
+              </div>
+            </div>
+          </fieldset>
           <div class="btn-row no-print">
             <button type="button" class="btn ghost" id="btnClearance">Use suggested clearance</button>
           </div>
@@ -227,10 +247,20 @@
           </div>
           <div class="field">
             <div class="with-info">
-              <label for="tauFactor">Allowable stress factor</label>
+              <label>Active stress limit</label>
               <button type="button" class="info-btn no-print" data-help="stress" aria-label="Information: stress factor" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
             </div>
+            <label class="mode-option"><input type="radio" name="stressMode" value="factor" checked> Factor × tensile strength</label>
+            <label class="mode-option"><input type="radio" name="stressMode" value="direct"> Entered stress limit</label>
+            <p id="stressActive" class="hint"></p>
+          </div>
+          <div class="field">
+            <label for="tauFactor">Allowable stress factor</label>
             <div class="unit-row"><input id="tauFactor" type="number" inputmode="decimal" step="0.01" min="0.2" max="0.8" value="0.5"><span class="unit">× Rm</span></div>
+          </div>
+          <div class="field">
+            <label for="tauAllowDirect">Entered stress limit</label>
+            <div class="unit-row"><input id="tauAllowDirect" type="number" inputmode="decimal" step="1" min="0" placeholder="N/mm²" disabled><span class="unit">N/mm²</span></div>
           </div>
           <div class="field">
             <label class="lbl" for="useIndicativeRm" style="display:flex;align-items:center;gap:8px;margin-top:22px;">
@@ -275,10 +305,14 @@
 
     <section id="step-5" class="step" data-step="5">
       <div class="card">
-        <h2>5. Optimise mean coil diameter</h2>
-        <p class="lead">For the selected wire, vary D between the index limits (4 to 16) and the pocket. Smaller D lowers stress but needs more coils and a longer solid length.</p>
+        <h2>5. Optimization</h2>
+        <p class="lead">Pick a standard wire near the selection, then vary D between the index limits (4 to 16) and the pocket. Smaller D lowers stress but needs more coils and a longer solid length.</p>
         <div class="btn-row no-print">
           <button type="button" class="btn gold" id="btnOptimise">Auto-optimise</button>
+        </div>
+        <div class="field">
+          <label for="optWire">Wire diameter</label>
+          <select id="optWire"></select>
         </div>
         <div class="field">
           <label for="Dslider">Mean coil diameter D = <span id="Dlabel">—</span> mm</label>

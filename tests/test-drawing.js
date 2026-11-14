@@ -145,6 +145,15 @@ assert(model.table2.rows.some(function (r) { return r.value.indexOf("BS EN 13906
   "Reference table cites BS EN 13906-1");
 assert(model.table2.rows.some(function (r) { return r.particular === "Material"; }), "Material has moved to Table 2");
 assert(model.notes.length === 3 && model.notes[0].text.indexOf("ASME Y14.5") >= 0, "Notes 1 to 3 are still the three existing notes");
+assert(!model.notes.some(function (n) { return n.text.indexOf("relaxation") >= 0; }),
+  "A blank service temperature omits the relaxation note");
+const hot = Drawing.build(Object.assign({}, example, { serviceTemp: 80 }), { grade: 2, date: "05 Nov 2026" });
+assert(hot.notes.length === 4 && hot.notes[3].text === "Set for relaxation at 130 °C",
+  "The drawing notes relaxation at service temperature plus 50");
+assert(hot.notes[0].text === model.notes[0].text, "The first three notes stay when the relaxation note is added");
+const directDraw = Drawing.build(Object.assign({}, example, { stressSource: "direct", tauAllow: 700 }), { grade: 2, date: "05 Nov 2026" });
+assert(findRow(directDraw.table2, "τzul").value.indexOf("entered directly") >= 0,
+  "A direct stress limit is labelled as entered directly");
 assert(model.layout.side.x > model.layout.table.x + model.layout.table.w, "The side view is to the right of the tables");
 assert(model.layout.end.y >= model.layout.side.y + model.layout.side.h - 0.1, "Third angle places the end view under the side view");
 assert(Math.abs((model.layout.end.x + model.layout.end.w / 2) - model.layout.axisX) < 0.2,

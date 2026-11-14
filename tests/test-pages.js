@@ -46,6 +46,18 @@ assert(page1.indexOf(">Spring guide diameter<") >= 0 && page1.indexOf('id="inner
   "The first page has a spring guide diameter and its clearance");
 assert(page1.indexOf("Used only when a spring guide diameter is entered.") >= 0,
   "The guide clearance hint says when it is used");
+assert(page1.indexOf(">Application constraints<") >= 0, "Page 1 has an application constraints section");
+assert(page1.indexOf('id="Lcomp"') >= 0 && page1.indexOf('id="Lrel"') >= 0,
+  "Page 1 has the most compressed and most relaxed working lengths");
+assert(page1.indexOf('id="serviceTemp"') >= 0 && page1.indexOf(">°C<") >= 0,
+  "Page 1 has a service temperature in °C");
+assert(page3.indexOf('name="stressMode"') >= 0 && page3.indexOf('id="tauAllowDirect"') >= 0,
+  "The material page can enter a stress limit directly");
+assert(page3.indexOf('id="stressActive"') >= 0, "The material page states which stress limit is active");
+const page5 = section(html, "step-5");
+assert(page5.indexOf(">5. Optimization<") >= 0, "The mean-diameter page is labelled Optimization");
+assert(page5.indexOf('id="optWire"') >= 0 && page5.indexOf('id="Dslider"') >= 0,
+  "Optimization offers a wire-size picker and the diameter slider");
 assert(page1.indexOf("Suggested clearance is a typical workshop allowance") === -1,
   "The suggested-clearance paragraph is not left on the constraints page");
 assert(page1.indexOf('data-help="diameters"') >= 0, "The diameter help button is on the first page");

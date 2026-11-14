@@ -73,11 +73,33 @@
     refreshLoadSummary();
   }
 
+  function stressMode() {
+    var checked = document.querySelector("input[name=stressMode]:checked");
+    return checked ? checked.value : "factor";
+  }
+
+  function serviceRange() {
+    var Lcomp = optionalNum("Lcomp");
+    var Lrel = optionalNum("Lrel");
+    if (Lcomp == null && Lrel == null) return null;
+    return { Lcomp: Lcomp, Lrel: Lrel };
+  }
+
   function currentLoads() {
-    if (state.mode === "A") {
-      return E.deriveModeA(num("L1"), num("F1"), num("L2"), num("F2"));
+    var range = serviceRange();
+    if (range && (range.Lcomp == null || range.Lrel == null)) {
+      return { ok: false, errors: ["Enter both the most compressed and the most relaxed working lengths, or leave both blank."] };
     }
-    return E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"));
+    if (state.mode === "A") {
+      var out = E.deriveModeA(num("L1"), num("F1"), num("L2"), num("F2"));
+      if (out.ok && range) {
+        out.Lcomp = range.Lcomp;
+        out.Lrel = range.Lrel;
+        if (out.R > 0) out.Fcomp = out.R * (out.L0 - range.Lcomp);
+      }
+      return out;
+    }
+    return E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"), range);
   }
 
   function refreshLoadSummary() {
@@ -121,9 +143,22 @@
       G: num("G"),
       Rm: num("Rm"),
       tauFactor: num("tauFactor"),
+      useDirectStress: stressMode() === "direct",
+      tauAllowDirect: optionalNum("tauAllowDirect"),
+      serviceTemp: optionalNum("serviceTemp"),
+      Lcomp: optionalNum("Lcomp"),
+      Lrel: optionalNum("Lrel"),
       useIndicativeRm: $("useIndicativeRm").checked,
       density: E.materialById(val("material")).density
     };
+  }
+
+  function activeStressText(g) {
+    var direct = g.useDirectStress && g.tauAllowDirect > 0;
+    var tauAllow = direct ? g.tauAllowDirect : (g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null);
+    if (!(tauAllow > 0)) return null;
+    var how = direct ? "entered directly" : E.fmt(g.tauFactor, 2) + " × Rm";
+    return E.fmt(tauAllow, 0) + " N/mm² (" + how + ")";
   }
 
   function refreshGeomSummary() {
@@ -132,10 +167,18 @@
     var note = $("constraintNote");
     var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (note) note.textContent = conflict || "";
-    var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
+    var active = activeStressText(g);
     box.innerHTML =
-      "<dt>Allowable corrected stress (screening)</dt><dd>" +
-      (tauAllow ? E.fmt(tauAllow, 0) + " N/mm²  (" + E.fmt(g.tauFactor, 2) + " × Rm)" : "—") + "</dd>";
+      "<dt>Active stress limit</dt><dd>" + (active || "—") + "</dd>";
+    var line = $("stressActive");
+    if (line) line.textContent = active ? "Active limit: " + active + "." : "No stress limit is active yet.";
+  }
+
+  function syncStressMode() {
+    var direct = stressMode() === "direct";
+    $("tauAllowDirect").disabled = !direct;
+    $("tauFactor").disabled = direct;
+    refreshGeomSummary();
   }
 
   function loadInputs() {
@@ -154,7 +197,8 @@
     return [
       state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
       val("Lb"), val("Fb"), val("Rb"), val("modeBPoint"),
-      g.pocket, g.innerMin, g.innerClearance, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor, g.useIndicativeRm
+      g.pocket, g.innerMin, g.innerClearance, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor,
+      g.useDirectStress, g.tauAllowDirect, g.serviceTemp, g.Lcomp, g.Lrel, g.useIndicativeRm
     ].join("|");
   }
 
@@ -243,6 +287,11 @@
       G: g.G,
       Rm: g.Rm,
       tauFactor: g.tauFactor,
+      useDirectStress: g.useDirectStress,
+      tauAllowDirect: g.tauAllowDirect,
+      serviceTemp: g.serviceTemp,
+      Lcomp: g.Lcomp,
+      Lrel: g.Lrel,
       materialId: g.materialId,
       useIndicativeRm: g.useIndicativeRm,
       density: g.density
@@ -262,6 +311,12 @@
     if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
     var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (conflict) errs.push(conflict);
+    if ((g.Lcomp == null) !== (g.Lrel == null)) {
+      errs.push("Enter both the most compressed and the most relaxed working lengths, or leave both blank.");
+    }
+    if (g.Lcomp != null && g.Lrel != null && !(g.Lrel > g.Lcomp)) {
+      errs.push("The most relaxed working length must be longer than the most compressed length.");
+    }
     return errs;
   }
 
@@ -291,8 +346,12 @@
       var g = geometry();
       var errs = [];
       if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
-      if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
-      if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
+      if (g.useDirectStress) {
+        if (!(g.tauAllowDirect > 0)) errs.push("Enter a stress limit in N/mm².");
+      } else {
+        if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
+        if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
+      }
       showErr("err2", errs);
       return errs.length === 0;
     }
@@ -346,6 +405,12 @@
       G: g.G,
       Rm: g.Rm,
       tauFactor: g.tauFactor,
+      useDirectStress: g.useDirectStress,
+      tauAllowDirect: g.tauAllowDirect,
+      serviceTemp: g.serviceTemp,
+      Lcomp: g.Lcomp,
+      Lrel: g.Lrel,
+      Fcomp: g.Fcomp,
       R: g.R,
       L0: g.L0,
       L1: g.L1,
@@ -507,7 +572,24 @@
     persist();
   }
 
+  function fillOptWires() {
+    var sel = $("optWire");
+    if (!sel || !(state.selectedWire > 0)) return;
+    var wires = E.nearbyStandardWires(state.selectedWire).slice();
+    var exact = wires.some(function (d) { return Math.abs(d - state.selectedWire) < 1e-9; });
+    if (!exact) wires.push(state.selectedWire);
+    wires.sort(function (a, b) { return a - b; });
+    sel.innerHTML = wires.map(function (d) {
+      return "<option value=\"" + d + "\">" + E.fmt(d, 2) + " mm</option>";
+    }).join("");
+    var chosen = wires.reduce(function (best, d) {
+      return Math.abs(d - state.selectedWire) < Math.abs(best - state.selectedWire) ? d : best;
+    }, wires[0]);
+    sel.value = String(chosen);
+  }
+
   function setupOptimise() {
+    fillOptWires();
     var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
     var scan = E.scanDiameters(input, 80);
     state.scan = scan;
@@ -566,7 +648,14 @@
   function autoOptimise() {
     var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
     var opt = E.autoOptimise(input, 80);
-    if (!opt.best) return;
+    if (!opt.best) {
+      showErr("err4", ["No nearby standard wire and mean diameter meet the stress limit and the 20–80 % deflection band at both working lengths."]);
+      return;
+    }
+    showErr("err4", []);
+    state.selectedWire = opt.best.d;
+    state.preferredD = opt.best.D;
+    setupOptimise();
     $("Dslider").value = opt.best.D;
     updateOptimise(opt.best.D);
   }
@@ -649,6 +738,7 @@
     var ev = state.design;
     if (!ev) return;
     ev.wind = val("wind");
+    ev.serviceTemp = geometry().serviceTemp;
     ev.materialName = E.materialById(val("material")).shortName;
     var model = SpringDrawing.build(ev, {
       grade: currentGrade(),
@@ -699,7 +789,8 @@
       row("Bergsträsser factor", "k", E.fmt(ev.k, 4)),
       row("Uncorrected stress at Fmax", "τ", E.fmt(ev.tau, 1) + " N/mm²"),
       row("Corrected stress at Fmax", "τk", E.fmt(ev.tauK, 1) + " N/mm²"),
-      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " N/mm²  (" + E.fmt(ev.tauFactor, 2) + " × Rm)"),
+      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " N/mm²  (" +
+        (ev.stressSource === "direct" ? "entered directly" : E.fmt(ev.tauFactor, 2) + " × Rm") + ")"),
       row("Stress ratio", "τk / τzul", E.fmt(ev.pctAllow, 1) + " %"),
       row("Tensile strength", "Rm", E.fmt(ev.Rm, 0) + " N/mm²"),
       row("Modulus of rigidity", "G", E.fmt(ev.G, 0) + " N/mm²"),
@@ -723,6 +814,12 @@
     setVal("clearance", 1.5);
     setVal("innerMin", "");
     setVal("innerClearance", "");
+    setVal("Lcomp", "");
+    setVal("Lrel", "");
+    setVal("serviceTemp", "");
+    document.querySelector("input[name=stressMode][value=factor]").checked = true;
+    setVal("tauAllowDirect", "");
+    syncStressMode();
     setVal("ends", "closed_ground");
     setVal("wind", "right");
     setGrade(2);
@@ -751,9 +848,11 @@
           Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
           pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
           innerClearance: val("innerClearance"),
+          Lcomp: val("Lcomp"), Lrel: val("Lrel"), serviceTemp: val("serviceTemp"),
           ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
-          tauFactor: val("tauFactor"),
+          tauFactor: val("tauFactor"), tauAllowDirect: val("tauAllowDirect"),
+          stressMode: stressMode(),
           useIndicativeRm: $("useIndicativeRm").checked,
           selectedWire: state.selectedWire,
           preferredD: state.preferredD,
@@ -772,6 +871,10 @@
       var v = data.values || {};
       Object.keys(v).forEach(function (k) {
         if (k === "useIndicativeRm") $("useIndicativeRm").checked = !!v[k];
+        else if (k === "stressMode") {
+          var modeRadio = document.querySelector("input[name=stressMode][value=\"" + v[k] + "\"]");
+          if (modeRadio) modeRadio.checked = true;
+        }
         else if (k === "selectedWire") state.selectedWire = v[k];
         else if (k === "preferredD") state.preferredD = v[k] == null || v[k] === "" ? null : Number(v[k]);
         else if (k === "D") { /* applied after evaluate */ }
@@ -789,6 +892,7 @@
       if (v.G) setVal("G", v.G);
       if (v.Rm) setVal("Rm", v.Rm);
       syncModeUI();
+      syncStressMode();
       refreshGeomSummary();
       if (v.preferredD != null && v.preferredD !== "") {
         state.preferredD = Number(v.preferredD);
@@ -1003,7 +1107,19 @@
         markFeasibilityStale();
       });
     });
-    ["pocket", "clearance", "innerMin", "innerClearance", "ends", "wind", "G", "Rm", "tauFactor"].forEach(function (id) {
+    ["Lcomp", "Lrel", "serviceTemp"].forEach(function (id) {
+      $(id).addEventListener("input", function () {
+        refreshLoadSummary();
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        refreshLoadSummary();
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+    });
+    ["pocket", "clearance", "innerMin", "innerClearance", "ends", "wind", "G", "Rm", "tauFactor", "tauAllowDirect"].forEach(function (id) {
       $(id).addEventListener("input", function () {
         refreshGeomSummary();
         markFeasibilityStale();
@@ -1047,6 +1163,24 @@
     $("Dslider").addEventListener("input", function (ev) {
       updateOptimise(ev.target.value);
     });
+    $("optWire").addEventListener("change", function () {
+      var d = Number($("optWire").value);
+      if (!(d > 0) || Math.abs(d - state.selectedWire) < 1e-9) return;
+      state.selectedWire = d;
+      state.preferredD = null;
+      var g = geometry();
+      if (g.useIndicativeRm) {
+        var irm = E.indicativeRm(g.materialId, d);
+        if (irm) setVal("Rm", Math.round(irm));
+      }
+      setupOptimise();
+    });
+    document.querySelectorAll("input[name=stressMode]").forEach(function (r) {
+      r.addEventListener("change", function () {
+        syncStressMode();
+        markFeasibilityStale();
+      });
+    });
     $("btnOptimise").addEventListener("click", autoOptimise);
     function onGradeInput(id) {
       setGrade(val(id));
@@ -1067,6 +1201,7 @@
     $("btnExportA3").addEventListener("click", function () {
       if (!state.design || typeof SpringPdf === "undefined") return;
       state.design.wind = val("wind");
+      state.design.serviceTemp = geometry().serviceTemp;
       state.design.materialName = E.materialById(val("material")).shortName;
       var entitlement = (typeof SpringEntitlement !== "undefined")
         ? SpringEntitlement.productionEntitlement()

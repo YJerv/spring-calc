@@ -64,7 +64,7 @@
         return dutyDiagram() +
         "<h3>Two ways to set the duty</h3>" +
         "<p>Two points: enter the longer operating length L1 with its load F1, and the shorter operating length L2 with its load F2. The rate is the change in load divided by the change in length.</p>" +
-        "<p>Point and rate: enter one operating length, the load at that length, and the rate R. Say whether that point is the lighter load F1 or the heavier load F2. The other point is worked out from the rate.</p>" +
+        "<p>Point and rate: enter one operating length, the load at that length, and the rate R. Say whether that point is the lighter load F1 or the heavier load F2. The other point is worked out from the rate. Design constraints can also set the most compressed and most relaxed working lengths. The stress check then includes the most compressed of those lengths.</p>" +
         "<h3>What the letters mean</h3>" +
         "<p>L1 and L2 are operating lengths set by the application: how long the spring is at each working position. They are not the free length, and they are not the solid length.</p>" +
         "<p>F1 and F2 are the operating loads, in newtons. A load is not necessarily a dead weight.</p>" +
@@ -124,7 +124,8 @@
         "<p>k = (w + 0.5) / (w − 0.75), where w is the spring index D/d.</p>" +
         "<p>It matters because skipping it understates the inside stress, and a spring can then look acceptable when it is not. The factor grows as the coil gets tighter. At the index limits this app already uses, it is about 1.38 at index 4 and about 1.08 at index 16. The expression is not used at index 0.75 or below. This correction is not a fatigue life, not a temperature derating, and not a certified allowable stress.</p>" +
         "<h3>Allowable stress factor</h3>" +
-        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. The fail or warning text stays on the page; it is not replaced by this window. The wire page still shows its own stress bands.</p>"
+        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. The fail or warning text stays on the page; it is not replaced by this window. The wire page still shows its own stress bands.</p>" +
+        "<p>Entered stress limit bypasses Rm. When that choice is active, every stress check uses the number in N/mm² and the page states that the limit was entered directly. The factor × Rm path stays in use until that choice is selected.</p>"
     },
     wire: {
       title: "Standard wire diameters",

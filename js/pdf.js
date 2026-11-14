@@ -33,7 +33,8 @@
       .replace(/\u2013/g, "\x96")
       .replace(/\u2212/g, "-")
       .replace(/×/g, "x")
-      .replace(/·/g, "|");
+      .replace(/·/g, "|")
+      .replace(/°/g, "\xB0");
   }
 
   function usePdfText(doc) {

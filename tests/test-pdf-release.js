@@ -154,6 +154,27 @@ assert(unpaidText.indexOf("125.000") === -1, "Unpaid PDF does not contain 125.00
 assert(paidText.indexOf("125.000") >= 0, "Paid test PDF contains 125.000");
 assert(unpaidText.indexOf("18.500") === -1 && unpaidText.indexOf("18.50") >= 0,
   "Unpaid PDF drops the table outside diameter but keeps the view dimension");
+assert(unpaidText.indexOf("Set for relaxation") === -1 && paidText.indexOf("Set for relaxation") === -1,
+  "A blank service temperature omits the relaxation note on both exports");
+assert(Pdf.toPdfText("Set for relaxation at 130 °C").indexOf("\xB0") >= 0,
+  "The degree sign is mapped into the PDF encoding");
+const hotDesign = Object.assign({}, example, { serviceTemp: 80 });
+const hotUnpaid = Pdf.toUint8Array(hotDesign, Object.assign({}, sheet, {
+  entitlement: Ent.productionEntitlement()
+}));
+assert(pdfWords(hotUnpaid.bytes).indexOf("Set for relaxation at 130") >= 0,
+  "The unpaid drawing includes the relaxation note");
+process.env.SPRING_CALC_TEST_ENTITLEMENT = "1";
+let hotPaid;
+try {
+  hotPaid = Pdf.toUint8Array(hotDesign, Object.assign({}, sheet, {
+    entitlement: Ent.testPaidFixture()
+  }));
+} finally {
+  delete process.env.SPRING_CALC_TEST_ENTITLEMENT;
+}
+assert(pdfWords(hotPaid.bytes).indexOf("Set for relaxation at 130") >= 0,
+  "The paid drawing includes the relaxation note");
 
 const artifactDir = "/opt/cursor/artifacts";
 if (fs.existsSync(artifactDir)) {

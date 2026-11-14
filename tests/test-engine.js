@@ -174,6 +174,45 @@ assert(!!opt.best, "Auto-optimise returns a candidate");
 assert(opt.best.D >= opt.bounds.Dmin - 1e-9, "Optimum D at or above Dmin (w = 4)");
 assert(opt.best.D <= opt.bounds.Dmax + 1e-9, "Optimum D at or below Dmax");
 assert(opt.best.De <= 18.5 + 1e-6, "Optimum still fits the pocket");
+assert(opt.wires.indexOf(2) >= 0, "Auto-optimise trials the standard sizes around 2 mm");
+assert(opt.best.pass, "The chosen optimum still passes the screening checks");
+const optPct = [opt.best.deflPct1, opt.best.deflPct2].filter(function (p) { return p != null; });
+assert(optPct.length === 2 && optPct.every(function (p) { return p >= 20 - 1e-6 && p <= 80 + 1e-6; }),
+  "Auto-optimise keeps both working deflections between 20 % and 80 %");
+
+const near4 = E.nearbyStandardWires(4);
+assert(near4.join(",") === "3,3.2,3.5,4,4.5,5,5.5", "A 4 mm selection trials the nearby standard wires", near4.join(","));
+
+const direct = E.evaluateDesign(Object.assign({}, example, {
+  useDirectStress: true,
+  tauAllowDirect: 700,
+  Rm: 0
+}));
+assert(direct.stressSource === "direct" && Math.abs(direct.tauAllow - 700) < 1e-9,
+  "A direct stress limit replaces the Rm factor");
+assert(direct.reasons.some(function (r) { return r.indexOf("700 N/mm²") >= 0; }) === (direct.tauK > 700),
+  "The direct limit is the one named in the stress check");
+
+const factorStill = E.evaluateDesign(example);
+assert(factorStill.stressSource === "factor" && Math.abs(factorStill.tauAllow - 900) < 1e-6,
+  "Without the direct choice the allowable stays 0.5 × Rm");
+
+const ranged = E.deriveModeB(125, 40, 5, "F2", { Lcomp: 30, Lrel: 48 });
+assert(ranged.ok && Math.abs(ranged.L2 - 30) < 1e-9 && Math.abs(ranged.L1 - 48) < 1e-9,
+  "A working-length range sets the compressed and relaxed lengths");
+assert(Math.abs(ranged.F2 - 125) < 1e-6 && Math.abs(ranged.F1 - (125 - 5 * 18)) < 1e-6,
+  "The entered load stays on the selected point and the other load follows the rate");
+const rangedEv = E.evaluateDesign(Object.assign({}, example, ranged, { d: 2, D: 16.5, DeMax: 18.5 }));
+assert(rangedEv.tauKcomp != null && Math.abs(rangedEv.Fmax - ranged.F2) < 1e-6,
+  "The range makes the most compressed load the screened working load");
+const hotter = E.evaluateDesign(Object.assign({}, example, { Lcomp: 20, Lrel: 50 }));
+assert(hotter.tauK <= hotter.tauAllow + 1e-6 && hotter.tauKcomp > hotter.tauAllow,
+  "A shorter service length can exceed the limit while the stated F2 does not");
+assert(hotter.reasons.some(function (r) { return r.indexOf("most compressed working length") >= 0; }),
+  "Stress is checked at the most compressed working length as well as at Fmax");
+const plainB = E.deriveModeB(125, 35, 5, "F2");
+assert(plainB.ok && plainB.L1 == null && Math.abs(plainB.L0 - 60) < 1e-9,
+  "Point and rate without a range is unchanged");
 
 const bounds = E.diameterBounds(2, 18.5);
 assertClose(bounds.Dmin, 8, "Dmin at w = 4");

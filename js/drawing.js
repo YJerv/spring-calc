@@ -210,7 +210,8 @@
         stressRow("Corrected stress at L2", "τk2", design.F2),
         stressRow("Corrected stress at Ln", "τkn", design.Fn),
         stressRow("Corrected stress at Lc", "τkc", design.Fc),
-        row("Allowable screening stress", "τzul", fmt(design.tauAllow, 1) + " N/mm² (" + fmt(design.tauFactor, 2) + " × Rm)"),
+        row("Allowable screening stress", "τzul", fmt(design.tauAllow, 1) + " N/mm² (" +
+          (design.stressSource === "direct" ? "entered directly" : fmt(design.tauFactor, 2) + " × Rm") + ")"),
         row("Modulus of rigidity", "G", fmt(design.G, 0) + " N/mm²"),
         row("Tensile strength", "Rm", fmt(design.Rm, 0) + " N/mm²"),
         row("Material", "—", design.materialName || "—"),
@@ -255,11 +256,18 @@
         ends: design.ends || "closed_ground"
       },
       layout: LAYOUT,
-      notes: [
-        { n: 1, text: GENERAL_NOTE },
-        { n: 2, text: "Tolerances on De, Di and D are the same AD from BS EN 15800 Table 3; control one coil diameter." },
-        { n: 3, text: "Coil hand " + handShort(design) + ", default right-hand when not stated." }
-      ],
+      notes: (function () {
+        var notes = [
+          { n: 1, text: GENERAL_NOTE },
+          { n: 2, text: "Tolerances on De, Di and D are the same AD from BS EN 15800 Table 3; control one coil diameter." },
+          { n: 3, text: "Coil hand " + handShort(design) + ", default right-hand when not stated." }
+        ];
+        var serviceTemp = design.serviceTemp == null || design.serviceTemp === "" ? null : Number(design.serviceTemp);
+        if (serviceTemp != null && isFinite(serviceTemp)) {
+          notes.push({ n: 4, text: "Set for relaxation at " + (serviceTemp + 50) + " °C" });
+        }
+        return notes;
+      })(),
       travelPercentOnDeflection: "provisional",
       travelPercentNote: "Not confirmed. The percent of available travel stays on deflection at F1 and F2. Only Ln was asked to be deleted.",
       diameterPlacement: {

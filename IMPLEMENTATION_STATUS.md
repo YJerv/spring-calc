@@ -262,3 +262,13 @@ These words describe this branch. They do not change the live WIP Results colour
 | Item | In this branch | Notes |
 | --- | --- | --- |
 | SC-010 | Cancelled | Not implemented |
+
+## 14 November 2026 — stress limit, working range, optimisation, temperature
+
+Attempt 1. It has not failed. This is on the review branch only. Nothing was merged, deployed, or built for Play.
+
+- The material page can keep factor × Rm, or enter a stress limit in N/mm². The summary names which one is active. Heat map, wire list, optimisation, particulars and the drawing use that limit.
+- Design constraints, under Application constraints, takes the most compressed and most relaxed working lengths. In point-and-rate mode those lengths set the two operating points. Stress is also checked at the most compressed length when that load is above the stated maximum.
+- Auto-optimise tries the standard wires around the selection, then the mean diameter. A candidate must pass the existing checks, stay under the active stress limit at the most compressed working length, and keep both working deflections between 20 % and 80 %. The heat-map matrix is unchanged, still in 1 mm steps. The coil-diameter page is titled Optimization and has a wire-size list.
+- Service temperature, °C, is on the same Application constraints section. If it is blank, the drawing omits the relaxation note. If it is set, note 4 reads “Set for relaxation at X °C”, where X is the service temperature plus 50, on the unpaid sheet and the paid test-fixture sheet.
+- R2-05 is still not done. No suggested-clearance button was added for the spring guide.
