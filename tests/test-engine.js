@@ -96,7 +96,7 @@ console.log("\nWorked example (full design)");
   L2 = 35 mm at F2 = 125 N
   → R = 5 N/mm, L0 = 60 mm
   Pocket De max = 18.5 mm, d = 2.0 mm → D = 16.5 mm
-  G = 81500 N/mm², Rm = 1800 N/mm², τallow = 0.5 Rm = 900
+  G = 81500 MPa, Rm = 1800 MPa, τallow = 0.5 Rm = 900
 */
 const example = {
   d: 2,
@@ -134,8 +134,8 @@ assertClose(ev.deflPct2, (100 * 25) / ev.sc, "Deflection as % of available trave
 console.log("\n  Worked-example snapshot");
 console.log("    w      = " + ev.w.toFixed(4));
 console.log("    k      = " + ev.k.toFixed(6));
-console.log("    τ      = " + ev.tau.toFixed(3) + " N/mm²");
-console.log("    τk     = " + ev.tauK.toFixed(3) + " N/mm²");
+console.log("    τ      = " + ev.tau.toFixed(3) + " MPa");
+console.log("    τk     = " + ev.tauK.toFixed(3) + " MPa");
 console.log("    % all. = " + ev.pctAllow.toFixed(2) + " %");
 console.log("    n      = " + ev.n.toFixed(5));
 console.log("    nt     = " + ev.nt.toFixed(5));
@@ -190,7 +190,7 @@ const direct = E.evaluateDesign(Object.assign({}, example, {
 }));
 assert(direct.stressSource === "direct" && Math.abs(direct.tauAllow - 700) < 1e-9,
   "A direct stress limit replaces the Rm factor");
-assert(direct.reasons.some(function (r) { return r.indexOf("700 N/mm²") >= 0; }) === (direct.tauK > 700),
+assert(direct.reasons.some(function (r) { return r.indexOf("700 MPa") >= 0; }) === (direct.tauK > 700),
   "The direct limit is the one named in the stress check");
 
 const factorStill = E.evaluateDesign(example);
@@ -225,9 +225,9 @@ const rm2 = E.indicativeRm("10270-1-DH", 2.0);
 assert(rm2 === 1960, "Indicative DH Rm at 2 mm");
 const rm3 = E.indicativeRm("10270-1-DH", 3.0);
 assert(rm3 === 1800, "Indicative DH Rm at 3 mm");
-assert(E.materialById("10270-1-DH").G === 81500, "EN 10270-1 G = 81 500 N/mm²");
-assert(E.materialById("10270-3-14310").G === 70000, "EN 10270-3 1.4310 G = 70 000 N/mm²");
-assert(E.materialById("10270-2-VDSiCr").G === 79500, "EN 10270-2 G = 79 500 N/mm²");
+assert(E.materialById("10270-1-DH").G === 81500, "EN 10270-1 G = 81 500 MPa");
+assert(E.materialById("10270-3-14310").G === 70000, "EN 10270-3 1.4310 G = 70 000 MPa");
+assert(E.materialById("10270-2-VDSiCr").G === 79500, "EN 10270-2 G = 79 500 MPa");
 
 console.log("\nMechanixCalc-style rate check (Wahl vs Bergsträsser)");
 /* Same geometry as the public worked example: d=4, D=40, n=10, F=200, G=81500 */

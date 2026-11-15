@@ -104,7 +104,7 @@
       G: 70000,
       density: 7.90e-6,
       rmTable: RM_14310,
-      note: "G = 70 000 N/mm², EN 13906-1 Table 4 delivery condition (HT condition is about 73 000)."
+      note: "G = 70 000 MPa, EN 13906-1 Table 4 delivery condition (HT condition is about 73 000)."
     },
     {
       id: "custom",
@@ -451,7 +451,7 @@
     if (!(n + 1e-9 >= N_MIN)) reasons.push("Fewer than two active coils.");
     if (n > N_MAX) reasons.push("More than 30 active coils (consider a larger mean diameter).");
     var limitText = stressSource === "direct"
-      ? Number(tauAllow).toFixed(0) + " N/mm²"
+      ? Number(tauAllow).toFixed(0) + " MPa"
       : (100 * tauFactor).toFixed(0) + " % of Rm";
     if (!(tauK <= tauAllow + 1e-6)) {
       reasons.push("Corrected stress exceeds the allowable (τk > " + limitText + ").");

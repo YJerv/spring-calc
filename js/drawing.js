@@ -184,7 +184,7 @@
 
     function stressRow(name, symbol, F) {
       var tau = stressAt(design, F);
-      return row(name, symbol, tau == null ? "—" : fmt(tau, 1) + " N/mm²");
+      return row(name, symbol, tau == null ? "—" : fmt(tau, 1) + " MPa");
     }
 
     function deflRow(name, symbol, s, L) {
@@ -210,10 +210,10 @@
         stressRow("Corrected stress at L2", "τk2", design.F2),
         stressRow("Corrected stress at Ln", "τkn", design.Fn),
         stressRow("Corrected stress at Lc", "τkc", design.Fc),
-        row("Allowable screening stress", "τzul", fmt(design.tauAllow, 1) + " N/mm² (" +
+        row("Allowable screening stress", "τzul", fmt(design.tauAllow, 1) + " MPa (" +
           (design.stressSource === "direct" ? "entered directly" : fmt(design.tauFactor, 2) + " × Rm") + ")"),
-        row("Modulus of rigidity", "G", fmt(design.G, 0) + " N/mm²"),
-        row("Tensile strength", "Rm", fmt(design.Rm, 0) + " N/mm²"),
+        row("Modulus of rigidity", "G", fmt(design.G, 0) + " MPa"),
+        row("Tensile strength", "Rm", fmt(design.Rm, 0) + " MPa"),
         row("Material", "—", design.materialName || "—"),
         row("Spring rate", "R", fmt(design.R, 4) + " N/mm"),
         row("Spring index", "w", fmt(design.w, 3)),

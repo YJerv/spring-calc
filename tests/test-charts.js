@@ -113,7 +113,7 @@ assert(html.indexOf("60.0 mm") !== -1 || html.indexOf("60 mm") !== -1, "L0 milli
 assert(html.indexOf("50.0 mm") !== -1 || html.indexOf("50 mm") !== -1, "L1 millimetre value sits on the graph");
 assert(html.indexOf("35.0 mm") !== -1 || html.indexOf("35 mm") !== -1, "L2 millimetre value sits on the graph");
 
-assert((html.match(/N\/mm²/g) || []).length >= 4, "Each loaded station shows τk in N/mm²");
+assert((html.match(/MPa/g) || []).length >= 4, "Each loaded station shows τk in MPa");
 assert((html.match(/τk /g) || []).length >= 4, "Horizontal lines are labelled with τk");
 assert(html.indexOf(" %") !== -1, "Horizontal lines are labelled with compression %");
 

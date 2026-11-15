@@ -159,7 +159,7 @@
       }));
 
       var line1 = (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %");
-      var line2 = s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " N/mm²";
+      var line2 = s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " MPa";
       var tw = Math.max(approxTextWidth(line1, 12), approxTextWidth(line2, 12));
       var gap = x - pad.l;
       var tx;

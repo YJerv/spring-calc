@@ -41,14 +41,14 @@ A **Load worked example** button fills:
 | L1, F1 | 50 mm, 50 N |
 | L2, F2 | 35 mm, 125 N |
 | Pocket / clearance | 20 mm / 1.5 mm (De max = 18.5 mm) |
-| Material | EN 10270-1 DH, G = 81 500 N/mm², Rm = 1 800 N/mm² |
+| Material | EN 10270-1 DH, G = 81 500 MPa, Rm = 1 800 MPa |
 | Wire (typical choice) | 2.00 mm at D = 16.5 mm |
 
-That example gives R = 5 N/mm, L0 = 60 mm, τk ≈ 766 N/mm² (85 % of 0.5 Rm), n ≈ 7.26, Lc ≈ 18.5 mm.
+That example gives R = 5 N/mm, L0 = 60 mm, τk ≈ 766 MPa (85 % of 0.5 Rm), n ≈ 7.26, Lc ≈ 18.5 mm.
 
 ## Key formulae (BS EN 13906-1)
 
-Units: mm, N, N/mm, N/mm² (MPa).
+Units: mm, N, N/mm, MPa.
 
 - Spring index `w = D / d`
 - Bergsträsser correction `k = (w + 0.5) / (w − 0.75)`  
@@ -96,7 +96,7 @@ A worked-example sheet is in `samples/helical-compression-spring-a3-example.pdf`
 
 ### Material moduli (EN 13906-1 Tables 3 and 4)
 
-| Material | G (N/mm²) |
+| Material | G (MPa) |
 |---|---|
 | EN 10270-1 patented cold-drawn carbon (SM / SH / DH) | 81 500 |
 | EN 10270-2 oil-tempered (e.g. VDSiCr) | 79 500 |

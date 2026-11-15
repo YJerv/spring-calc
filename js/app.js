@@ -194,7 +194,7 @@
     var tauAllow = direct ? g.tauAllowDirect : (g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null);
     if (!(tauAllow > 0)) return null;
     var how = direct ? "entered directly" : E.fmt(g.tauFactor, 2) + " × Rm";
-    return E.fmt(tauAllow, 0) + " N/mm² (" + how + ")";
+    return E.fmt(tauAllow, 0) + " MPa (" + how + ")";
   }
 
   function refreshGeomSummary() {
@@ -371,7 +371,7 @@
       var errs = [];
       if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
       if (g.useDirectStress) {
-        if (!(g.tauAllowDirect > 0)) errs.push("Enter a stress limit in N/mm².");
+        if (!(g.tauAllowDirect > 0)) errs.push("Enter a stress limit in MPa.");
       } else {
         if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
         if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
@@ -632,12 +632,12 @@
       var why = r.pass
         ? (r.warnings[0] || "Fits the pocket at D max, with stress and solid length inside limits.")
         : r.reasons[0];
-      var rmNote = r.indicativeRm ? " · Rm " + E.fmt(r.indicativeRm, 0) + " N/mm²" : "";
+      var rmNote = r.indicativeRm ? " · Rm " + E.fmt(r.indicativeRm, 0) + " MPa" : "";
       return "<button type=\"button\" class=\"wire-card " + r.status + (selected ? " selected" : "") +
         "\" data-d=\"" + r.d + "\">" +
         "<div class=\"top\"><span class=\"d\">" + E.fmt(r.d, 2) + " mm wire</span>" +
         "<span class=\"badge " + r.status + "\">" + r.status + "</span></div>" +
-        "<div class=\"meta\">τk " + E.fmt(r.tauK, 1) + " N/mm²  (" + E.fmt(r.pctAllow, 1) +
+        "<div class=\"meta\">τk " + E.fmt(r.tauK, 1) + " MPa  (" + E.fmt(r.pctAllow, 1) +
         "% of allowable) · n = " + E.fmt(r.n, 2) + " · Lc = " + E.fmt(r.Lc, 2) +
         " mm · w = " + E.fmt(r.w, 2) + rmNote + "</div>" +
         "<div class=\"why\">" + why + "</div></button>";
@@ -764,14 +764,14 @@
       status.innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
         (screen.level === "warning" ? "Optimum with a warning" : "Optimum") +
         "</strong> — wire " + E.fmt(best.d, 2) + " mm, mean diameter " + E.fmt(best.D, 2) +
-        " mm, τk " + E.fmt(candidateStress(best), 1) + " N/mm²." +
+        " mm, τk " + E.fmt(candidateStress(best), 1) + " MPa." +
         (screen.warning ? " " + esc(screen.warning) : "") + "</div>";
     }
     if (metrics) {
       metrics.innerHTML = [
         metric("Wire d", E.fmt(best.d, 2) + " mm"),
         metric("Mean diameter D", E.fmt(best.D, 2) + " mm"),
-        metric("Corrected stress τk", E.fmt(candidateStress(best), 1) + " N/mm²"),
+        metric("Corrected stress τk", E.fmt(candidateStress(best), 1) + " MPa"),
         metric("Deflection L1", best.deflPct1 == null ? "—" : E.fmt(best.deflPct1, 1) + " %"),
         metric("Deflection L2", best.deflPct2 == null ? "—" : E.fmt(best.deflPct2, 1) + " %"),
         metric("Outside Ø De", E.fmt(best.De, 2) + " mm")
@@ -789,7 +789,7 @@
         var flag = row.growth && row.growth.flags && row.growth.flags.length ? " · " + row.growth.flags[0] : "";
         return "<button type=\"button\" class=\"wire-card " + (on ? "selected " : "") + tone + "\" data-opt-d=\"" + row.d + "\" data-opt-D=\"" + row.D + "\">" +
           "<div class=\"top\"><strong>D " + E.fmt(row.D, 2) + " mm</strong><span>d " + E.fmt(row.d, 2) + " mm</span></div>" +
-          "<div class=\"meta\">τk " + E.fmt(candidateStress(row), 1) + " N/mm² · L1 " +
+          "<div class=\"meta\">τk " + E.fmt(candidateStress(row), 1) + " MPa · L1 " +
           (row.deflPct1 == null ? "—" : E.fmt(row.deflPct1, 0) + "%") + " · L2 " +
           (row.deflPct2 == null ? "—" : E.fmt(row.deflPct2, 0) + "%") + esc(flag) + "</div></button>";
         }).join("");
@@ -908,7 +908,7 @@
       $("coilMetrics").innerHTML = [
         metric("Index w", E.fmt(ev.w, 2)),
         metric("Active coils n", E.fmt(ev.n, 2)),
-        metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " N/mm²"),
+        metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " MPa"),
         metric("% of allowable", E.fmt(ev.pctAllow, 1) + " %"),
         metric("Solid length Lc", E.fmt(ev.Lc, 2) + " mm"),
         metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
@@ -939,7 +939,7 @@
       var tone = found.level === "pass" ? "pass" : "warning";
       $("coilStatus").innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
         (found.level === "pass" ? "Optimum for this wire" : "Optimum for this wire, with a warning") +
-        "</strong> — D " + E.fmt(found.best.D, 2) + " mm, τk " + E.fmt(candidateStress(found.best), 1) + " N/mm²." +
+        "</strong> — D " + E.fmt(found.best.D, 2) + " mm, τk " + E.fmt(candidateStress(found.best), 1) + " MPa." +
         (found.warning ? " " + esc(found.warning) : "") + "</div>";
     }
     setupCoilControls(false);
@@ -965,7 +965,7 @@
       return "<tr><td>" + s.id + (extra ? " <span class=\"hint\">" + extra + "</span>" : "") +
         "</td><td>" + E.fmt(s.L, 2) + " mm</td><td>" + E.fmt(s.F, 1) + " N</td><td>" +
         (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %") + "</td><td>" +
-        (s.tauK == null ? "—" : E.fmt(s.tauK, 0) + " N/mm²") + "</td></tr>";
+        (s.tauK == null ? "—" : E.fmt(s.tauK, 0) + " MPa") + "</td></tr>";
     }).join("");
   }
 
@@ -1136,10 +1136,10 @@
       row("Free length", "L0", E.fmt(ev.L0, 3) + " mm"),
       row("Length at F1", "L1", ev.L1 != null ? E.fmt(ev.L1, 3) + " mm" : "—"),
       row("Load F1", "F1", ev.F1 != null ? E.fmt(ev.F1, 3) + " N" : "—"),
-      row("Corrected stress at F1", "τk1", ev.tauK1 != null ? E.fmt(ev.tauK1, 1) + " N/mm²" : "—"),
+      row("Corrected stress at F1", "τk1", ev.tauK1 != null ? E.fmt(ev.tauK1, 1) + " MPa" : "—"),
       row("Length at F2", "L2", ev.L2 != null ? E.fmt(ev.L2, 3) + " mm" : "—"),
       row("Load F2", "F2", ev.F2 != null ? E.fmt(ev.F2, 3) + " N" : "—"),
-      row("Corrected stress at F2", "τk2", E.fmt(ev.tauK2, 1) + " N/mm²"),
+      row("Corrected stress at F2", "τk2", E.fmt(ev.tauK2, 1) + " MPa"),
       row("Recommended shortest length", "Ln", E.fmt(ev.Ln, 3) + " mm  (85 % of available travel)"),
       row("Load at Ln", "Fn", E.fmt(ev.Fn, 3) + " N"),
       row("Solid length", "Lc", E.fmt(ev.Lc, 3) + " mm"),
@@ -1149,13 +1149,13 @@
       row("Available travel", "L0 − Lc", E.fmt(ev.sc, 3) + " mm"),
       row("Deflection at max. working load", "s", E.fmt(ev.s2, 3) + " mm  (" + E.fmt(ev.deflPct2, 1) + " % of available travel)"),
       row("Bergsträsser factor", "k", E.fmt(ev.k, 4)),
-      row("Uncorrected stress at Fmax", "τ", E.fmt(ev.tau, 1) + " N/mm²"),
-      row("Corrected stress at Fmax", "τk", E.fmt(ev.tauK, 1) + " N/mm²"),
-      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " N/mm²  (" +
+      row("Uncorrected stress at Fmax", "τ", E.fmt(ev.tau, 1) + " MPa"),
+      row("Corrected stress at Fmax", "τk", E.fmt(ev.tauK, 1) + " MPa"),
+      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " MPa  (" +
         (ev.stressSource === "direct" ? "entered directly" : E.fmt(ev.tauFactor, 2) + " × Rm") + ")"),
       row("Stress ratio", "τk / τzul", E.fmt(ev.pctAllow, 1) + " %"),
-      row("Tensile strength", "Rm", E.fmt(ev.Rm, 0) + " N/mm²"),
-      row("Modulus of rigidity", "G", E.fmt(ev.G, 0) + " N/mm²"),
+      row("Tensile strength", "Rm", E.fmt(ev.Rm, 0) + " MPa"),
+      row("Modulus of rigidity", "G", E.fmt(ev.G, 0) + " MPa"),
       row("Material", "—", ev.materialName || "—"),
       row("Ends", "—", ev.endsLabel),
       row("Wound direction", "—", windLabel),

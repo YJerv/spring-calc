@@ -140,7 +140,7 @@ assert(findRow(neither.table1, "De") && findRow(neither.table2, "Di"), "Blank li
 const both = Drawing.build(example, { grade: 2, date: "05 Nov 2026", outerLimit: true, innerLimit: true });
 assert(findRow(both.table1, "De") && findRow(both.table1, "Di") && both.diameterPlacement.bothSetNote.indexOf("Not specified") >= 0,
   "Both limits keep both diameters on Table 1 and record that the source did not choose one");
-assert(findRow(model.table2, "τkc").value.indexOf("N/mm²") >= 0, "Corrected stress at solid length is numeric");
+assert(findRow(model.table2, "τkc").value.indexOf("MPa") >= 0, "Corrected stress at solid length is numeric");
 assert(model.table2.rows.some(function (r) { return r.value.indexOf("BS EN 13906-1") >= 0; }),
   "Reference table cites BS EN 13906-1");
 assert(model.table2.rows.some(function (r) { return r.particular === "Material"; }), "Material has moved to Table 2");
