@@ -379,6 +379,40 @@ const curveAt = shaded.innerHTML.indexOf("<polyline");
 assert(bandAt >= 0 && bandAt < curveAt, "Failing diameters are shaded behind the curves");
 assert(shaded.innerHTML.indexOf('fill="var(--fail)"') >= 0 && shaded.innerHTML.indexOf('opacity="0.18"') >= 0, "The failing band is translucent red");
 
+console.log("\nSide view labels\n");
+
+function sideBoxes(html) {
+  function boxFor(needle) {
+    const parts = html.split("<text");
+    const part = parts.filter(function (p) { return p.indexOf(needle) >= 0; })[0];
+    assert(!!part, "The side view includes " + needle);
+    const raw = part.match(/data-box="([^"]+)"/);
+    assert(!!raw, needle + " publishes a bounding box");
+    const n = raw[1].split(",").map(Number);
+    return { x: n[0], y: n[1], w: n[2], h: n[3] };
+  }
+  return { de: boxFor("De = "), cap: boxFor("Side view at free length") };
+}
+function intersects(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+const sideSamples = [
+  { name: "worked example", design: ev },
+  { name: "short and wide", design: { De: 48, D: 44, d: 4, L0: 16, n: 3, nt: 5, wind: "right" } },
+  { name: "long and thin", design: { De: 10, D: 8, d: 1.6, L0: 220, n: 28, nt: 30, wind: "left" } },
+  { name: "square outline", design: { De: 30, D: 27, d: 3, L0: 30, n: 6, nt: 8, wind: "right" } },
+  { name: "very long", design: { De: 8, D: 6.5, d: 1.2, L0: 360, n: 40, nt: 42, wind: "right" } }
+];
+sideSamples.forEach(function (sample) {
+  const pic = fakeSvg();
+  C.renderSpringDiagram(pic, sample.design);
+  const boxes = sideBoxes(pic.innerHTML);
+  assert(!intersects(boxes.de, boxes.cap), sample.name + ": the diameter label stays clear of the scale caption",
+    "De " + JSON.stringify(boxes.de) + " caption " + JSON.stringify(boxes.cap));
+  assert(boxes.de.y + boxes.de.h + 4 <= boxes.cap.y, sample.name + ": there is a gap under the diameter label");
+  assert(pic.innerHTML.indexOf("Scaled side view") === -1, sample.name + ": the drawing caption is not the card title");
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

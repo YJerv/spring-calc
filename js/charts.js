@@ -362,10 +362,18 @@
     svg.innerHTML = parts.join("");
   }
 
+  function labelBox(text, x, baseline, fontSize, anchor) {
+    var width = text.length * fontSize * 0.6;
+    var ascent = fontSize * 0.85;
+    var descent = fontSize * 0.3;
+    var left = anchor === "end" ? x - width : (anchor === "middle" ? x - width / 2 : x);
+    return { x: left, y: baseline - ascent, w: width, h: ascent + descent };
+  }
+
   function renderSpringDiagram(svg, design) {
     var W = 390;
-    var H = 420;
-    var margin = { l: 74, r: 36, t: 36, b: 56 };
+    var H = 456;
+    var margin = { l: 74, r: 36, t: 36, b: 92 };
     var De = design.De;
     var d = design.d;
     var L0 = design.L0;
@@ -487,22 +495,30 @@
       x1: cx + half, y1: yDe - 5, x2: cx + half, y2: yDe + 5,
       stroke: "var(--series-l0)", "stroke-width": 1
     }));
+    var deText = "De = " + E.fmt(De, 2) + " mm";
+    var deBaseline = yDe + 16;
+    var deBox = labelBox(deText, cx, deBaseline, 11, "middle");
     parts.push(el("text", {
-      x: cx, y: yDe + 16, "text-anchor": "middle", fill: "var(--series-l0)",
+      x: cx, y: deBaseline, "text-anchor": "middle", fill: "var(--series-l0)",
       "font-size": 11, "font-weight": 600,
-      "font-family": "ui-sans-serif, system-ui, sans-serif"
-    }, ["De = " + E.fmt(De, 2) + " mm"]));
+      "font-family": "ui-sans-serif, system-ui, sans-serif",
+      "data-box": [deBox.x, deBox.y, deBox.w, deBox.h].map(function (n) { return n.toFixed(1); }).join(",")
+    }, [deText]));
 
     parts.push(el("text", {
       x: W - margin.r, y: 18, "text-anchor": "end", fill: "var(--chart-muted)",
       "font-size": 10,
       "font-family": "ui-sans-serif, system-ui, sans-serif"
     }, ["d = " + E.fmt(d, 2) + " mm   ·   " + (design.wind === "left" ? "LH" : "RH") + " wound"]));
+    var capText = "Side view at free length  ·  scale " + E.fmt(scale, 2) + " px/mm";
+    var capBaseline = H - 18;
+    var capBox = labelBox(capText, W / 2, capBaseline, 10, "middle");
     parts.push(el("text", {
-      x: W / 2, y: H - 12, "text-anchor": "middle", fill: "var(--chart-muted)",
+      x: W / 2, y: capBaseline, "text-anchor": "middle", fill: "var(--chart-muted)",
       "font-size": 10,
-      "font-family": "ui-sans-serif, system-ui, sans-serif"
-    }, ["Side view at free length  ·  scale " + E.fmt(scale, 2) + " px/mm"]));
+      "font-family": "ui-sans-serif, system-ui, sans-serif",
+      "data-box": [capBox.x, capBox.y, capBox.w, capBox.h].map(function (n) { return n.toFixed(1); }).join(",")
+    }, [capText]));
 
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     svg.setAttribute("role", "img");
