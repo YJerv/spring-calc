@@ -43,7 +43,8 @@ assert(pages[0].indexOf('class="brand-logo"') < pages[0].indexOf(">1. Overview<"
 assert(swJs.indexOf("./assets/brand/jet-logo.png") >= 0, "The service worker precaches the JET logo");
 assert(pages[1].indexOf(">2. Design mode<") >= 0 && pages[1].indexOf('name="mode"') >= 0, "Page 2 chooses two points or point and rate");
 assert(pages[2].indexOf(">3. Application constraints<") >= 0, "Page 3 is application constraints");
-assert(pages[2].indexOf("Application constraints and design constraints are the same") >= 0, "The heading says the two names once");
+assert(pages[2].indexOf("Application constraints and design constraints are the same") === -1, "The page no longer says the two names are the same limits");
+assert(pages[2].indexOf("Leave a box blank for no limit.") >= 0, "The remaining introduction stays");
 assert(pages[2].indexOf(">Pocket and guide diameters<") >= 0 && pages[2].indexOf(">Working lengths<") >= 0, "Pocket, guide and working lengths are separate blocks");
 assert(pages[2].indexOf('id="pocketFold"') >= 0 && pages[2].indexOf('id="lengthFold"') >= 0 && pages[2].indexOf('id="tempFold"') >= 0, "Those blocks collapse");
 assert(pages[2].indexOf('id="pocketFold" open') === -1 && pages[2].indexOf('id="lengthFold" open') === -1 && pages[2].indexOf('id="tempFold" open') === -1, "Constraint sections start collapsed");

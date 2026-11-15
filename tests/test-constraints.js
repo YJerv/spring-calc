@@ -118,10 +118,11 @@ assert(appJs.indexOf("deriveModeB") >= 0 && appJs.indexOf("modeBPoint") === -1,
 const step3 = page.slice(page.indexOf('id="step-3"'), page.indexOf('id="step-4"'));
 assert(step3.indexOf('id="btnClearConstraints"') >= 0 && step3.indexOf("Clear all") >= 0, "Application constraints has a Clear all button");
 assert(step3.indexOf('class="btn secondary" id="btnClearConstraints"') >= 0, "Clear all is a secondary button");
-assert(step3.indexOf(">3. Application constraints<") < step3.indexOf("Application constraints and design constraints")
-  && step3.indexOf("Application constraints and design constraints") < step3.indexOf('id="btnClearConstraints"')
+assert(step3.indexOf("Application constraints and design constraints") === -1, "The same-limits sentence is gone");
+assert(step3.indexOf(">3. Application constraints<") < step3.indexOf("Leave a box blank for no limit.")
+  && step3.indexOf("Leave a box blank for no limit.") < step3.indexOf('id="btnClearConstraints"')
   && step3.indexOf('id="btnClearConstraints"') < step3.indexOf('id="pocketFold"'),
-  "Clear all sits below the introduction and before the first section");
+  "Clear all sits below the remaining introduction and before the first section");
 assert(step3.indexOf("btnBack") === -1, "Clear all is not inside the Back and Next navigation");
 const clearFn = appJs.slice(appJs.indexOf('$("btnClearConstraints")'), appJs.indexOf('$("btnClearance")'));
 ["pocket", "clearance", "innerMin", "innerClearance", "workL1", "workL2", "serviceTemp"].forEach(function (id) {
