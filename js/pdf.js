@@ -199,35 +199,42 @@
     doc.setFillColor(255, 255, 255);
     doc.circle(cx, cy, rInner, "F");
 
-    var aStart = -22 * Math.PI / 180;
-    var aEnd = -248 * Math.PI / 180;
-    var steps = 72;
-    var i;
-    function bandRadii(u) {
-      var taper = u > 0.9 ? Math.max(0.03, (1 - u) / 0.1) : 1;
-      var half = ring * 0.22 * taper;
-      return { inner: rMid - half, outer: rMid + half };
+    var kind = String(v.ends || "closed_ground");
+    var ground = kind.indexOf("ground") >= 0;
+    var closed = kind.indexOf("closed") === 0;
+    function fillBand(aStart, aEnd, steps) {
+      function bandRadii(u) {
+        var taper = u > 0.9 ? Math.max(0.03, (1 - u) / 0.1) : 1;
+        var half = ring * 0.22 * taper;
+        return { inner: rMid - half, outer: rMid + half };
+      }
+      doc.setFillColor(55, 55, 55);
+      doc.setDrawColor(55, 55, 55);
+      doc.setLineWidth(0.35);
+      var i;
+      for (i = 0; i < steps; i++) {
+        var u0 = i / steps;
+        var u1 = (i + 1) / steps;
+        var g0 = aStart + (aEnd - aStart) * u0;
+        var g1 = aStart + (aEnd - aStart) * u1;
+        var p0 = bandRadii(u0);
+        var p1 = bandRadii(u1);
+        var o0x = cx + p0.outer * Math.cos(g0);
+        var o0y = cy + p0.outer * Math.sin(g0);
+        var o1x = cx + p1.outer * Math.cos(g1);
+        var o1y = cy + p1.outer * Math.sin(g1);
+        var i0x = cx + p0.inner * Math.cos(g0);
+        var i0y = cy + p0.inner * Math.sin(g0);
+        var i1x = cx + p1.inner * Math.cos(g1);
+        var i1y = cy + p1.inner * Math.sin(g1);
+        doc.triangle(o0x, o0y, o1x, o1y, i0x, i0y, "FD");
+        doc.triangle(i0x, i0y, o1x, o1y, i1x, i1y, "FD");
+      }
     }
-    doc.setFillColor(55, 55, 55);
-    doc.setDrawColor(55, 55, 55);
-    doc.setLineWidth(0.35);
-    for (i = 0; i < steps; i++) {
-      var u0 = i / steps;
-      var u1 = (i + 1) / steps;
-      var g0 = aStart + (aEnd - aStart) * u0;
-      var g1 = aStart + (aEnd - aStart) * u1;
-      var p0 = bandRadii(u0);
-      var p1 = bandRadii(u1);
-      var o0x = cx + p0.outer * Math.cos(g0);
-      var o0y = cy + p0.outer * Math.sin(g0);
-      var o1x = cx + p1.outer * Math.cos(g1);
-      var o1y = cy + p1.outer * Math.sin(g1);
-      var i0x = cx + p0.inner * Math.cos(g0);
-      var i0y = cy + p0.inner * Math.sin(g0);
-      var i1x = cx + p1.inner * Math.cos(g1);
-      var i1y = cy + p1.inner * Math.sin(g1);
-      doc.triangle(o0x, o0y, o1x, o1y, i0x, i0y, "FD");
-      doc.triangle(i0x, i0y, o1x, o1y, i1x, i1y, "FD");
+    if (ground && closed) {
+      fillBand(-22 * Math.PI / 180, -248 * Math.PI / 180, 72);
+    } else if (ground) {
+      fillBand(-78 * Math.PI / 180, -250 * Math.PI / 180, 60);
     }
 
     doc.setDrawColor(0, 0, 0);
@@ -247,7 +254,19 @@
     doc.setFillColor(75, 75, 75);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.3);
-    doc.rect(cx + rInner, cy - side / 2, ring, side, "FD");
+    if (ground && closed) {
+      doc.rect(cx + rInner, cy - side / 2, ring, side, "FD");
+    } else if (ground) {
+      var pull = Math.max(1.6, ring * 0.36);
+      var openH = side * 0.68;
+      doc.rect(cx + rInner + pull, cy - openH / 2, Math.max(1.5, ring - pull), openH, "FD");
+    } else {
+      var tipW = Math.max(1.2, ring * 0.36);
+      var tipH = Math.max(1.7, ring * 0.58);
+      var tipY = cy + rInner + (ring - tipH) / 2;
+      var tipX = closed ? cx + 0.45 : cx + Math.max(2.8, ring * 0.9);
+      doc.rect(tipX, tipY, tipW, tipH, "FD");
+    }
 
     var rightHand = model.hand !== "LH";
     var dirx = 0.9;
@@ -267,7 +286,13 @@
       "F"
     );
 
-    var endName = v.ends === "closed_ground" ? "Square and ground" : (model.ends || "—");
+    var endCaptions = {
+      closed_ground: "Closed and ground",
+      closed: "Closed, not ground",
+      open_ground: "Open and ground",
+      open: "Open, not ground"
+    };
+    var endName = endCaptions[kind] || model.ends || "—";
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);

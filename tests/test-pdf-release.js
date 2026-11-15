@@ -7,6 +7,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 const E = require(path.join(__dirname, "..", "js", "engine.js"));
 const Drawing = require(path.join(__dirname, "..", "js", "drawing.js"));
 const Ent = require(path.join(__dirname, "..", "js", "entitlement.js"));
@@ -175,6 +176,102 @@ try {
 }
 assert(pdfWords(hotPaid.bytes).indexOf("Set for relaxation at 130") >= 0,
   "The paid drawing includes the relaxation note");
+
+console.log("\nEnd views\n");
+
+function pdfStreams(bytes) {
+  const raw = Buffer.from(bytes).toString("latin1");
+  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let match;
+  let out = "";
+  while ((match = re.exec(raw))) {
+    const body = Buffer.from(match[1], "latin1");
+    let decoded = body;
+    try { decoded = zlib.inflateSync(body); } catch (err) { /* already plain */ }
+    out += decoded.toString("latin1") + "\n";
+  }
+  return out;
+}
+
+function tipRect(stream) {
+  const pt = 72 / 25.4;
+  const rects = [];
+  const re = /([\d.]+) ([\d.]+) ([\d.-]+) ([\d.-]+) re/g;
+  let match;
+  while ((match = re.exec(stream))) {
+    const w = Math.abs(Number(match[3])) / pt;
+    const h = Math.abs(Number(match[4])) / pt;
+    if (w > 0.8 && h > 0.8 && w < 12 && h < 12) {
+      rects.push({ x: Number(match[1]) / pt, w: w, h: h });
+    }
+  }
+  return rects;
+}
+
+const endCases = [
+  { id: "closed_ground", caption: "Closed and ground", ground: true, closedTip: true },
+  { id: "closed", caption: "Closed, not ground", ground: false, closedTip: true },
+  { id: "open_ground", caption: "Open and ground", ground: true, closedTip: false },
+  { id: "open", caption: "Open, not ground", ground: false, closedTip: false }
+];
+const endBase = {
+  d: 2, D: 16.5, G: 81500, Rm: 1800, tauFactor: 0.5,
+  R: 5, L0: 60, L1: 50, F1: 50, L2: 35, F2: 125,
+  Fmax: 125, LmaxLoad: 35, DeMax: 18.5
+};
+const captions = endCases.map(function (item) { return item.caption; });
+endCases.forEach(function (item) {
+  const design = E.evaluateDesign(Object.assign({}, endBase, { ends: item.id }));
+  design.wind = "right";
+  design.materialName = "EN 10270-1 DH";
+  const drawn = Drawing.build(design, sheet);
+  const e1 = drawn.table1.rows.filter(function (row) { return row.symbol === "e1"; })[0];
+  const e2 = drawn.table1.rows.filter(function (row) { return row.symbol === "e2"; })[0];
+  if (item.id === "closed_ground") {
+    assert(e1.value.indexOf("Not applicable") === -1 && e2.value.indexOf("Not applicable") === -1,
+      "Closed and ground keeps squareness and parallelism");
+  } else {
+    assert(e1.value.indexOf("Not applicable") >= 0 && e2.value.indexOf("Not applicable") >= 0,
+      item.caption + " leaves squareness and parallelism not applicable");
+  }
+  const file = Pdf.toUint8Array(design, Object.assign({}, sheet, {
+    entitlement: Ent.productionEntitlement()
+  }));
+  const words = pdfWords(file.bytes);
+  assert(words.indexOf(item.caption) >= 0, "The end-view caption reads " + item.caption);
+  captions.forEach(function (other) {
+    if (other === item.caption) return;
+    assert(words.indexOf(other) === -1, item.caption + " sheet does not use the caption " + other);
+  });
+  assert(words.indexOf("Square and ground") === -1, "The end view does not say Square and ground");
+  assert(words.indexOf("End view") >= 0 && words.indexOf("De = ") >= 0 && words.indexOf("Di = ") >= 0,
+    item.caption + " keeps the end-view title and the diameter captions");
+  const stream = pdfStreams(file.bytes);
+  const hasBand = stream.indexOf("0.22 g") >= 0;
+  assert(hasBand === item.ground, item.caption + (item.ground ? " draws the ground band" : " omits the ground band"));
+  const tips = tipRect(stream);
+  assert(tips.length === 1, item.caption + " draws one wire tip", "found " + tips.length);
+});
+const closedTip = tipRect(pdfStreams(Pdf.toUint8Array(
+  Object.assign(E.evaluateDesign(Object.assign({}, endBase, { ends: "closed" })), { wind: "right" }),
+  Object.assign({}, sheet, { entitlement: Ent.productionEntitlement() })
+).bytes))[0];
+const openTip = tipRect(pdfStreams(Pdf.toUint8Array(
+  Object.assign(E.evaluateDesign(Object.assign({}, endBase, { ends: "open" })), { wind: "right" }),
+  Object.assign({}, sheet, { entitlement: Ent.productionEntitlement() })
+).bytes))[0];
+assert(openTip.x > closedTip.x + 2, "The open cut tip leaves a wider gap than the closed tip",
+  "closed x " + closedTip.x.toFixed(2) + " open x " + openTip.x.toFixed(2));
+const groundSquare = tipRect(pdfStreams(Pdf.toUint8Array(
+  Object.assign(E.evaluateDesign(Object.assign({}, endBase, { ends: "closed_ground" })), { wind: "right" }),
+  Object.assign({}, sheet, { entitlement: Ent.productionEntitlement() })
+).bytes))[0];
+const openGroundSquare = tipRect(pdfStreams(Pdf.toUint8Array(
+  Object.assign(E.evaluateDesign(Object.assign({}, endBase, { ends: "open_ground" })), { wind: "right" }),
+  Object.assign({}, sheet, { entitlement: Ent.productionEntitlement() })
+).bytes))[0];
+assert(groundSquare.w > openGroundSquare.w + 0.8, "The closed ground tip spans the ring; the open ground tip stops short",
+  groundSquare.w.toFixed(2) + " vs " + openGroundSquare.w.toFixed(2));
 
 const artifactDir = "/opt/cursor/artifacts";
 if (fs.existsSync(artifactDir)) {
