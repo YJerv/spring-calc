@@ -113,6 +113,8 @@ const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8"
 assert(appJs.indexOf("collapseStepFolds(step)") >= 0, "Opening Application constraints closes those sections again");
 assert(appJs.indexOf('id: "pocket"') >= 0 && appJs.indexOf('id: "workL2"') >= 0 && appJs.indexOf('id: "serviceTemp"') >= 0,
   "A pocket, length or temperature message opens its section");
+assert(appJs.indexOf("deriveModeB") >= 0 && appJs.indexOf("modeBPoint") === -1,
+  "Point and rate takes the working lengths from Application constraints and no longer chooses F1 or F2");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {

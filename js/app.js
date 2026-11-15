@@ -99,15 +99,18 @@
         setVal("L1", val("workL1"));
         setVal("L2", val("workL2"));
       }
-    } else if (val("modeBPoint") === "F1") {
-      if (from === "duty") setVal("workL1", val("Lb"));
-      else setVal("Lb", val("workL1"));
-    } else if (from === "duty") {
-      setVal("workL2", val("Lb"));
-    } else {
-      setVal("Lb", val("workL2"));
     }
     syncingLengths = false;
+  }
+
+  function refreshModeBNote() {
+    var note = $("modeBNote");
+    if (!note) return;
+    var range = serviceRange();
+    var complete = range && range.Lcomp != null && range.Lrel != null && range.Lrel > range.Lcomp;
+    note.textContent = complete
+      ? "L1 and L2 are the working lengths. F1 and F2 are taken from this line."
+      : "No working-length range is set, so this point is the most compressed condition (L2, F2).";
   }
 
   function currentLoads() {
@@ -128,7 +131,7 @@
       }
       return out;
     }
-    var modeB = E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"), complete ? range : null);
+    var modeB = E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), null, complete ? range : null);
     if (modeB.ok && range && range.Lcomp != null && modeB.Lcomp == null) {
       modeB.Lcomp = range.Lcomp;
       if (modeB.R > 0) modeB.Fcomp = modeB.R * (modeB.L0 - range.Lcomp);
@@ -151,6 +154,7 @@
       "<dt>Free length L0</dt><dd>" + E.fmt(out.L0, 3) + " mm</dd>" +
       "<dt>Maximum working load</dt><dd>" + E.fmt(out.Fmax, 3) + " N at " +
       E.fmt(out.LmaxLoad, 3) + " mm</dd>";
+    refreshModeBNote();
   }
 
   function optionalNum(id) {
@@ -232,7 +236,7 @@
     var g = geometry();
     return [
       state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
-      val("Lb"), val("Fb"), val("Rb"), val("modeBPoint"),
+      val("Lb"), val("Fb"), val("Rb"),
       g.pocket, g.innerMin, g.innerClearance, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor,
       g.useDirectStress, g.tauAllowDirect, g.serviceTemp, g.Lcomp, g.Lrel, g.useIndicativeRm
     ].join("|");
@@ -471,10 +475,6 @@
     if (state.mode === "A") {
       if (val("L1") === "" && val("L2") === "" && (val("workL1") !== "" || val("workL2") !== "")) syncLengths("work");
       else if (val("L1") !== "" || val("L2") !== "") syncLengths("duty");
-    } else if (val("Lb") === "" && (val("workL2") !== "" || val("workL1") !== "")) {
-      syncLengths("work");
-    } else if (val("Lb") !== "") {
-      syncLengths("duty");
     }
   }
 
@@ -1208,7 +1208,7 @@
         mode: state.mode,
         values: {
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
-          Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
+          Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"),
           pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
           innerClearance: val("innerClearance"),
           workL1: val("workL1"), workL2: val("workL2"), serviceTemp: val("serviceTemp"),
@@ -1477,14 +1477,14 @@
         markFeasibilityStale();
       });
     });
-    ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb", "modeBPoint"].forEach(function (id) {
+    ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb"].forEach(function (id) {
       $(id).addEventListener("input", function () {
-        if (id === "L1" || id === "L2" || id === "Lb" || id === "modeBPoint") syncLengths("duty");
+        if (id === "L1" || id === "L2") syncLengths("duty");
         refreshLoadSummary();
         markFeasibilityStale();
       });
       $(id).addEventListener("change", function () {
-        if (id === "L1" || id === "L2" || id === "Lb" || id === "modeBPoint") syncLengths("duty");
+        if (id === "L1" || id === "L2") syncLengths("duty");
         refreshLoadSummary();
         markFeasibilityStale();
       });

@@ -270,24 +270,22 @@
     F = Number(F);
     L = Number(L);
     R = Number(R);
-    asPoint = asPoint || "F2";
     var errors = [];
     if (!(F >= 0)) errors.push("Load must be zero or greater.");
     if (!(R > 0)) errors.push("Spring rate must be greater than zero.");
+    if (!(L > 0)) errors.push("Length must be greater than zero.");
     var Lcomp = range && range.Lcomp != null && range.Lcomp !== "" ? Number(range.Lcomp) : null;
     var Lrel = range && range.Lrel != null && range.Lrel !== "" ? Number(range.Lrel) : null;
     var ranged = Lcomp != null && Lrel != null && isFinite(Lcomp) && isFinite(Lrel);
-    if (!ranged && !(L > 0)) errors.push("Length must be greater than zero.");
     if (ranged && !(Lrel > Lcomp)) {
       errors.push("The most relaxed working length must be longer than the most compressed length.");
     }
     if (errors.length) return { ok: false, errors: errors };
+    /* F(x) = F + R·(L − x). L0 stays on the anchor. asPoint is ignored: older saves chose F1 or F2. */
+    var L0 = L + F / R;
     if (ranged) {
-      var atCompressed = asPoint !== "F1";
-      var Lpoint = atCompressed ? Lcomp : Lrel;
-      var span = Lrel - Lcomp;
-      var F1 = atCompressed ? F - R * span : F;
-      var F2 = atCompressed ? F : F + R * span;
+      var F1 = F + R * (L - Lrel);
+      var F2 = F + R * (L - Lcomp);
       if (!(F1 >= 0)) {
         return { ok: false, errors: ["The load at the relaxed length would be below zero. Check the rate and the length range."] };
       }
@@ -295,7 +293,7 @@
         ok: true,
         mode: "B",
         R: R,
-        L0: Lpoint + F / R,
+        L0: L0,
         L1: Lrel,
         F1: F1,
         L2: Lcomp,
@@ -305,33 +303,27 @@
         Lcomp: Lcomp,
         Lrel: Lrel,
         Fcomp: F2,
+        anchorL: L,
+        anchorF: F,
         errors: []
       };
     }
-    var L0 = L + F / R;
-    var out = {
+    return {
       ok: true,
       mode: "B",
       R: R,
       L0: L0,
+      L1: null,
+      F1: null,
+      L2: L,
+      F2: F,
+      Fmax: F,
+      LmaxLoad: L,
+      anchorL: L,
+      anchorF: F,
+      anchorIsCompressed: true,
       errors: []
     };
-    if (asPoint === "F1") {
-      out.L1 = L;
-      out.F1 = F;
-      out.L2 = null;
-      out.F2 = null;
-      out.Fmax = F;
-      out.LmaxLoad = L;
-    } else {
-      out.L2 = L;
-      out.F2 = F;
-      out.L1 = null;
-      out.F1 = null;
-      out.Fmax = F;
-      out.LmaxLoad = L;
-    }
-    return out;
   }
 
   function roundTo(value, step) {

@@ -200,8 +200,10 @@ assert(factorStill.stressSource === "factor" && Math.abs(factorStill.tauAllow - 
 const ranged = E.deriveModeB(125, 40, 5, "F2", { Lcomp: 30, Lrel: 48 });
 assert(ranged.ok && Math.abs(ranged.L2 - 30) < 1e-9 && Math.abs(ranged.L1 - 48) < 1e-9,
   "A working-length range sets the compressed and relaxed lengths");
-assert(Math.abs(ranged.F2 - 125) < 1e-6 && Math.abs(ranged.F1 - (125 - 5 * 18)) < 1e-6,
-  "The entered load stays on the selected point and the other load follows the rate");
+assertClose(ranged.L0, 40 + 125 / 5, "The anchor fixes L0 = L + F/R");
+assertClose(ranged.F1, 125 + 5 * (40 - 48), "F1 = F + R(L − L1)");
+assertClose(ranged.F2, 125 + 5 * (40 - 30), "F2 = F + R(L − L2)");
+assertClose(ranged.Fmax, ranged.F2, "The stress check uses the most compressed load");
 const rangedEv = E.evaluateDesign(Object.assign({}, example, ranged, { d: 2, D: 16.5, DeMax: 18.5 }));
 assert(rangedEv.tauKcomp != null && Math.abs(rangedEv.Fmax - ranged.F2) < 1e-6,
   "The range makes the most compressed load the screened working load");

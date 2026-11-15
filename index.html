@@ -275,15 +275,8 @@
               <label for="Rb">Spring rate R</label>
               <div class="unit-row"><input id="Rb" type="number" inputmode="decimal" step="any" min="0"><span class="unit">N/mm</span></div>
             </div>
-            <div class="field">
-              <label for="modeBPoint">This point is</label>
-              <select id="modeBPoint">
-                <option value="F2">Most compressed condition, F2 at L2</option>
-                <option value="F1">Most relaxed condition, F1 at L1</option>
-              </select>
-            </div>
           </div>
-          <p class="hint lead">The most compressed condition is carried into the working length L2.</p>
+          <p class="hint lead" id="modeBNote">No working-length range is set, so this point is the most compressed condition (L2, F2).</p>
         </div>
         <div class="btn-row no-print">
           <button type="button" class="btn" id="btnCheck">Check</button>
