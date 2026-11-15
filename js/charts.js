@@ -77,8 +77,8 @@
 
   function renderLoadGraph(svg, design) {
     var W = 390;
-    var H = 336;
-    var pad = { l: 58, r: 14, t: 26, b: 78 };
+    var H = 360;
+    var pad = { l: 58, r: 14, t: 26, b: 102 };
     var L0 = design.L0;
     var Lc = design.Lc;
     var span = Math.max(L0 - Lc, 1);
@@ -110,11 +110,11 @@
       stroke: "var(--chart-ink)", "stroke-width": 1.2
     }));
     parts.push(el("text", {
-      x: 12, y: 16, fill: "var(--chart-ink)", "font-size": 11,
+      x: 12, y: 16, fill: "var(--chart-ink)", "font-size": 12,
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Load F (N)"]));
     parts.push(el("text", {
-      x: pad.l + (W - pad.l - pad.r) / 2, y: H - 8, fill: "var(--chart-ink)", "font-size": 10,
+      x: pad.l + (W - pad.l - pad.r) / 2, y: H - 14, fill: "var(--chart-ink)", "font-size": 12,
       "text-anchor": "middle",
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Deflection, S"]));
@@ -160,7 +160,7 @@
 
       var line1 = (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %");
       var line2 = s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " N/mm²";
-      var tw = Math.max(approxTextWidth(line1, 8), approxTextWidth(line2, 8));
+      var tw = Math.max(approxTextWidth(line1, 12), approxTextWidth(line2, 12));
       var gap = x - pad.l;
       var tx;
       if (gap >= tw + 18) {
@@ -170,16 +170,16 @@
         if (tx + tw / 2 > W - 6) tx = W - 6 - tw / 2;
         if (tx - tw / 2 < pad.l + 4) tx = pad.l + 4 + tw / 2;
       }
-      var y1 = above ? y - 15 : y + 12;
-      var y2 = above ? y - 6 : y + 21;
+      var y1 = above ? y - 36 : y + 20;
+      var y2 = above ? y - 18 : y + 38;
       parts.push(labelText({
         x: tx, y: y1, "text-anchor": "middle", fill: s.colour,
-        "font-size": 8, "font-weight": 700
+        "font-size": 12, "font-weight": 700
       }, [txt(line1)]));
       if (line2) {
         parts.push(labelText({
           x: tx, y: y2, "text-anchor": "middle", fill: s.colour,
-          "font-size": 8, "font-weight": 650
+          "font-size": 12, "font-weight": 650
         }, [txt(line2)]));
       }
     });
@@ -218,13 +218,13 @@
     var lastY = Infinity;
     yLabelItems.forEach(function (item) {
       var y = yOf(item.F);
-      if (lastY - y < 11) y = lastY - 11;
+      if (lastY - y < 16) y = lastY - 16;
       lastY = y;
       var label = E.fmt(item.F, item.F >= 100 ? 0 : 1);
       parts.push(el("text", {
-        x: pad.l - 7, y: y + 3,
+        x: pad.l - 7, y: y + 4,
         "text-anchor": "end",
-        "font-size": 9,
+        "font-size": 12,
         fill: item.colour,
         "font-weight": 650,
         "font-family": "ui-sans-serif, system-ui, sans-serif"
@@ -235,8 +235,8 @@
     xSorted.forEach(function (s, i) {
       var x = xOf(s.L);
       var row = i % 2;
-      var ySym = H - pad.b + 13 + row * 22;
-      var yVal = ySym + 10;
+      var ySym = H - pad.b + 18 + row * 32;
+      var yVal = ySym + 16;
       var xAnchor = x;
       if (i === 0 && x < pad.l + 16) xAnchor = pad.l;
       if (i === xSorted.length - 1 && x > W - pad.r - 16) xAnchor = W - pad.r;
@@ -245,12 +245,12 @@
         : "middle";
       parts.push(el("text", {
         x: xAnchor, y: ySym, "text-anchor": anchor, fill: s.colour,
-        "font-size": 9, "font-weight": 700,
+        "font-size": 12, "font-weight": 700,
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, [txt(s.id)]));
       parts.push(el("text", {
         x: xAnchor, y: yVal, "text-anchor": anchor, fill: "var(--chart-muted)",
-        "font-size": 8,
+        "font-size": 12,
         "font-family": "ui-sans-serif, system-ui, sans-serif"
       }, [txt(E.fmt(s.L, 1) + " mm")]));
     });

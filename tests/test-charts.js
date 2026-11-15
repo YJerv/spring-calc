@@ -101,7 +101,7 @@ assert(html.indexOf(">Deflection, S<") !== -1, "The load graph x axis is labelle
 assert(html.toLowerCase().indexOf("shorter") === -1, "The load graph does not say shorter");
 const springLine = html.match(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)" stroke="var\(--chart-ink\)" stroke-width="2"/);
 assert(springLine && Math.abs(Number(springLine[1]) - 58) < 0.2, "The spring line starts on the y axis at L0");
-assert(springLine && Math.abs(Number(springLine[2]) - (336 - 78)) < 0.2, "The spring line starts at zero load");
+assert(springLine && Math.abs(Number(springLine[2]) - (360 - 102)) < 0.2, "The spring line starts at zero load");
 assert(springLine && Math.abs(Number(springLine[3]) - 58) > 1, "The spring line runs straight away from the origin");
 assert(svg.attrs.viewBox.indexOf("390") === 0 || /0 0 390 /.test(svg.attrs.viewBox),
   "Graph is laid out for a 390 px phone width", svg.attrs.viewBox);
@@ -117,9 +117,12 @@ assert((html.match(/N\/mm²/g) || []).length >= 4, "Each loaded station shows τ
 assert((html.match(/τk /g) || []).length >= 4, "Horizontal lines are labelled with τk");
 assert(html.indexOf(" %") !== -1, "Horizontal lines are labelled with compression %");
 
-const axisY = 336 - 78;
-assert(html.indexOf('y="' + (axisY + 13) + '"') !== -1 || html.indexOf("y=\"" + (axisY + 13)) !== -1,
-  "First row of length ticks is below the x axis (" + (axisY + 13) + ")");
+const axisY = 360 - 102;
+assert(html.indexOf('y="' + (axisY + 18) + '"') !== -1 || html.indexOf("y=\"" + (axisY + 18)) !== -1,
+  "First row of length ticks is below the x axis (" + (axisY + 18) + ")");
+assert(html.indexOf('font-size="8"') === -1 && html.indexOf('font-size="9"') === -1 && html.indexOf('font-size="10"') === -1,
+  "Load-graph text is no longer 8–10 px");
+assert((html.match(/font-size="12"/g) || []).length >= 12, "Load-graph labels are 12 px at the 390 px layout");
 const belowAxisLabels = (html.match(/y="(27[0-9]|28[0-9]|29[0-9]|3[0-3][0-9])"/g) || []).length;
 assert(belowAxisLabels >= 8, "Length names and millimetre values are drawn below the axis",
   "found " + belowAxisLabels + " text y-positions below the axis");
@@ -161,7 +164,7 @@ assert(markers.length === dashed.length, "Marker geometry matches the dotted lin
 dashed.forEach(function (ln, i) {
   const m = markers[i];
   assert(Math.abs(ln.x1 - ln.x2) < 1e-6, "Vertical marker " + i + " is vertical");
-  assert(Math.abs(ln.y2 - (336 - 78)) < 1e-6, "Vertical marker " + i + " starts at the x axis");
+  assert(Math.abs(ln.y2 - (360 - 102)) < 1e-6, "Vertical marker " + i + " starts at the x axis");
   assert(ln.y1 > plotTop + 1, "Vertical marker " + i + " does not extend above the spring line to the plot top",
     "y1=" + ln.y1 + " plotTop=" + plotTop);
   assert(ln.y1 < ln.y2 - 1, "Vertical marker " + i + " runs upward from the axis and stops at the load point");
