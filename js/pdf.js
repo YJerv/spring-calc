@@ -100,25 +100,28 @@
     var stroke = Math.max(0.25, d * scale * 0.85);
 
     var ground = String(v.ends || "").indexOf("ground") >= 0;
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.35);
-    if (ground) {
-      doc.line(cx - half - 1.5, yTop, cx + half + 1.5, yTop);
-      doc.line(cx - half - 1.5, yTop + drawnH, cx + half + 1.5, yTop + drawnH);
-    }
 
     var turns = Math.max(nt, 2);
     var steps = Math.max(48, Math.round(turns * 20));
     var dead = Math.max(nt - n, 0);
     function yAtTurn(t) {
+      var y;
       if (dead >= 1.5) {
         var endRise = d * 0.55;
         var midRise = Math.max(L0 - 2 * endRise, 0);
-        if (t <= 1) return t * endRise;
-        if (t >= nt - 1) return endRise + midRise + (t - (nt - 1)) * endRise;
-        return endRise + ((t - 1) / Math.max(n, 1e-9)) * midRise;
+        if (t <= 1) y = t * endRise;
+        else if (t >= nt - 1) y = endRise + midRise + (t - (nt - 1)) * endRise;
+        else y = endRise + ((t - 1) / Math.max(n, 1e-9)) * midRise;
+      } else {
+        y = (t / turns) * L0;
       }
-      return (t / turns) * L0;
+      /* Ground face is the outer edge of the end coil, not a line past the spring. */
+      if (ground) {
+        var face = stroke / (2 * scale);
+        if (y < face) y = face;
+        if (y > L0 - face) y = L0 - face;
+      }
+      return y;
     }
 
     var front = [];

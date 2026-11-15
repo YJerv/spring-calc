@@ -406,6 +406,46 @@ const sideSamples = [
   { name: "square outline", design: { De: 30, D: 27, d: 3, L0: 30, n: 6, nt: 8, wind: "right" } },
   { name: "very long", design: { De: 8, D: 6.5, d: 1.2, L0: 360, n: 40, nt: 42, wind: "right" } }
 ];
+function diagramLines(html) {
+  return (html.match(/<line\b[^>]*>/g) || []).map(function (tag) {
+    function num(name) {
+      const m = tag.match(new RegExp("\\b" + name + '="([^"]+)"'));
+      return m ? Number(m[1]) : NaN;
+    }
+    return { x1: num("x1"), y1: num("y1"), x2: num("x2"), y2: num("y2") };
+  });
+}
+["closed_ground", "closed", "open_ground", "open"].forEach(function (ends) {
+  const design = E.evaluateDesign(Object.assign({}, example, { ends: ends }));
+  const pic = fakeSvg();
+  C.renderSpringDiagram(pic, design);
+  const lines = diagramLines(pic.innerHTML);
+  const vertical = lines.filter(function (ln) { return Math.abs(ln.x1 - ln.x2) < 0.2 && ln.y2 - ln.y1 > 40; })[0];
+  assert(!!vertical, ends + " side view still has the free-length dimension");
+  const yTop = vertical.y1;
+  const yBot = vertical.y2;
+  const seats = lines.filter(function (ln) {
+    return Math.abs(ln.y1 - ln.y2) < 0.2 && Math.abs(ln.x2 - ln.x1) > 30 &&
+      (Math.abs(ln.y1 - yTop) < 4 || Math.abs(ln.y1 - yBot) < 4);
+  });
+  assert(seats.length === 0, ends + " side view has no flat line across the end coils",
+    "found " + seats.length);
+  const pts = (pic.innerHTML.match(/[\d.]+,[\d.]+/g) || []).map(function (pair) {
+    const xy = pair.split(",");
+    return { x: Number(xy[0]), y: Number(xy[1]) };
+  }).filter(function (p) { return p.y > yTop - 2 && p.y < yBot + 2; });
+  const topPts = pts.filter(function (p) { return p.y < yTop + design.d * 3; });
+  const ys = topPts.map(function (p) { return p.y; });
+  const yMin = Math.min.apply(null, ys);
+  if (ends.indexOf("ground") >= 0) {
+    assert(yMin > yTop + 0.2, ends + " grinds the end coil inside its own outline",
+      "coil " + yMin + " end " + yTop);
+  } else {
+    assert(yMin < yTop + 0.6, ends + " end coil is not held on a ground face",
+      "coil " + yMin + " end " + yTop);
+  }
+});
+
 sideSamples.forEach(function (sample) {
   const pic = fakeSvg();
   C.renderSpringDiagram(pic, sample.design);

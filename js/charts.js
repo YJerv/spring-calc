@@ -486,17 +486,8 @@
     var stroke = Math.max(1.2, d * scale);
 
     var parts = [empty("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--chart-paper)" })];
-
-    /* Ground seats */
     var half = (De * scale) / 2;
-    parts.push(empty("line", {
-      x1: cx - half, y1: yTop, x2: cx + half, y2: yTop,
-      stroke: "var(--chart-ink)", "stroke-width": 2
-    }));
-    parts.push(empty("line", {
-      x1: cx - half, y1: yTop + L0 * scale, x2: cx + half, y2: yTop + L0 * scale,
-      stroke: "var(--chart-ink)", "stroke-width": 2
-    }));
+    var ground = String(design.ends || "").indexOf("ground") >= 0;
 
     var turns = Math.max(nt, 2);
     var steps = Math.max(80, Math.round(turns * 48));
@@ -505,14 +496,23 @@
     var dead = Math.max(nt - n, 0);
     function yAtTurn(t) {
       /* Closed ends: first and last inactive turns take up roughly d each. */
+      var y;
       if (dead >= 2) {
         var endRise = d;
         var midRise = L0 - 2 * endRise;
-        if (t <= 1) return (t / 1) * endRise;
-        if (t >= nt - 1) return endRise + midRise + ((t - (nt - 1)) / 1) * endRise;
-        return endRise + ((t - 1) / Math.max(n, 1e-9)) * midRise;
+        if (t <= 1) y = (t / 1) * endRise;
+        else if (t >= nt - 1) y = endRise + midRise + ((t - (nt - 1)) / 1) * endRise;
+        else y = endRise + ((t - 1) / Math.max(n, 1e-9)) * midRise;
+      } else {
+        y = (t / turns) * L0;
       }
-      return (t / turns) * L0;
+      /* Ground face is the outer edge of the end coil, inset by half the wire. */
+      if (ground) {
+        var face = stroke / (2 * scale);
+        if (y < face) y = face;
+        if (y > L0 - face) y = L0 - face;
+      }
+      return y;
     }
 
     for (var i = 0; i <= steps; i++) {
