@@ -1508,6 +1508,16 @@
       markFeasibilityStale();
     });
     $("useIndicativeRm").addEventListener("change", markFeasibilityStale);
+    $("btnClearConstraints").addEventListener("click", function () {
+      ["pocket", "clearance", "innerMin", "innerClearance", "workL1", "workL2", "serviceTemp"].forEach(function (id) {
+        setVal(id, "");
+      });
+      syncLengths("work");
+      showErr("errConstraints", []);
+      refreshLoadSummary();
+      refreshGeomSummary();
+      markFeasibilityStale();
+    });
     $("btnClearance").addEventListener("click", function () {
       var pocket = num("pocket");
       var guide = num("innerMin");

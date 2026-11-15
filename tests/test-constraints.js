@@ -115,6 +115,21 @@ assert(appJs.indexOf('id: "pocket"') >= 0 && appJs.indexOf('id: "workL2"') >= 0 
   "A pocket, length or temperature message opens its section");
 assert(appJs.indexOf("deriveModeB") >= 0 && appJs.indexOf("modeBPoint") === -1,
   "Point and rate takes the working lengths from Application constraints and no longer chooses F1 or F2");
+const step3 = page.slice(page.indexOf('id="step-3"'), page.indexOf('id="step-4"'));
+assert(step3.indexOf('id="btnClearConstraints"') >= 0 && step3.indexOf("Clear all") >= 0, "Application constraints has a Clear all button");
+assert(step3.indexOf('class="btn secondary" id="btnClearConstraints"') >= 0, "Clear all is a secondary button");
+assert(step3.indexOf('id="tempFold"') < step3.indexOf('id="btnClearConstraints"'), "Clear all sits at the bottom of the constraints page");
+assert(step3.indexOf("btnBack") === -1, "Clear all is above the Back and Next navigation, not inside it");
+const clearFn = appJs.slice(appJs.indexOf('$("btnClearConstraints")'), appJs.indexOf('$("btnClearance")'));
+["pocket", "clearance", "innerMin", "innerClearance", "workL1", "workL2", "serviceTemp"].forEach(function (id) {
+  assert(clearFn.indexOf('"' + id + '"') >= 0, "Clear all resets " + id);
+});
+assert(clearFn.indexOf("syncLengths(\"work\")") >= 0, "Clear all keeps the working lengths in step");
+assert(clearFn.indexOf("showErr(\"errConstraints\", [])") >= 0, "Clear all clears the constraints warning");
+assert(clearFn.indexOf("refreshLoadSummary()") >= 0 && clearFn.indexOf("refreshGeomSummary()") >= 0 && clearFn.indexOf("markFeasibilityStale()") >= 0,
+  "Clear all refreshes the summary, the warnings and the downstream check");
+assert(clearFn.indexOf("suggestedClearance") === -1, "Clear all does not refill the suggested clearance");
+assert(clearFn.indexOf("\"F1\"") === -1 && clearFn.indexOf("\"ends\"") === -1, "Clear all leaves the other pages' fields alone");
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
