@@ -877,8 +877,38 @@
     var anyWithinRaisedStress = false;
     var anyBounds = false;
     var counts = { solid: 0, pocket: 0, guide: 0, coilsFew: 0, coilsMany: 0, index: 0, stress: 0 };
+    var viableBest = {};
     var i;
     var j;
+    function stressOf(ev) {
+      return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
+    }
+    function noteViable(ev) {
+      if (diameterSampleFails(ev)) return;
+      var prev = viableBest[ev.d];
+      if (!prev || stressOf(ev) < stressOf(prev) - 1e-9 || (Math.abs(stressOf(ev) - stressOf(prev)) <= 1e-9 && ev.D < prev.D)) {
+        viableBest[ev.d] = ev;
+      }
+    }
+    function viableSummary() {
+      var wires = [];
+      var best = null;
+      Object.keys(viableBest).forEach(function (key) {
+        var ev = viableBest[key];
+        wires.push(ev.d);
+        if (!best || stressOf(ev) < stressOf(best) - 1e-9 || (Math.abs(stressOf(ev) - stressOf(best)) <= 1e-9 && ev.d < best.d)) {
+          best = ev;
+        }
+      });
+      wires.sort(function (a, b) { return a - b; });
+      return { viableWires: wires, bestViable: best };
+    }
+    function finish(result) {
+      var extra = viableSummary();
+      result.viableWires = extra.viableWires;
+      result.bestViable = extra.bestViable;
+      return result;
+    }
     function tally(ev) {
       (ev.reasons || []).forEach(function (reason) {
         if (reason.indexOf("Solid length") === 0 || reason.indexOf("Free length") === 0) counts.solid++;
@@ -905,6 +935,7 @@
         var ev = evaluateDesign(Object.assign({}, input, { d: d, D: diameters[j], Rm: rm }));
         if (!ev.ok) continue;
         tally(ev);
+        noteViable(ev);
         var compressed = ev.deflPct2 != null ? ev.deflPct2 : null;
         if (compressed != null && compressed > 100 + 1e-6) sawOverTravel = true;
         if (!geometricOk(ev)) continue;
@@ -947,7 +978,7 @@
     }
     if (!tier) {
       var hint = failureHint(counts, all, anyBounds, sawOverTravel);
-      return {
+      return finish({
         level: "fail",
         tier: null,
         warning: "",
@@ -957,10 +988,7 @@
         best: null,
         perDiameter: [],
         candidates: []
-      };
-    }
-    function stressOf(ev) {
-      return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
+      });
     }
     pool.sort(function (a, b) {
       var ds = stressOf(a) - stressOf(b);
@@ -979,7 +1007,7 @@
     }
     var perDiameter = order.map(function (key) { return byD[key]; });
     perDiameter.sort(function (a, b) { return a.D - b.D; });
-    return {
+    return finish({
       level: tier.id === "strict" ? "pass" : "warning",
       tier: tier.id,
       warning: tier.warning,
@@ -989,7 +1017,7 @@
       best: best,
       perDiameter: perDiameter,
       candidates: pool
-    };
+    });
   }
 
   function failureHint(counts, pool, anyBounds, sawOverTravel) {

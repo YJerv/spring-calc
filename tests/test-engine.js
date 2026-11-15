@@ -441,6 +441,35 @@ const optSpan = E.passingDiameterSpan(optScan.rows, optFit.best.D);
 assert(optFit.best && optFit.best.D >= optSpan.min - 1e-6 && optFit.best.D <= optSpan.max + 1e-6,
   "The optimised diameter sits inside the passing range", optFit.best && (optFit.best.D + " in " + optSpan.min + "–" + optSpan.max));
 
+console.log("\nWires with a passing diameter\n");
+
+const listed = E.searchOptimisation(example);
+assert(listed.viableWires && listed.viableWires.length > 0, "The worked example offers at least one wire");
+assert(listed.bestViable && listed.bestViable.pctAllow <= 100 + 1e-6 && listed.bestViable.Lc <= listed.bestViable.LmaxLoad + 1e-6,
+  "The best listed wire passes the stress and solid-length test");
+assert(listed.viableWires.some(function (d) { return Math.abs(d - listed.bestViable.d) < 1e-9; }),
+  "The best valid wire is in the filtered list");
+assert(listed.best && listed.viableWires.some(function (d) { return Math.abs(d - listed.best.d) < 1e-9; }),
+  "The optimised wire is one of the wires that pass somewhere");
+const noneFit = E.searchOptimisation(Object.assign({}, example, { DeMax: 0.5 }));
+assert(noneFit.viableWires && noneFit.viableWires.length === 0 && noneFit.bestViable == null,
+  "A duty with no passing diameter has an empty wire list");
+const harsh = E.searchOptimisation(Object.assign({}, example, { DeMax: null, Rm: 700, tauFactor: 0.5, F2: 400, Fmax: 400, R: 20, L0: 80, L2: 40, LmaxLoad: 40 }));
+assert(harsh.viableWires.length > 0 && harsh.viableWires.length < E.STANDARD_WIRES.length,
+  "Some standard wires fail at every diameter and drop out of the list", harsh.viableWires.length + " of " + E.STANDARD_WIRES.length);
+harsh.viableWires.forEach(function (d) {
+  const scan = E.scanDiameters(Object.assign({}, example, { DeMax: null, Rm: 700, tauFactor: 0.5, F2: 400, Fmax: 400, R: 20, L0: 80, L2: 40, LmaxLoad: 40, d: d }), 20);
+  const anyPass = scan.rows.some(function (r) { return r.pctAllow <= 100 + 1e-6 && r.Lc <= r.LmaxLoad + 1e-6; });
+  assert(anyPass, "Listed wire " + d + " mm has a passing diameter");
+});
+const dropped = E.STANDARD_WIRES.filter(function (d) {
+  return !harsh.viableWires.some(function (v) { return Math.abs(v - d) < 1e-9; });
+})[0];
+const droppedScan = E.scanDiameters(Object.assign({}, example, { DeMax: null, Rm: 700, tauFactor: 0.5, F2: 400, Fmax: 400, R: 20, L0: 80, L2: 40, LmaxLoad: 40, d: dropped }), 20);
+assert(droppedScan.rows.length > 0 && droppedScan.rows.every(function (r) {
+  return !(r.pctAllow <= 100 + 1e-6 && r.Lc <= r.LmaxLoad + 1e-6);
+}), "A removed wire fails the pass test at every sampled diameter", String(dropped));
+
 console.log("    Heat map D range " + hm.Dmin + "–" + hm.Dmax + " mm in " + hm.diameters.length + " steps");
 console.log("    Most options: D = " + hm.bestDiameters.join(", ") + " mm with " + hm.maxViable + " viable wire sizes");
 

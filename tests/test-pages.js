@@ -69,6 +69,7 @@ assert(pages[5].indexOf('id="Dslider"') < pages[5].indexOf('id="tradeoffSvg"'), 
 assert(pages[5].indexOf('id="coilTune"') >= 0 && pages[5].indexOf('id="coilTune"') < pages[5].indexOf('id="btnOptimise"') && pages[5].indexOf('id="tradeoffSvg"') < pages[5].indexOf("</div>\n        <div class=\"error\" id=\"err4\">"), "Optimise, the slider and the graph are one block");
 assert(pages[5].indexOf("No spring will work for this duty") >= 0 && pages[5].indexOf('id="optNone" class="status-banner fail hidden"') >= 0, "The no-option banner is ready and hidden");
 assert(appJs.indexOf("setCoilTune(false, screen.message || E.NO_OPTIONS)") >= 0 && appJs.indexOf("setCoilTune(true)") >= 0, "No options hides the tuning controls, and a feasible search shows them again");
+assert(appJs.indexOf("viableWires") >= 0 && appJs.indexOf("bestViable") >= 0, "The wire list keeps only sizes with a passing diameter, and an invalid selection is replaced");
 assert(appJs.indexOf("C.renderTradeoff") >= 0 && appJs.indexOf("paintCoil") >= 0, "Moving the slider redraws the stress graph");
 assert(appJs.indexOf("passingDiameterSpan") >= 0 && appJs.indexOf("function clampCoilD") >= 0, "The diameter slider stops at the passing range and clamps its value");
 assert(appJs.indexOf("wires: [d]") >= 0, "Optimise searches mean diameters for the selected wire");

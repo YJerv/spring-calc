@@ -618,16 +618,35 @@
     return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
   }
 
-  function fillOptWires(around) {
+  function wireIsListed(wires, d) {
+    if (!(d > 0) || !wires) return false;
+    for (var i = 0; i < wires.length; i++) {
+      if (Math.abs(Number(wires[i]) - Number(d)) < 1e-9) return true;
+    }
+    return false;
+  }
+
+  function fillOptWires(around, allowed, selectD) {
     var sel = $("optWire");
     if (!sel || !(around > 0)) return;
     fillingWires = true;
     var current = sel.value;
-    var wires = E.nearbyStandardWires(around);
+    var wires = E.nearbyStandardWires(around).filter(function (d) {
+      return !allowed || wireIsListed(allowed, d);
+    });
+    if (allowed && wireIsListed(allowed, around) && !wireIsListed(wires, around)) wires.push(Number(around));
+    wires.sort(function (a, b) { return a - b; });
+    var pick = null;
+    if (selectD != null) {
+      for (var i = 0; i < wires.length; i++) {
+        if (Math.abs(wires[i] - Number(selectD)) < 1e-9) pick = wires[i];
+      }
+    }
     sel.innerHTML = "<option value=\"\">Best wire at each diameter</option>" + wires.map(function (d) {
       return "<option value=\"" + d + "\">" + E.fmt(d, 2) + " mm</option>";
     }).join("");
-    if (current && [].some.call(sel.options, function (opt) { return opt.value === current; })) sel.value = current;
+    if (pick != null) sel.value = String(pick);
+    else if (current && [].some.call(sel.options, function (opt) { return opt.value === current; })) sel.value = current;
     fillingWires = false;
   }
 
@@ -655,7 +674,8 @@
     var list = $("optCandidates");
     var metrics = $("optMetrics");
     var note = $("optClearance");
-    if (!screen.best) {
+    var viable = screen.viableWires || [];
+    if (!viable.length) {
       state.design = null;
       if (status) status.innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(screen.message || E.NO_OPTIONS) + "</div>";
       if (metrics) metrics.innerHTML = "";
@@ -668,18 +688,37 @@
     }
     setCoilTune(true);
     showErr("err4", []);
-    var tone = screen.level === "pass" ? "pass" : "warning";
-    var best = screen.best;
-    if (!state.design) applyCandidate(best);
-    fillOptWires(best.d);
+    var explicit = $("optWire") && $("optWire").value !== "" ? Number($("optWire").value) : null;
+    var active = explicit != null ? explicit : state.selectedWire;
+    var replaced = false;
+    if (!wireIsListed(viable, active)) {
+      if (screen.bestViable) applyCandidate(screen.bestViable);
+      if (explicit != null && screen.bestViable) explicit = screen.bestViable.d;
+      replaced = explicit != null;
+    } else if (explicit != null && (!state.design || Math.abs(state.design.d - explicit) > 1e-9)) {
+      var kept = null;
+      var pool = screen.candidates || [];
+      for (var pi = 0; pi < pool.length; pi++) {
+        if (Math.abs(pool[pi].d - explicit) > 1e-9) continue;
+        if (!kept || candidateStress(pool[pi]) < candidateStress(kept) - 1e-9) kept = pool[pi];
+      }
+      if (!kept && screen.bestViable && Math.abs(screen.bestViable.d - explicit) < 1e-9) kept = screen.bestViable;
+      if (kept) applyCandidate(kept);
+    } else if (!state.design && screen.bestViable) {
+      applyCandidate(screen.bestViable);
+    }
+    var tone = screen.level === "warning" ? "warning" : "pass";
+    var best = (screen.best && wireIsListed(viable, screen.best.d)) ? screen.best : screen.bestViable;
+    fillOptWires(state.selectedWire || (best && best.d), viable, replaced ? explicit : null);
     var filter = $("optWire") && $("optWire").value !== "" ? Number($("optWire").value) : null;
     var rows = filter
-      ? screen.candidates.filter(function (row) { return Math.abs(row.d - filter) < 1e-9; })
-      : screen.perDiameter.slice();
-    if (!rows.length) rows = [best];
+      ? (screen.candidates || []).filter(function (row) { return Math.abs(row.d - filter) < 1e-9; })
+      : (screen.perDiameter || []).slice();
+    rows = rows.filter(function (row) { return wireIsListed(viable, row.d); });
+    if (!rows.length && best) rows = [best];
     if (status) {
       status.innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
-        (screen.level === "pass" ? "Optimum" : "Optimum with a warning") +
+        (screen.level === "warning" ? "Optimum with a warning" : "Optimum") +
         "</strong> — wire " + E.fmt(best.d, 2) + " mm, mean diameter " + E.fmt(best.D, 2) +
         " mm, τk " + E.fmt(candidateStress(best), 1) + " N/mm²." +
         (screen.warning ? " " + esc(screen.warning) : "") + "</div>";
