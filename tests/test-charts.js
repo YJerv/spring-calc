@@ -416,6 +416,102 @@ sideSamples.forEach(function (sample) {
   assert(pic.innerHTML.indexOf("Scaled side view") === -1, sample.name + ": the drawing caption is not the card title");
 });
 
+console.log("\nLoad-graph dual labels\n");
+
+function dualBoxes(html) {
+  return html.split("<text").slice(1).filter(function (part) {
+    return part.indexOf('data-dual="1"') >= 0;
+  }).map(function (part) {
+    const raw = part.match(/data-box="([^"]+)"/);
+    const n = raw[1].split(",").map(Number);
+    return {
+      part: part.match(/data-part="([^"]+)"/)[1],
+      station: part.match(/data-station="([^"]+)"/)[1],
+      layout: part.match(/data-layout="([^"]+)"/)[1],
+      line: Number(part.match(/data-line="([^"]+)"/)[1]),
+      x: n[0], y: n[1], w: n[2], h: n[3]
+    };
+  });
+}
+function hitsSpring(box, design) {
+  const W = 390;
+  const H = 360;
+  const pad = { l: 58, r: 14, t: 26, b: 102 };
+  const span = Math.max(design.L0 - design.Lc, 1);
+  const Lright = design.Lc - 0.08 * span;
+  function xOf(L) {
+    return pad.l + ((design.L0 - L) / (design.L0 - Lright)) * (W - pad.l - pad.r);
+  }
+  let Ftop = 1;
+  [["L0", design.L0, 0], ["L1", design.L1, design.F1], ["L2", design.L2, design.F2],
+    ["Ln", design.Ln, design.Fn], ["Lc", design.Lc, design.Fc]].forEach(function (s) {
+    if (s[2] > Ftop) Ftop = s[2];
+  });
+  Ftop *= 1.16;
+  const axis = H - pad.b;
+  function yOf(F) {
+    return axis - (F / Ftop) * (H - pad.t - pad.b);
+  }
+  const x0 = pad.l;
+  const y0 = axis;
+  const x1 = xOf(design.Lc);
+  const y1 = yOf(design.Fc);
+  for (let i = 0; i <= 80; i++) {
+    const t = i / 80;
+    const sx = x0 + t * (x1 - x0);
+    const sy = y0 + t * (y1 - y0);
+    if (sx >= box.x - 1 && sx <= box.x + box.w + 1 && sy >= box.y - 1 && sy <= box.y + box.h + 1) return true;
+  }
+  return false;
+}
+const titleBox = { x: 12, y: 16 - 12 * 0.85, w: "Load F (N)".length * 12 * 0.6, h: 12 * 1.15 };
+const dualSamples = [
+  { name: "worked example", design: ev, layout: "split" },
+  { name: "close loads", design: E.evaluateDesign(Object.assign({}, example, { L1: 48, F1: 60, L2: 46, F2: 70 })), layout: "split" },
+  { name: "near solid", design: E.evaluateDesign(Object.assign({}, example, { L1: 28, F1: 160, L2: 22, F2: 190, Fmax: 190, LmaxLoad: 22 })), layout: "split" },
+  { name: "long spring", design: E.evaluateDesign({ d: 1.2, D: 10, G: 81500, Rm: 1800, tauFactor: 0.5, R: 2, L0: 80, L1: 70, F1: 20, L2: 40, F2: 80, Fmax: 80, LmaxLoad: 40, ends: "closed_ground" }), layout: "split" },
+  { name: "mode B", design: modeB, layout: "row" },
+  { name: "short travel", design: E.evaluateDesign(Object.assign({}, example, { L0: 40, L1: 38, F1: 20, L2: 30, F2: 100, Fmax: 100, LmaxLoad: 30, R: 10 })), layout: "row" }
+];
+dualSamples.forEach(function (sample) {
+  const pic = fakeSvg();
+  C.renderLoadGraph(pic, sample.design);
+  const boxes = dualBoxes(pic.innerHTML);
+  const stations = C.loadGraphStations(sample.design).filter(function (s) { return s.id !== "L0"; });
+  assert(boxes.length === stations.length * 2, sample.name + ": each loaded station has a percent and a stress label",
+    "found " + boxes.length + " for " + stations.length + " stations");
+  const layouts = boxes.map(function (b) { return b.layout; }).filter(function (v, i, all) { return all.indexOf(v) === i; });
+  assert(layouts.length === 1 && layouts[0] === sample.layout,
+    sample.name + ": dual labels use one arrangement (" + sample.layout + ")", layouts.join(","));
+  stations.forEach(function (s) {
+    const pct = boxes.filter(function (b) { return b.station === s.id && b.part === "pct"; })[0];
+    const tau = boxes.filter(function (b) { return b.station === s.id && b.part === "tau"; })[0];
+    assert(!!pct && !!tau, sample.name + ": " + s.id + " shows both values");
+    if (!pct || !tau) return;
+    if (sample.layout === "split") {
+      assert(pct.y + pct.h <= pct.line - 1, sample.name + ": " + s.id + " percent sits above its load line",
+        "bottom " + (pct.y + pct.h) + " line " + pct.line);
+      assert(tau.y >= tau.line + 1, sample.name + ": " + s.id + " stress sits below its load line",
+        "top " + tau.y + " line " + tau.line);
+    } else {
+      assert(Math.abs(pct.y - tau.y) < 0.2, sample.name + ": " + s.id + " percent and stress share one line");
+      assert(pct.x + pct.w <= tau.x - 2, sample.name + ": " + s.id + " percent sits to the left of the stress");
+      assert(pct.y + pct.h <= pct.line - 1 || pct.y >= pct.line + 1,
+        sample.name + ": " + s.id + " pair stays off the load line");
+    }
+  });
+  boxes.forEach(function (b, i) {
+    assert(b.x >= 2 && b.y >= 2 && b.x + b.w <= 388 && b.y + b.h <= 256,
+      sample.name + ": " + b.station + " " + b.part + " stays inside the plot",
+      JSON.stringify(b));
+    assert(!hitsSpring(b, sample.design), sample.name + ": " + b.station + " " + b.part + " stays off the spring curve");
+    assert(!intersects(b, titleBox), sample.name + ": " + b.station + " " + b.part + " stays clear of the load-axis title");
+    for (let j = i + 1; j < boxes.length; j++) {
+      assert(!intersects(b, boxes[j]), sample.name + ": " + b.station + " " + b.part + " does not overlap " + boxes[j].station + " " + boxes[j].part);
+    }
+  });
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 if (failed) {
   console.log("\nFailures:");

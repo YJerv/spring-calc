@@ -71,10 +71,6 @@
     });
   }
 
-  function approxTextWidth(str, fontSize) {
-    return String(str).length * fontSize * 0.58;
-  }
-
   function renderLoadGraph(svg, design) {
     var W = 390;
     var H = 360;
@@ -144,44 +140,147 @@
       .slice()
       .sort(function (a, b) { return a.F - b.F; });
 
-    loaded.forEach(function (s, i) {
+    loaded.forEach(function (s) {
       var x = xOf(s.L);
       var y = yOf(s.F);
-      var yPrev = i === 0 ? yOf(0) : yOf(loaded[i - 1].F);
-      var yNext = i === loaded.length - 1 ? pad.t : yOf(loaded[i + 1].F);
-      var spaceAbove = y - yNext;
-      var spaceBelow = yPrev - y;
-      var above = spaceAbove >= spaceBelow;
-
       parts.push(empty("line", {
         x1: pad.l, y1: y, x2: x, y2: y,
         stroke: s.colour, "stroke-width": 1.15, opacity: 0.95
       }));
+    });
 
-      var line1 = (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %");
-      var line2 = s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " MPa";
-      var tw = Math.max(approxTextWidth(line1, 12), approxTextWidth(line2, 12));
-      var gap = x - pad.l;
-      var tx;
-      if (gap >= tw + 18) {
-        tx = pad.l + gap / 2;
-      } else {
-        tx = x + 8 + tw / 2;
-        if (tx + tw / 2 > W - 6) tx = W - 6 - tw / 2;
-        if (tx - tw / 2 < pad.l + 4) tx = pad.l + 4 + tw / 2;
+    /* Side by side on the load line when the pair fits there without meeting
+       the spring. Otherwise the percent sits above the line and the corrected
+       stress sits below it. If that split pair would cross the axis, both
+       values share one line in the open part of the plot. Every station uses
+       the same arrangement. */
+    var axisY = H - pad.b;
+    var labelFont = 12;
+    /* System UI at 12px draws about 13.1px above the baseline and 3.8px below.
+       The gap keeps that ink off the load line. */
+    var labelAscent = 13.1;
+    var labelDescent = 3.8;
+    var labelH = labelAscent + labelDescent;
+    var labelGap = 4;
+    function dualBox(text, left, top) {
+      var width = String(text).length * labelFont * 0.6;
+      return {
+        x: left, y: top, w: width, h: labelH,
+        baseline: top + labelAscent, cx: left + width / 2, text: text
+      };
+    }
+    function boxesHit(a, b, padPx) {
+      var p = padPx || 0;
+      return a.x < b.x + b.w + p && a.x + a.w + p > b.x &&
+        a.y < b.y + b.h + p && a.y + a.h + p > b.y;
+    }
+    function hitsSpring(b) {
+      var steps = 64;
+      var i;
+      for (i = 0; i <= steps; i++) {
+        var t = i / steps;
+        var sx = x0 + t * (xc - x0);
+        var sy = y0 + t * (yc - y0);
+        if (sx >= b.x - 3 && sx <= b.x + b.w + 3 && sy >= b.y - 3 && sy <= b.y + b.h + 3) return true;
       }
-      var y1 = above ? y - 36 : y + 20;
-      var y2 = above ? y - 18 : y + 38;
-      parts.push(labelText({
-        x: tx, y: y1, "text-anchor": "middle", fill: s.colour,
-        "font-size": 12, "font-weight": 700
-      }, [txt(line1)]));
-      if (line2) {
+      return false;
+    }
+    var titleBox = labelBox("Load F (N)", 12, 16, labelFont, "start");
+    function blocked(b, placed) {
+      if (b.x < pad.l + 2 || b.y < 2 || b.x + b.w > W - 2 || b.y + b.h > axisY - 2) return true;
+      if (hitsSpring(b) || boxesHit(b, titleBox, 2)) return true;
+      var i;
+      for (i = 0; i < placed.length; i++) {
+        if (boxesHit(b, placed[i], 2)) return true;
+      }
+      return false;
+    }
+    function findBox(text, top, preferCx, placed) {
+      var width = String(text).length * labelFont * 0.6;
+      var best = null;
+      var left;
+      for (left = pad.l + 2; left <= W - 2 - width; left += 2) {
+        var b = dualBox(text, left, top);
+        if (blocked(b, placed)) continue;
+        var dist = Math.abs(b.cx - preferCx);
+        if (!best || dist < best.dist) best = { box: b, dist: dist };
+      }
+      return best ? best.box : null;
+    }
+    function stationTexts(s) {
+      return {
+        pct: s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %",
+        tau: s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " MPa"
+      };
+    }
+    function trySplit() {
+      var placed = [];
+      var specs = [];
+      var ordered = loaded.slice().sort(function (a, b) { return b.F - a.F; });
+      var i;
+      for (i = 0; i < ordered.length; i++) {
+        var s = ordered[i];
+        var texts = stationTexts(s);
+        if (!texts.tau) return null;
+        var x = xOf(s.L);
+        var y = yOf(s.F);
+        var tauW = texts.tau.length * labelFont * 0.6;
+        var pctW = texts.pct.length * labelFont * 0.6;
+        var tauBox = findBox(texts.tau, y + labelGap, x + 6 + tauW / 2, placed);
+        var pctBox = tauBox && findBox(texts.pct, y - labelGap - labelH,
+          Math.min((pad.l + x) / 2, x - 6 - pctW / 2), placed.concat([tauBox]));
+        if (!tauBox || !pctBox) return null;
+        placed.push(tauBox, pctBox);
+        specs.push({ s: s, y: y, pct: pctBox, tau: tauBox, layout: "split" });
+      }
+      return specs.length ? specs : null;
+    }
+    function tryRow(above, onSegment) {
+      var placed = [];
+      var specs = [];
+      var ordered = loaded.slice().sort(function (a, b) { return b.F - a.F; });
+      var inner = 8;
+      var i;
+      for (i = 0; i < ordered.length; i++) {
+        var s = ordered[i];
+        var texts = stationTexts(s);
+        if (!texts.tau) return null;
+        var x = xOf(s.L);
+        var y = yOf(s.F);
+        var pctW = texts.pct.length * labelFont * 0.6;
+        var tauW = texts.tau.length * labelFont * 0.6;
+        var pairW = pctW + inner + tauW;
+        var top = above ? y - labelGap - labelH : y + labelGap;
+        var best = null;
+        var leftMax = onSegment ? Math.min(W - 2 - pairW, x - 4 - pairW) : W - 2 - pairW;
+        var left;
+        for (left = pad.l + 2; left <= leftMax; left += 2) {
+          var pctBox = dualBox(texts.pct, left, top);
+          var tauBox = dualBox(texts.tau, left + pctW + inner, top);
+          if (blocked(pctBox, placed) || blocked(tauBox, placed.concat([pctBox]))) continue;
+          var dist = Math.abs(left + pairW / 2 - (pad.l + x) / 2);
+          if (!best || dist < best.dist) best = { pct: pctBox, tau: tauBox, dist: dist };
+        }
+        if (!best) return null;
+        placed.push(best.pct, best.tau);
+        specs.push({ s: s, y: y, pct: best.pct, tau: best.tau, layout: "row" });
+      }
+      return specs.length ? specs : null;
+    }
+    var dualSpecs = tryRow(true, true) || trySplit() || tryRow(true, false) || tryRow(false, false) || [];
+    function r1(n) { return Math.round(n * 10) / 10; }
+    dualSpecs.forEach(function (spec) {
+      function paint(part, box, weight) {
         parts.push(labelText({
-          x: tx, y: y2, "text-anchor": "middle", fill: s.colour,
-          "font-size": 12, "font-weight": 650
-        }, [txt(line2)]));
+          x: box.cx, y: r1(box.baseline), "text-anchor": "middle", fill: spec.s.colour,
+          "font-size": labelFont, "font-weight": weight,
+          "data-dual": "1", "data-part": part, "data-station": spec.s.id,
+          "data-layout": spec.layout, "data-line": r1(spec.y),
+          "data-box": [r1(box.x), r1(box.y), r1(box.w), r1(box.h)].join(",")
+        }, [txt(box.text)]));
       }
+      paint("pct", spec.pct, 700);
+      paint("tau", spec.tau, 650);
     });
 
     var markerGeom = [];
