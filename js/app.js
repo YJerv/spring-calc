@@ -240,9 +240,10 @@
 
   function renderFeasibility(report, note) {
     var box = $("calcResult");
-    if (!box) return;
+    if (!box) { syncDutyNext(); return; }
     if (!report) {
       box.innerHTML = note ? "<p class=\"lead\">" + esc(note) + "</p>" : "";
+      syncDutyNext();
       return;
     }
     var html = "";
@@ -253,6 +254,7 @@
         : "<div class=\"status-banner warning\"><strong>Cannot check yet</strong> — Enter a material modulus and tensile strength before the wire search can run. Nothing was changed.</div>";
       html += blocked;
       box.innerHTML = html;
+      syncDutyNext();
       return;
     }
     var screen = report.screen || { level: "fail", message: E.NO_OPTIONS, warning: "" };
@@ -274,6 +276,7 @@
     }
     box.innerHTML = html;
     revealFoldsForMessages();
+    syncDutyNext();
   }
 
   function markFeasibilityStale() {
@@ -390,6 +393,10 @@
           "Choose Check before continuing. The check runs on that click, not while typing.");
         return false;
       }
+      if (dutyListEmpty()) {
+        revealDutyBlock();
+        return false;
+      }
       return true;
     }
     if (step === 6) {
@@ -403,7 +410,43 @@
     return true;
   }
 
+  function dutyListEmpty() {
+    if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) return false;
+    var report = state.feasibility.report;
+    if (!report || !report.ready || !report.screen) return false;
+    return report.screen.level === "fail";
+  }
+
+  function dutyForwardBlocked() {
+    return state.step === 5 && dutyListEmpty();
+  }
+
+  function revealDutyBlock() {
+    var box = $("calcResult");
+    var hint = box && box.querySelector(".status-banner.fail");
+    if (!hint) hint = box;
+    if (!hint) return;
+    hint.classList.add("duty-highlight");
+    if (hint.scrollIntoView) hint.scrollIntoView({ block: "center", behavior: "smooth" });
+    window.setTimeout(function () {
+      if (hint) hint.classList.remove("duty-highlight");
+    }, 1600);
+  }
+
+  function syncDutyNext() {
+    var btn = $("btnNext");
+    if (!btn) return;
+    var blocked = dutyForwardBlocked();
+    btn.disabled = blocked;
+    btn.setAttribute("aria-disabled", blocked ? "true" : "false");
+  }
+
   function goTo(step) {
+    if (step > state.step && dutyForwardBlocked()) {
+      revealDutyBlock();
+      syncDutyNext();
+      return;
+    }
     state.step = step;
     document.querySelectorAll(".step").forEach(function (sec) {
       sec.classList.toggle("active", Number(sec.getAttribute("data-step")) === step);
@@ -419,6 +462,7 @@
     if (step === 7) renderResults();
     collapseStepFolds(step);
     revealFoldsForMessages();
+    syncDutyNext();
     window.scrollTo(0, 0);
     persist();
   }
@@ -1571,6 +1615,10 @@
       if (state.step > 1) goTo(state.step - 1);
     });
     $("btnNext").addEventListener("click", function () {
+      if (dutyForwardBlocked()) {
+        revealDutyBlock();
+        return;
+      }
       if (state.step === 7) {
         goTo(1);
         return;
@@ -1578,6 +1626,36 @@
       if (!validateStep(state.step)) return;
       goTo(state.step + 1);
     });
+    var stepNav = document.querySelector(".step-nav");
+    if (stepNav) {
+      stepNav.addEventListener("pointerup", function (ev) {
+        if (!dutyForwardBlocked()) return;
+        var btn = $("btnNext");
+        if (!btn) return;
+        var rect = btn.getBoundingClientRect();
+        if (ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+          revealDutyBlock();
+        }
+      });
+    }
+    document.querySelectorAll(".progress span").forEach(function (dot, index) {
+      dot.addEventListener("click", function () {
+        var target = index + 1;
+        if (target > state.step && dutyForwardBlocked()) revealDutyBlock();
+      });
+    });
+    var dutySwipe = null;
+    document.addEventListener("touchstart", function (ev) {
+      if (!ev.touches || ev.touches.length !== 1) { dutySwipe = null; return; }
+      dutySwipe = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+    }, { passive: true });
+    document.addEventListener("touchend", function (ev) {
+      if (!dutySwipe || !ev.changedTouches || !ev.changedTouches.length) return;
+      var dx = ev.changedTouches[0].clientX - dutySwipe.x;
+      var dy = ev.changedTouches[0].clientY - dutySwipe.y;
+      dutySwipe = null;
+      if (dx < -70 && Math.abs(dx) > Math.abs(dy) && dutyForwardBlocked()) revealDutyBlock();
+    }, { passive: true });
     syncModeUI();
     restore();
     goTo(state.step || 1);

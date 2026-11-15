@@ -544,6 +544,7 @@ input[type="range"] {
 .status-banner.pass { background: var(--pass-bg); color: var(--pass-ink); }
 .status-banner.warning { background: var(--warn-bg); color: var(--warn-ink); }
 .status-banner.fail { background: var(--fail-bg); color: var(--fail-ink); }
+.status-banner.fail.duty-highlight { outline: 3px solid var(--fail); outline-offset: 3px; }
 
 .hidden { display: none !important; }
 

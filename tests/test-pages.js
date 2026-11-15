@@ -70,6 +70,11 @@ assert(pages[5].indexOf('id="coilTune"') >= 0 && pages[5].indexOf('id="coilTune"
 assert(pages[5].indexOf("No spring will work for this duty") >= 0 && pages[5].indexOf('id="optNone" class="status-banner fail hidden"') >= 0, "The no-option banner is ready and hidden");
 assert(appJs.indexOf("setCoilTune(false, screen.message || E.NO_OPTIONS)") >= 0 && appJs.indexOf("setCoilTune(true)") >= 0, "No options hides the tuning controls, and a feasible search shows them again");
 assert(appJs.indexOf("viableWires") >= 0 && appJs.indexOf("bestViable") >= 0, "The wire list keeps only sizes with a passing diameter, and an invalid selection is replaced");
+assert(appJs.indexOf("function dutyListEmpty") >= 0 && appJs.indexOf("btn.disabled = blocked") >= 0, "A red Duty check disables Next");
+assert(appJs.indexOf("step > state.step && dutyForwardBlocked()") >= 0, "Forward navigation, including a step jump, stays on Duty");
+assert(appJs.indexOf("function revealDutyBlock") >= 0 && appJs.indexOf("duty-highlight") >= 0, "Trying Next anyway brings the reason into view");
+assert(appJs.indexOf("dx < -70") >= 0, "A swipe towards Optimization is stopped while Duty is blocked");
+assert(appJs.indexOf("state.step > 1) goTo(state.step - 1)") >= 0, "Back stays available from Duty");
 assert(appJs.indexOf("C.renderTradeoff") >= 0 && appJs.indexOf("paintCoil") >= 0, "Moving the slider redraws the stress graph");
 assert(appJs.indexOf("passingDiameterSpan") >= 0 && appJs.indexOf("function clampCoilD") >= 0, "The diameter slider stops at the passing range and clamps its value");
 assert(appJs.indexOf("wires: [d]") >= 0, "Optimise searches mean diameters for the selected wire");
