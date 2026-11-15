@@ -60,7 +60,8 @@ assert(pages[3].indexOf('id="material"') >= 0 && pages[3].indexOf('name="stressM
 assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");
 assert(pages[4].indexOf('id="modeBPoint"') === -1, "Point and rate does not ask which condition the point is");
 assert(pages[4].indexOf('id="Lb"') >= 0 && pages[4].indexOf('id="Fb"') >= 0 && pages[4].indexOf('id="Rb"') >= 0, "Point and rate enters one length, one force and the rate");
-assert(pages[4].indexOf('id="modeBNote"') >= 0 && pages[4].indexOf("most compressed condition (L2, F2)") >= 0, "Without a working-length range the point is the most compressed condition");
+assert(pages[4].indexOf('id="modeBNote"') === -1 && pages[4].indexOf("most compressed condition") === -1 && pages[4].indexOf("This point is") === -1, "Point and rate shows only the length, force and rate");
+assert(helpJs.indexOf("used as the most compressed condition") >= 0, "The info window explains a missing working-length range");
 assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<") === -1, "Calculate has been renamed");
 assert(pages[4].indexOf('id="loadSummary"') === -1, "Rate, free length and maximum load are not repeated under Check");
 assert(pages[4].indexOf('data-help="check"') >= 0, "The Check explanation is an information window");

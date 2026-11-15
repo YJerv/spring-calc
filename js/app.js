@@ -103,16 +103,6 @@
     syncingLengths = false;
   }
 
-  function refreshModeBNote() {
-    var note = $("modeBNote");
-    if (!note) return;
-    var range = serviceRange();
-    var complete = range && range.Lcomp != null && range.Lrel != null && range.Lrel > range.Lcomp;
-    note.textContent = complete
-      ? "L1 and L2 are the working lengths. F1 and F2 are taken from this line."
-      : "No working-length range is set, so this point is the most compressed condition (L2, F2).";
-  }
-
   function currentLoads() {
     var range = serviceRange();
     var complete = range && range.Lcomp != null && range.Lrel != null;
@@ -154,7 +144,6 @@
       "<dt>Free length L0</dt><dd>" + E.fmt(out.L0, 3) + " mm</dd>" +
       "<dt>Maximum working load</dt><dd>" + E.fmt(out.Fmax, 3) + " N at " +
       E.fmt(out.LmaxLoad, 3) + " mm</dd>";
-    refreshModeBNote();
   }
 
   function optionalNum(id) {

@@ -43,7 +43,7 @@
         "<p>L1: Most relaxed working length.</p>" +
         "<p>L2: Most compressed working length.</p>" +
         "<p>Lc: Closed (solid) length.</p>" +
-        "<p>F1 and F2 are the loads at L1 and L2. A load is not necessarily a dead weight. Two points uses both pairs. Point and rate uses one length, one force and the rate. L1 and L2 are the working lengths, and F1 and F2 are taken from that line.</p>";
+        "<p>F1 and F2 are the loads at L1 and L2. A load is not necessarily a dead weight. Two points uses both pairs. Point and rate uses one length, one force and the rate. L1 and L2 are the working lengths, and the loads there follow F + R times (L minus the length). If no working-length range is entered, that length and force are used as the most compressed condition.</p>";
       }
     },
     check: {
