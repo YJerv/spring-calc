@@ -32,11 +32,15 @@ function section(html, id) {
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
 const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
+const swJs = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
 const pages = [1, 2, 3, 4, 5, 6, 7].map(function (n) { return section(html, "step-" + n); });
 
 console.log("Seven-page order\n");
 
 assert(pages[0].indexOf(">1. Overview<") >= 0, "Page 1 is the overview");
+assert(pages[0].indexOf('class="brand-logo"') >= 0 && pages[0].indexOf('alt="JET – Jervis Engineering Tools"') >= 0 && pages[0].indexOf("assets/brand/jet-logo.png") >= 0, "The Overview shows the JET logo");
+assert(pages[0].indexOf('class="brand-logo"') < pages[0].indexOf(">1. Overview<"), "The logo sits above the Overview heading");
+assert(swJs.indexOf("./assets/brand/jet-logo.png") >= 0, "The service worker precaches the JET logo");
 assert(pages[1].indexOf(">2. Design mode<") >= 0 && pages[1].indexOf('name="mode"') >= 0, "Page 2 chooses two points or point and rate");
 assert(pages[2].indexOf(">3. Application constraints<") >= 0, "Page 3 is application constraints");
 assert(pages[2].indexOf("Application constraints and design constraints are the same") >= 0, "The heading says the two names once");
