@@ -79,6 +79,8 @@ assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<"
 assert(pages[4].indexOf('id="loadSummary"') === -1, "Rate, free length and maximum load are not repeated under Check");
 assert(pages[4].indexOf('data-help="check"') >= 0, "The Check explanation is an information window");
 assert(pages[5].indexOf(">6. Optimisation<") >= 0 && pages[5].indexOf('id="optWire"') >= 0 && pages[5].indexOf('id="optCandidates"') >= 0, "Page 6 is Optimisation with a wire picker and candidates");
+assert(pages[5].indexOf('id="optSelectedNote"') > pages[5].indexOf('id="optStatus"') && pages[5].indexOf('id="optSelectedNote"') < pages[5].indexOf('id="optMetrics"'), "The six figures are labelled as the selected wire");
+assert(appJs.indexOf("function fillSelectedMetrics") >= 0 && appJs.indexOf("fillSelectedMetrics(ev)") >= 0 && appJs.indexOf("fillSelectedMetrics(state.design || best)") >= 0, "Choosing another wire recalculates the six figures");
 assert(html.indexOf("Optimization") === -1 && helpJs.indexOf("Optimization") === -1, "The page and the help use the British spelling Optimisation");
 assert(pages[5].indexOf("heatmap") === -1 && html.indexOf('id="heatmapScroll"') === -1, "The heat map is gone");
 assert(pages[5].indexOf('id="optCandidates"') < pages[5].indexOf('id="btnOptimise"'), "Optimise sits below the wire list");
