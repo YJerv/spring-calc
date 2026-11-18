@@ -36,13 +36,13 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
 const helpSrc = fs.readFileSync(path.join(root, "js/help.js"), "utf8");
 
-const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export", "nomenclature", "modeA", "modeB"];
+const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export", "lengths", "temperature", "nomenclature", "modeA", "modeB"];
 assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the agreed subjects");
 
 console.log("\nButtons sit on the agreed questions only\n");
 
 const buttons = html.match(/class="info-btn[^"]*"/g) || [];
-assert(buttons.length === 12, "There are twelve circled information buttons", String(buttons.length));
+assert(buttons.length === 14, "There are fourteen circled information buttons", String(buttons.length));
 expected.forEach(function (id) {
   assert(html.indexOf('data-help="' + id + '"') >= 0, "A button opens " + id);
   const topic = Help.topic(id);
@@ -142,6 +142,14 @@ const diameters = Help.topic("diameters").body;
 assert(diameters.indexOf("<svg") === -1, "Diameter help uses Yuan's diagram");
 assert(helpSrc.indexOf('HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png"') >= 0,
   "HELP_DIAMETER_IMAGE points at Yuan's diameter diagram");
+const lengthsHelp = Help.topic("lengths").body;
+assert(lengthsHelp.indexOf("assets/help/help-working-lengths.png") >= 0, "Working-length help reuses the length diagram");
+assert(lengthsHelp.indexOf("most relaxed working length") >= 0 && lengthsHelp.indexOf("most compressed working length") >= 0, "Working-length help explains L1 and L2");
+assert(lengthsHelp.indexOf("working-length range") >= 0, "Working-length help explains the range");
+assert(lengthsHelp.indexOf("Ln (permissible length) = Lc + 15% of available travel") >= 0, "Working-length help keeps the Ln rule");
+const temperatureHelp = Help.topic("temperature").body;
+assert(temperatureHelp.indexOf("hot-set (presetting) temperature") >= 0, "Service temperature explains why it is asked for");
+assert(temperatureHelp.indexOf("compresses the spring to solid, or near solid") >= 0 && temperatureHelp.indexOf("permanent set during manufacture") >= 0, "Service temperature explains hot setting");
 assert(Help.topic("wire").body.indexOf("lowest corrected stress") >= 0, "Wire help explains the optimisation search");
 assert(Help.topic("wire").body.indexOf("heat map") === -1, "Wire help no longer describes the heat map");
 assert(Help.topic("graph").body.indexOf("85 %") >= 0, "Graph help explains the stations");

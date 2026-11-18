@@ -125,6 +125,10 @@ assert(step3.indexOf(">3. Application constraints<") < step3.indexOf("Leave a bo
   "Clear all sits below the remaining introduction and before the first section");
 assert(step3.indexOf('data-help="diameters"') > step3.indexOf('id="pocketFold"') && step3.indexOf('data-help="diameters"') < step3.indexOf('id="pocket"'),
   "Pocket and guide information sits beside that section title");
+assert(step3.indexOf('data-help="lengths"') > step3.indexOf('id="lengthFold"') && step3.indexOf('data-help="lengths"') < step3.indexOf('id="workL1"'),
+  "Working lengths have their own information button");
+assert(step3.indexOf('data-help="temperature"') > step3.indexOf('id="tempFold"') && step3.indexOf('data-help="temperature"') < step3.indexOf('id="serviceTemp"'),
+  "Service temperature has its own information button");
 assert(step3.indexOf("btnBack") === -1, "Clear all is not inside the Back and Next navigation");
 const clearFn = appJs.slice(appJs.indexOf('$("btnClearConstraints")'), appJs.indexOf('$("btnClearance")'));
 ["pocket", "clearance", "innerMin", "innerClearance", "workL1", "workL2", "serviceTemp"].forEach(function (id) {

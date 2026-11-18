@@ -263,6 +263,19 @@
       title: "A3 drawing export",
       body: "<p>The only export is an A3 PDF drawing. There are no adverts. A one-off permanent Pro unlock for complete drawings is agreed, but the price, Play Billing product and verification server are not configured, so this page cannot unlock one. The file from this button is the unpaid preview: every table value is left out of the PDF, and the sheet carries the line “Upgrade to release drawing table”. The results on this page stay complete.</p>"
     },
+    lengths: {
+      title: "Working lengths",
+      body: function () {
+        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths L0, L1, L2 and Lc") +
+          "<p>L1 is the most relaxed working length, the longest length in service. L2 is the most compressed working length, the shortest length in service. The two lengths are the working-length range.</p>" +
+          "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>";
+      }
+    },
+    temperature: {
+      title: "Service temperature",
+      body: "<p>The service temperature sets the hot-set (presetting) temperature.</p>" +
+        "<p>Hot setting compresses the spring to solid, or near solid, at or above the service temperature. The spring takes its permanent set during manufacture rather than in service, which reduces relaxation and load loss at temperature.</p>"
+    },
     nomenclature: {
       title: "Nomenclature",
       body: nomenclatureTable
