@@ -1,0 +1,24 @@
+# Secrets and signing material. Never commit these.
+android.keystore
+*.keystore
+*.jks
+*.pem
+keystore.properties
+service-account.json
+*service-account*.json
+
+# Local SDK location (Android Studio / a machine-specific path).
+local.properties
+
+# Build outputs.
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+app-release-unsigned-aligned.apk
+
+# IDE
+.idea/
+*.iml
+captures/

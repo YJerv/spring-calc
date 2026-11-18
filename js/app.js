@@ -13,7 +13,8 @@
     preferredD: null,
     design: null,
     scan: null,
-    heatmap: null
+    heatmap: null,
+    feasibility: null
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -42,6 +43,7 @@
       el.textContent = "";
       el.classList.remove("show");
     }
+    revealFoldsForMessages();
   }
 
   function populateMaterials() {
@@ -72,17 +74,93 @@
     refreshLoadSummary();
   }
 
-  function currentLoads() {
+  function stressMode() {
+    var checked = document.querySelector("input[name=stressMode]:checked");
+    return checked ? checked.value : "factor";
+  }
+
+  function serviceRange() {
+    var Lcomp = optionalNum("workL2");
+    var Lrel = optionalNum("workL1");
+    if (Lcomp == null && Lrel == null) return null;
+    return { Lcomp: Lcomp, Lrel: Lrel };
+  }
+
+  var syncingLengths = false;
+
+  function syncLengths(from) {
+    if (syncingLengths) return;
+    syncingLengths = true;
     if (state.mode === "A") {
-      return E.deriveModeA(num("L1"), num("F1"), num("L2"), num("F2"));
+      if (from === "duty") {
+        setVal("workL1", val("L1"));
+        setVal("workL2", val("L2"));
+      } else {
+        setVal("L1", val("workL1"));
+        setVal("L2", val("workL2"));
+      }
     }
-    return E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), val("modeBPoint"));
+    syncingLengths = false;
+  }
+
+  function currentLoads() {
+    var range = serviceRange();
+    var complete = range && range.Lcomp != null && range.Lrel != null;
+    if (complete && !(range.Lrel > range.Lcomp)) {
+      return { ok: false, errors: ["The most relaxed working length must be longer than the most compressed length."] };
+    }
+    if (state.mode === "A") {
+      var out = E.deriveModeA(num("L1"), num("F1"), num("L2"), num("F2"));
+      if (out.ok && complete) {
+        out.Lcomp = range.Lcomp;
+        out.Lrel = range.Lrel;
+        if (out.R > 0) out.Fcomp = out.R * (out.L0 - range.Lcomp);
+      } else if (out.ok && range && range.Lcomp != null) {
+        out.Lcomp = range.Lcomp;
+        if (out.R > 0) out.Fcomp = out.R * (out.L0 - range.Lcomp);
+      }
+      return out;
+    }
+    var modeB = E.deriveModeB(num("Fb"), num("Lb"), num("Rb"), null, complete ? range : null);
+    if (modeB.ok && range && range.Lcomp != null && modeB.Lcomp == null) {
+      modeB.Lcomp = range.Lcomp;
+      if (modeB.R > 0) modeB.Fcomp = modeB.R * (modeB.L0 - range.Lcomp);
+    }
+    if (modeB.ok && range && range.Lrel != null && modeB.Lrel == null) modeB.Lrel = range.Lrel;
+    return modeB;
+  }
+
+  function plainMm(n) {
+    var s = E.fmt(n, 3);
+    if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+
+  function refreshRateLengthHint() {
+    var hint = $("rateLengthHint");
+    if (!hint) return;
+    var range = serviceRange();
+    var complete = range && range.Lcomp != null && range.Lrel != null && range.Lrel > range.Lcomp;
+    hint.textContent = complete
+      ? "Working lengths: L2 " + plainMm(range.Lcomp) + " mm to L1 " + plainMm(range.Lrel) + " mm. Use one of these, or a length between them."
+      : "No working-length range is set.";
+  }
+
+  function markRateLength(errors) {
+    var input = $("Lb");
+    if (!input) return;
+    var bad = (errors || []).some(function (msg) { return msg.indexOf("working range") >= 0; });
+    input.classList.toggle("is-invalid", bad);
+    if (bad) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
   }
 
   function refreshLoadSummary() {
     var out = currentLoads();
     state.loads = out.ok ? out : null;
+    refreshRateLengthHint();
     var box = $("loadSummary");
+    if (!box) return;
     if (!out.ok) {
       box.innerHTML = "";
       return;
@@ -94,74 +172,258 @@
       E.fmt(out.LmaxLoad, 3) + " mm</dd>";
   }
 
+  function optionalNum(id) {
+    var raw = val(id);
+    if (raw == null || String(raw).trim() === "") return null;
+    var n = Number(raw);
+    return isFinite(n) ? n : null;
+  }
+
   function geometry() {
-    var pocket = num("pocket");
-    var clearance = num("clearance");
+    var pocket = optionalNum("pocket");
+    var clearance = optionalNum("clearance");
+    var innerMin = optionalNum("innerMin");
+    var innerClearance = optionalNum("innerClearance");
+    if (clearance == null) clearance = 0;
+    if (innerClearance == null) innerClearance = 0;
     return {
       pocket: pocket,
       clearance: clearance,
-      DeMax: pocket - clearance,
+      innerMin: innerMin,
+      innerClearance: innerClearance,
+      DeMax: pocket == null ? null : pocket - clearance,
       ends: val("ends"),
       wind: val("wind"),
       materialId: val("material"),
       G: num("G"),
       Rm: num("Rm"),
       tauFactor: num("tauFactor"),
+      useDirectStress: stressMode() === "direct",
+      tauAllowDirect: optionalNum("tauAllowDirect"),
+      serviceTemp: optionalNum("serviceTemp"),
+      Lcomp: optionalNum("workL2"),
+      Lrel: optionalNum("workL1"),
       useIndicativeRm: $("useIndicativeRm").checked,
       density: E.materialById(val("material")).density
     };
   }
 
-  function refreshGeomSummary() {
-    var g = geometry();
-    var box = $("geomSummary");
-    if (!(g.pocket > 0)) {
-      box.innerHTML = "";
-      return;
+  function activeStressText(g) {
+    if (g.useDirectStress) {
+      if (!(g.tauAllowDirect > 0)) return null;
+      return E.fmt(g.tauAllowDirect, 0) + " MPa (entered directly)";
     }
     var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
-    box.innerHTML =
-      "<dt>Maximum outside diameter De max</dt><dd>" +
-      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " mm  (pocket − clearance)" : "—") + "</dd>" +
-      "<dt>Mean diameter for a chosen wire</dt><dd>D = De − d, so D max = " +
-      (g.DeMax > 0 ? E.fmt(g.DeMax, 3) + " − d" : "—") + "</dd>" +
-      "<dt>Allowable corrected stress (screening)</dt><dd>" +
-      (tauAllow ? E.fmt(tauAllow, 0) + " N/mm²  (" + E.fmt(g.tauFactor, 2) + " × Rm)" : "—") + "</dd>";
+    if (!(tauAllow > 0)) return null;
+    return E.fmt(tauAllow, 0) + " MPa (" + E.fmt(g.tauFactor, 2) + " × Rm)";
+  }
+
+  function refreshGeomSummary() {
+    var g = geometry();
+    var note = $("constraintNote");
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
+    if (note) note.textContent = conflict || "";
+    var active = activeStressText(g);
+    var line = $("stressActive");
+    if (line) line.textContent = active ? "Active limit: " + active + "." : "No stress limit is active yet.";
+  }
+
+  function syncStressMode() {
+    var direct = stressMode() === "direct";
+    $("tauAllowDirect").disabled = !direct;
+    $("tauFactor").disabled = direct;
+    $("tauFactor").closest(".field").classList.toggle("is-inactive", direct);
+    $("tauAllowDirect").closest(".field").classList.toggle("is-inactive", !direct);
+    refreshGeomSummary();
   }
 
   function loadInputs() {
     return Object.assign({}, state.loads, geometry());
   }
 
+  function esc(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function feasibilitySignature() {
+    var g = geometry();
+    return [
+      state.mode, val("L1"), val("F1"), val("L2"), val("F2"),
+      val("Lb"), val("Fb"), val("Rb"),
+      g.pocket, g.innerMin, g.innerClearance, g.clearance, g.DeMax, g.ends, g.materialId, g.G, g.Rm, g.tauFactor,
+      g.useDirectStress, g.tauAllowDirect, g.serviceTemp, g.Lcomp, g.Lrel, g.useIndicativeRm
+    ].join("|");
+  }
+
+  function renderFeasibility(report, note) {
+    var box = $("calcResult");
+    if (!box) { syncDutyNext(); return; }
+    if (!report) {
+      box.innerHTML = note ? "<p class=\"lead\">" + esc(note) + "</p>" : "";
+      syncDutyNext();
+      return;
+    }
+    var html = "";
+    if (note) html += "<p class=\"lead\">" + esc(note) + "</p>";
+    if (!report.ready) {
+      var blocked = report.blocked === "conflict"
+        ? "<div class=\"status-banner fail\"><strong>Limits conflict</strong> — " + esc(report.message) + " Nothing was changed.</div>"
+        : "<div class=\"status-banner warning\"><strong>Cannot check yet</strong> — Enter a material modulus and tensile strength before the wire search can run. Nothing was changed.</div>";
+      html += blocked;
+      box.innerHTML = html;
+      syncDutyNext();
+      return;
+    }
+    var screen = report.screen || { level: "fail", message: E.NO_OPTIONS, warning: "" };
+    var tone = screen.level === "pass" ? "pass" : (screen.level === "warning" ? "warning" : "fail");
+    var title = screen.level === "pass" ? "Feasible" : (screen.level === "warning" ? "Feasible with a warning" : "No options available");
+    var detail = screen.level === "pass"
+      ? "Working deflection is between 30% and 70%, and the stress is within the active limit."
+      : (screen.level === "warning"
+        ? screen.warning
+        : (screen.message || E.NO_OPTIONS));
+    html += "<div class=\"status-banner " + tone + "\"><strong>" + title + "</strong> — " + esc(detail) + "</div>";
+    if (screen.level !== "pass" && report.suggestions && report.suggestions.length) {
+      html += "<p><strong>What to try</strong></p><ul>" + report.suggestions.map(function (item) {
+        return "<li>" + esc(item.text) + "</li>";
+      }).join("") + "</ul>";
+    }
+    if (report.diameterProposal && report.diameterProposal.proposed === false) {
+      html += "<p class=\"lead\">" + esc(report.diameterProposal.statement) + "</p>";
+    }
+    box.innerHTML = html;
+    revealFoldsForMessages();
+    syncDutyNext();
+  }
+
+  function markFeasibilityStale() {
+    if (!state.feasibility) return;
+    if (state.feasibility.signature === feasibilitySignature()) return;
+    renderFeasibility(state.feasibility.report, "Inputs have changed. Choose Check again.");
+  }
+
+  function runCalculate() {
+    var out = currentLoads();
+    showErr("err1", out.ok ? [] : out.errors);
+    markRateLength(out.ok ? [] : out.errors);
+    if (!out.ok) {
+      state.feasibility = null;
+      renderFeasibility(null, out.errors.join(" "));
+      return;
+    }
+    var g = geometry();
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
+    if (conflict) {
+      var blockedReport = {
+        ready: false,
+        blocked: "conflict",
+        message: conflict,
+        passing: 0,
+        suggestions: []
+      };
+      state.feasibility = { signature: feasibilitySignature(), report: blockedReport };
+      renderFeasibility(blockedReport, "");
+      return;
+    }
+    var input = Object.assign({}, out, {
+      pocket: g.pocket,
+      clearance: g.clearance,
+      innerMin: g.innerMin,
+      innerClearance: g.innerClearance,
+      DeMax: g.DeMax,
+      ends: g.ends,
+      G: g.G,
+      Rm: g.Rm,
+      tauFactor: g.tauFactor,
+      useDirectStress: g.useDirectStress,
+      tauAllowDirect: g.tauAllowDirect,
+      serviceTemp: g.serviceTemp,
+      Lcomp: g.Lcomp,
+      Lrel: g.Lrel,
+      materialId: g.materialId,
+      useIndicativeRm: g.useIndicativeRm,
+      density: g.density
+    });
+    var report = E.assessFeasibility(input, { steps: 8 });
+    report.screen = E.searchOptimisation(input);
+    state.screen = report.screen;
+    state.feasibility = { signature: feasibilitySignature(), report: report };
+    renderFeasibility(report, "");
+  }
+
+  function constraintErrors() {
+    var g = geometry();
+    var errs = [];
+    if (g.pocket != null && !(g.pocket > 0)) errs.push("The pocket maximum must be greater than zero, or left blank for no outer limit.");
+    if (g.innerMin != null && !(g.innerMin > 0)) errs.push("The spring guide diameter must be greater than zero, or left blank.");
+    if (g.innerMin != null && !(g.innerClearance >= 0)) errs.push("The spring guide clearance must be zero or greater.");
+    if (g.pocket != null && !(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
+    if (g.pocket != null && !(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
+    var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
+    if (conflict) errs.push(conflict);
+    if (g.Lcomp != null && g.Lrel != null && !(g.Lrel > g.Lcomp)) {
+      errs.push("The most relaxed working length must be longer than the most compressed length.");
+    }
+    return errs;
+  }
+
+  function constraintsBlank() {
+    var g = geometry();
+    return g.pocket == null && g.innerMin == null && g.Lcomp == null && g.Lrel == null && g.serviceTemp == null;
+  }
+
   function validateStep(step) {
-    if (step === 1) {
-      var out = currentLoads();
-      showErr("err1", out.ok ? [] : out.errors);
-      return out.ok;
-    }
-    if (step === 2) {
-      var g = geometry();
-      var errs = [];
-      if (!(g.pocket > 0)) errs.push("Enter the pocket maximum diameter.");
-      if (!(g.clearance >= 0)) errs.push("Clearance must be zero or greater.");
-      if (!(g.DeMax > 0)) errs.push("Clearance is not smaller than the pocket, so De max is not positive.");
-      if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
-      if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
-      if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
-      showErr("err2", errs);
-      return errs.length === 0;
-    }
+    if (step === 1 || step === 2) return true;
     if (step === 3) {
-      if (!state.selectedWire) {
-        showErr("err3", ["Select a wire diameter to continue."]);
-        return false;
+      var constraintErrs = constraintErrors();
+      showErr("errConstraints", constraintErrs);
+      if (constraintErrs.length) return false;
+      if (constraintsBlank()) {
+        var proceed = window.confirm("Nothing is entered for the pocket, the spring guide, the working lengths or the service temperature. Continue without those limits?");
+        if (!proceed) return false;
       }
-      showErr("err3", []);
       return true;
     }
     if (step === 4) {
+      var g = geometry();
+      var errs = [];
+      if (!(g.G > 0)) errs.push("Enter a modulus of rigidity G.");
+      if (g.useDirectStress) {
+        if (!(g.tauAllowDirect > 0)) errs.push("Enter a stress limit in MPa.");
+      } else {
+        if (!(g.Rm > 0)) errs.push("Enter a tensile strength Rm.");
+        if (!(g.tauFactor > 0)) errs.push("Enter an allowable stress factor.");
+      }
+      showErr("err2", errs);
+      return errs.length === 0;
+    }
+    if (step === 5) {
+      var out = currentLoads();
+      showErr("err1", out.ok ? [] : out.errors);
+      markRateLength(out.ok ? [] : out.errors);
+      if (!out.ok) return false;
+      var conflict = E.constraintConflict(geometry().pocket, E.springGuideLimit(geometry()));
+      if (conflict) {
+        renderFeasibility({ ready: false, blocked: "conflict", message: conflict }, "");
+        return false;
+      }
+      if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) {
+        renderFeasibility(state.feasibility ? state.feasibility.report : null,
+          "Choose Check before continuing. The check runs on that click, not while typing.");
+        return false;
+      }
+      if (dutyListEmpty()) {
+        revealDutyBlock();
+        return false;
+      }
+      return true;
+    }
+    if (step === 6) {
       if (!state.design) {
-        showErr("err4", ["Adjust the mean diameter, or use auto-optimise."]);
+        showErr("err4", [E.NO_OPTIONS]);
         return false;
       }
       showErr("err4", []);
@@ -170,34 +432,87 @@
     return true;
   }
 
+  function dutyListEmpty() {
+    if (!state.feasibility || state.feasibility.signature !== feasibilitySignature()) return false;
+    var report = state.feasibility.report;
+    if (!report || !report.ready || !report.screen) return false;
+    return report.screen.level === "fail";
+  }
+
+  function dutyForwardBlocked() {
+    return state.step === 5 && dutyListEmpty();
+  }
+
+  function revealDutyBlock() {
+    var box = $("calcResult");
+    var hint = box && box.querySelector(".status-banner.fail");
+    if (!hint) hint = box;
+    if (!hint) return;
+    hint.classList.add("duty-highlight");
+    if (hint.scrollIntoView) hint.scrollIntoView({ block: "center", behavior: "smooth" });
+    window.setTimeout(function () {
+      if (hint) hint.classList.remove("duty-highlight");
+    }, 1600);
+  }
+
+  function syncDutyNext() {
+    var btn = $("btnNext");
+    if (!btn) return;
+    var blocked = dutyForwardBlocked();
+    btn.disabled = blocked;
+    btn.setAttribute("aria-disabled", blocked ? "true" : "false");
+  }
+
   function goTo(step) {
+    if (step > state.step && dutyForwardBlocked()) {
+      revealDutyBlock();
+      syncDutyNext();
+      return;
+    }
     state.step = step;
     document.querySelectorAll(".step").forEach(function (sec) {
       sec.classList.toggle("active", Number(sec.getAttribute("data-step")) === step);
     });
-    for (var i = 1; i <= 5; i++) {
+    for (var i = 1; i <= 7; i++) {
       var p = $("p" + i);
-      p.className = i === step ? "on" : (i < step ? "done" : "");
+      if (p) p.className = i === step ? "on" : (i < step ? "done" : "");
     }
     $("btnBack").disabled = step === 1;
-    $("btnNext").textContent = step === 5 ? "Start again" : (step === 4 ? "Show results" : "Next");
-    if (step === 3) {
-      renderHeatmap();
-      renderWires();
-    }
-    if (step === 4) setupOptimise();
-    if (step === 5) renderResults();
+    $("btnNext").textContent = step === 7 ? "Start again" : (step === 6 ? "Show results" : "Next");
+    if (step === 5) alignLengths();
+    if (step === 6) renderOptimise();
+    if (step === 7) renderResults();
+    collapseStepFolds(step);
+    revealFoldsForMessages();
+    syncDutyNext();
     window.scrollTo(0, 0);
     persist();
+  }
+
+  function alignLengths() {
+    if (state.mode === "A") {
+      if (val("L1") === "" && val("L2") === "" && (val("workL1") !== "" || val("workL2") !== "")) syncLengths("work");
+      else if (val("L1") !== "" || val("L2") !== "") syncLengths("duty");
+    }
   }
 
   function wireInputBase() {
     var g = loadInputs();
     return {
       DeMax: g.DeMax,
+      innerMin: g.innerMin,
+      innerClearance: g.innerClearance,
+      pocket: g.pocket,
+      clearance: g.clearance,
       G: g.G,
       Rm: g.Rm,
       tauFactor: g.tauFactor,
+      useDirectStress: g.useDirectStress,
+      tauAllowDirect: g.tauAllowDirect,
+      serviceTemp: g.serviceTemp,
+      Lcomp: g.Lcomp,
+      Lrel: g.Lrel,
+      Fcomp: g.Fcomp,
       R: g.R,
       L0: g.L0,
       L1: g.L1,
@@ -249,11 +564,16 @@
     var bestBox = $("heatmapBest");
     if (!mount) return;
     var input = wireInputBase();
-    var hm = E.buildHeatmap(input, { step: 0.5 });
+    var hm = E.buildHeatmap(input);
     state.heatmap = hm;
-    if (bestBox) bestBox.textContent = describeBestDiameters(hm);
+    if (bestBox) {
+      var openMap = input.DeMax == null && !(E.springGuideLimit(input) > 0);
+      bestBox.textContent = (openMap
+        ? "No pocket or spring guide is set, so mean diameter runs from 1 mm to 100 mm in 1 mm steps. A blank pocket does not propose an optimal diameter; that choice is still open. "
+        : "") + describeBestDiameters(hm);
+    }
     if (!hm.rows.length) {
-      mount.innerHTML = "<p class=\"lead\">The heat map needs a pocket diameter and load case before it can be drawn.</p>";
+      mount.innerHTML = "<p class=\"lead\">The heat map has no diameters for these limits.</p>";
       return;
     }
     var selectedD = state.preferredD;
@@ -316,10 +636,6 @@
 
   function renderWires() {
     var input = wireInputBase();
-    $("wireIntro").innerHTML =
-      "<dt>De max</dt><dd>" + E.fmt(input.DeMax, 3) + " mm</dd>" +
-      "<dt>Maximum working load</dt><dd>" + E.fmt(input.Fmax, 3) + " N</dd>" +
-      "<dt>Required rate</dt><dd>" + E.fmt(input.R, 4) + " N/mm</dd>";
     var rows = E.listWires(input);
     state.wireRows = rows;
     var passOnly = $("passOnly").checked;
@@ -334,12 +650,12 @@
       var why = r.pass
         ? (r.warnings[0] || "Fits the pocket at D max, with stress and solid length inside limits.")
         : r.reasons[0];
-      var rmNote = r.indicativeRm ? " · Rm " + E.fmt(r.indicativeRm, 0) + " N/mm²" : "";
+      var rmNote = r.indicativeRm ? " · Rm " + E.fmt(r.indicativeRm, 0) + " MPa" : "";
       return "<button type=\"button\" class=\"wire-card " + r.status + (selected ? " selected" : "") +
         "\" data-d=\"" + r.d + "\">" +
         "<div class=\"top\"><span class=\"d\">" + E.fmt(r.d, 2) + " mm wire</span>" +
         "<span class=\"badge " + r.status + "\">" + r.status + "</span></div>" +
-        "<div class=\"meta\">τk " + E.fmt(r.tauK, 1) + " N/mm²  (" + E.fmt(r.pctAllow, 1) +
+        "<div class=\"meta\">τk " + E.fmt(r.tauK, 1) + " MPa  (" + E.fmt(r.pctAllow, 1) +
         "% of allowable) · n = " + E.fmt(r.n, 2) + " · Lc = " + E.fmt(r.Lc, 2) +
         " mm · w = " + E.fmt(r.w, 2) + rmNote + "</div>" +
         "<div class=\"why\">" + why + "</div></button>";
@@ -358,68 +674,311 @@
     persist();
   }
 
-  function setupOptimise() {
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
-    var scan = E.scanDiameters(input, 80);
-    state.scan = scan;
-    if (!scan.bounds.valid) {
-      $("optMetrics").innerHTML = "";
-      showErr("err4", ["This wire cannot produce an index between 4 and 16 that also fits the pocket."]);
-      return;
-    }
-    var slider = $("Dslider");
-    slider.min = scan.bounds.Dmin.toFixed(3);
-    slider.max = scan.bounds.Dmax.toFixed(3);
-    slider.step = "0.01";
-    var startD;
-    if (state.preferredD != null) startD = state.preferredD;
-    else if (state.design && state.design.d === input.d) startD = state.design.D;
-    else startD = scan.bounds.Dmax;
-    startD = Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, startD));
-    slider.value = startD;
-    C.renderTradeoff($("tradeoffSvg"), scan.rows, startD);
-    updateOptimise(startD);
+  var fillingWires = false;
+
+  function candidateStress(ev) {
+    return ev.tauKcomp != null && isFinite(ev.tauKcomp) ? Math.max(ev.tauK, ev.tauKcomp) : ev.tauK;
   }
 
-  function updateOptimise(D) {
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, D: Number(D), Rm: num("Rm") });
-    var ev = E.evaluateDesign(input);
+  function wireIsListed(wires, d) {
+    if (!(d > 0) || !wires) return false;
+    for (var i = 0; i < wires.length; i++) {
+      if (Math.abs(Number(wires[i]) - Number(d)) < 1e-9) return true;
+    }
+    return false;
+  }
+
+  function fillOptWires(around, allowed, selectD) {
+    var sel = $("optWire");
+    if (!sel || !(around > 0)) return;
+    fillingWires = true;
+    var current = sel.value;
+    var wires = E.nearbyStandardWires(around).filter(function (d) {
+      return !allowed || wireIsListed(allowed, d);
+    });
+    if (allowed && wireIsListed(allowed, around) && !wireIsListed(wires, around)) wires.push(Number(around));
+    wires.sort(function (a, b) { return a - b; });
+    var pick = null;
+    if (selectD != null) {
+      for (var i = 0; i < wires.length; i++) {
+        if (Math.abs(wires[i] - Number(selectD)) < 1e-9) pick = wires[i];
+      }
+    }
+    sel.innerHTML = "<option value=\"\">Best wire at each diameter</option>" + wires.map(function (d) {
+      return "<option value=\"" + d + "\">" + E.fmt(d, 2) + " mm</option>";
+    }).join("");
+    if (pick != null) sel.value = String(pick);
+    else if (current && [].some.call(sel.options, function (opt) { return opt.value === current; })) sel.value = current;
+    fillingWires = false;
+  }
+
+  function applyCandidate(ev) {
+    state.selectedWire = ev.d;
+    state.preferredD = ev.D;
     ev.wind = val("wind");
     ev.materialId = val("material");
     ev.materialName = E.materialById(val("material")).shortName;
     state.design = ev;
-    $("Dlabel").textContent = E.fmt(ev.D, 3);
-    C.renderTradeoff($("tradeoffSvg"), state.scan ? state.scan.rows : [], ev.D);
-    $("optMetrics").innerHTML = [
-      metric("Index w", E.fmt(ev.w, 2)),
-      metric("Active coils n", E.fmt(ev.n, 2)),
-      metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " N/mm²"),
-      metric("% of allowable", E.fmt(ev.pctAllow, 1) + " %"),
-      metric("Solid length Lc", E.fmt(ev.Lc, 2) + " mm"),
-      metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
-    ].join("");
-    var banner = "<div class=\"status-banner " + ev.status + "\"><strong>" +
-      ev.status.toUpperCase() + "</strong> — " +
-      (ev.pass
-        ? (ev.warnings[0] || "This diameter satisfies the screening checks.")
-        : ev.reasons[0]) + "</div>";
-    $("optStatus").innerHTML = banner +
-      (ev.warnings.length && ev.pass
-        ? "<p class=\"lead\">" + ev.warnings.join(" ") + "</p>"
-        : "");
     persist();
+  }
+
+  function renderOptimise() {
+    var input = wireInputBase();
+    var same = state.screen && state.feasibility && state.feasibility.signature === feasibilitySignature();
+    if (!same) {
+      state.design = null;
+      state.coilChosen = false;
+      state.coilNote = "";
+    }
+    var screen = same ? state.screen : E.searchOptimisation(input);
+    state.screen = screen;
+    var status = $("optStatus");
+    var list = $("optCandidates");
+    var metrics = $("optMetrics");
+    var note = $("optClearance");
+    var viable = screen.viableWires || [];
+    if (!viable.length) {
+      state.design = null;
+      if (status) status.innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(screen.message || E.NO_OPTIONS) + "</div>";
+      if (metrics) metrics.innerHTML = "";
+      fillSelectedMetrics(null);
+      if (list) list.innerHTML = "";
+      if (note) note.textContent = "";
+      if ($("optWire")) $("optWire").innerHTML = "";
+      setCoilTune(false, screen.message || E.NO_OPTIONS);
+      showErr("err4", []);
+      return;
+    }
+    setCoilTune(true);
+    showErr("err4", []);
+    var explicit = $("optWire") && $("optWire").value !== "" ? Number($("optWire").value) : null;
+    var active = explicit != null ? explicit : state.selectedWire;
+    var replaced = false;
+    if (!wireIsListed(viable, active)) {
+      if (screen.bestViable) applyCandidate(screen.bestViable);
+      if (explicit != null && screen.bestViable) explicit = screen.bestViable.d;
+      replaced = explicit != null;
+    } else if (explicit != null && (!state.design || Math.abs(state.design.d - explicit) > 1e-9)) {
+      var kept = null;
+      var pool = screen.candidates || [];
+      for (var pi = 0; pi < pool.length; pi++) {
+        if (Math.abs(pool[pi].d - explicit) > 1e-9) continue;
+        if (!kept || candidateStress(pool[pi]) < candidateStress(kept) - 1e-9) kept = pool[pi];
+      }
+      if (!kept && screen.bestViable && Math.abs(screen.bestViable.d - explicit) < 1e-9) kept = screen.bestViable;
+      if (kept) applyCandidate(kept);
+    } else if (!state.design && screen.bestViable) {
+      applyCandidate(screen.bestViable);
+    }
+    var tone = screen.level === "warning" ? "warning" : "pass";
+    var best = (screen.best && wireIsListed(viable, screen.best.d)) ? screen.best : screen.bestViable;
+    fillOptWires(state.selectedWire || (best && best.d), viable, replaced ? explicit : null);
+    var filter = $("optWire") && $("optWire").value !== "" ? Number($("optWire").value) : null;
+    var rows = filter
+      ? (screen.candidates || []).filter(function (row) { return Math.abs(row.d - filter) < 1e-9; })
+      : (screen.perDiameter || []).slice();
+    rows = rows.filter(function (row) { return wireIsListed(viable, row.d); });
+    if (!rows.length && best) rows = [best];
+    if (status) {
+      status.innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
+        (screen.level === "warning" ? "Optimum with a warning" : "Optimum") +
+        "</strong> — wire " + E.fmt(best.d, 2) + " mm, mean diameter " + E.fmt(best.D, 2) +
+        " mm, τk " + E.fmt(candidateStress(best), 1) + " MPa." +
+        (screen.warning ? " " + esc(screen.warning) : "") + "</div>";
+    }
+    fillSelectedMetrics(state.design || best);
+    var growth = (state.design || best).growth;
+    if (note) {
+      if (growth && growth.flags && growth.flags.length) note.textContent = growth.flags.join(" ");
+      else if (growth && growth.delta != null) note.textContent = "At the most compressed length the outside diameter changes by " + E.fmt(growth.delta, 2) + " mm.";
+      else note.textContent = "";
+    }
+    if (list) {
+      list.innerHTML = rows.map(function (row) {
+        var on = state.design && Math.abs(state.design.d - row.d) < 1e-9 && Math.abs(state.design.D - row.D) < 1e-4;
+        var flag = row.growth && row.growth.flags && row.growth.flags.length ? " · " + row.growth.flags[0] : "";
+        return "<button type=\"button\" class=\"wire-card " + (on ? "selected " : "") + tone + "\" data-opt-d=\"" + row.d + "\" data-opt-D=\"" + row.D + "\">" +
+          "<div class=\"top\"><strong>D " + E.fmt(row.D, 2) + " mm</strong><span>d " + E.fmt(row.d, 2) + " mm</span></div>" +
+          "<div class=\"meta\">τk " + E.fmt(candidateStress(row), 1) + " MPa · L1 " +
+          (row.deflPct1 == null ? "—" : E.fmt(row.deflPct1, 0) + "%") + " · L2 " +
+          (row.deflPct2 == null ? "—" : E.fmt(row.deflPct2, 0) + "%") + esc(flag) + "</div></button>";
+        }).join("");
+    }
+    setupCoilControls(false);
+    revealFoldsForMessages();
+  }
+
+  function setCoilTune(available, hint) {
+    var tune = $("coilTune");
+    var none = $("optNone");
+    var line = $("optNoneHint");
+    if (tune) tune.classList.toggle("hidden", !available);
+    if (none) none.classList.toggle("hidden", !!available);
+    if (line && !available) line.textContent = hint || E.NO_OPTIONS;
+  }
+
+  function activeOptWire() {
+    var sel = $("optWire");
+    if (sel && sel.value !== "" && Number(sel.value) > 0) return Number(sel.value);
+    if (state.selectedWire > 0) return state.selectedWire;
+    if (state.screen && state.screen.best) return state.screen.best.d;
+    return null;
+  }
+
+  function bandNote(ev) {
+    if (!ev || !ev.ok || !E.geometricOk(ev)) return "";
+    var pcts = [];
+    if (ev.deflPct1 != null && isFinite(ev.deflPct1)) pcts.push(ev.deflPct1);
+    if (ev.deflPct2 != null && isFinite(ev.deflPct2)) pcts.push(ev.deflPct2);
+    function inBand(lo, hi) {
+      return pcts.length && pcts.every(function (p) { return p >= lo - 1e-6 && p <= hi + 1e-6; });
+    }
+    var limit = ev.tauAllow;
+    var stress = candidateStress(ev);
+    var within = limit > 0 && stress <= limit + 1e-6;
+    var raised = limit > 0 && stress <= limit * 1.2 + 1e-6;
+    if (inBand(30, 70) && within) return "";
+    if (inBand(20, 80) && within) {
+      return "Working deflection is outside 30–70 % of available travel. These candidates are between 20 % and 80 %.";
+    }
+    if (inBand(20, 80) && raised) {
+      return "No candidate met the stress limit inside the deflection band. These candidates allow a stress limit 20 % higher than the one set.";
+    }
+    return "";
+  }
+
+  function setupCoilControls(fromUser) {
+    var d = activeOptWire();
+    var slider = $("Dslider");
+    var svg = $("tradeoffSvg");
+    if (!slider || !svg || !(d > 0)) return;
+    var input = Object.assign(wireInputBase(), { d: d, Rm: num("Rm") });
+    var scan = E.scanDiameters(input, 80);
+    state.coilScan = scan;
+    if (!scan.bounds.valid) {
+      svg.innerHTML = "";
+      if ($("coilMetrics")) $("coilMetrics").innerHTML = "";
+      return;
+    }
+    var startD = null;
+    if (state.design && Math.abs(state.design.d - d) < 1e-9) startD = state.design.D;
+    else if (state.preferredD != null) startD = state.preferredD;
+    else startD = scan.bounds.Dmax;
+    var span = E.passingDiameterSpan(scan.rows, startD);
+    var lo = scan.bounds.Dmin;
+    var hi = scan.bounds.Dmax;
+    if (span) { lo = span.min; hi = span.max; }
+    lo = Math.ceil(lo * 1000 - 1e-9) / 1000;
+    hi = Math.floor(hi * 1000 + 1e-9) / 1000;
+    if (span && Number(startD) >= span.min - 1e-6 && Number(startD) <= span.max + 1e-6) {
+      if (Number(startD) < lo) lo = Number(Number(startD).toFixed(3));
+      if (Number(startD) > hi) hi = Number(Number(startD).toFixed(3));
+    }
+    if (!(hi >= lo)) {
+      var mid = Number((Math.min(scan.bounds.Dmax, Math.max(scan.bounds.Dmin, Number(startD)))).toFixed(3));
+      lo = mid;
+      hi = mid;
+    }
+    state.coilSpan = { min: lo, max: hi };
+    slider.min = lo.toFixed(3);
+    slider.max = hi.toFixed(3);
+    slider.step = "0.01";
+    startD = Math.min(hi, Math.max(lo, Number(startD)));
+    slider.value = startD;
+    paintCoil(startD, fromUser);
+  }
+
+  function clampCoilD(D) {
+    var n = Number(D);
+    var span = state.coilSpan;
+    if (!span || !isFinite(n)) return n;
+    return Math.min(span.max, Math.max(span.min, n));
+  }
+
+  function paintCoil(D, fromUser) {
+    D = clampCoilD(D);
+    var d = activeOptWire();
+    if (!(d > 0)) return;
+    var input = Object.assign(wireInputBase(), { d: d, D: Number(D), Rm: num("Rm") });
+    var ev = E.evaluateDesign(input);
+    ev.wind = val("wind");
+    ev.materialId = val("material");
+    ev.materialName = E.materialById(val("material")).shortName;
+    ev.growth = E.compressedClearance(ev, input);
+    state.selectedWire = d;
+    state.preferredD = ev.D;
+    state.design = ev;
+    if (fromUser || state.coilChosen) {
+      state.coilChosen = true;
+      state.coilNote = bandNote(ev);
+    }
+    if ($("Dlabel")) $("Dlabel").textContent = E.fmt(ev.D, 3);
+    fillSelectedMetrics(ev);
+    if ($("tradeoffSvg")) C.renderTradeoff($("tradeoffSvg"), state.coilScan ? state.coilScan.rows : [], ev.D);
+    if ($("coilMetrics")) {
+      $("coilMetrics").innerHTML = [
+        metric("Index w", E.fmt(ev.w, 2)),
+        metric("Active coils n", E.fmt(ev.n, 2)),
+        metric("Corrected stress τk", E.fmt(ev.tauK, 1) + " MPa"),
+        metric("% of allowable", E.fmt(ev.pctAllow, 1) + " %"),
+        metric("Solid length Lc", E.fmt(ev.Lc, 2) + " mm"),
+        metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
+      ].join("");
+    }
+    persist();
+  }
+
+  function optimiseCoil() {
+    var d = activeOptWire();
+    if (!(d > 0)) {
+      showErr("err4", ["Pick a standard wire, then optimise its mean diameter."]);
+      return;
+    }
+    var found = E.searchOptimisation(Object.assign(wireInputBase(), { wires: [d], Rm: num("Rm") }));
+    if (!found.best) {
+      showErr("err4", [found.message || E.NO_OPTIONS]);
+      if ($("coilStatus")) {
+        $("coilStatus").innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(found.message || E.NO_OPTIONS) + "</div>";
+      }
+      return;
+    }
+    showErr("err4", []);
+    state.coilChosen = true;
+    state.coilNote = found.warning || "";
+    applyCandidate(found.best);
+    if ($("coilStatus")) {
+      var tone = found.level === "pass" ? "pass" : "warning";
+      $("coilStatus").innerHTML = "<div class=\"status-banner " + tone + "\"><strong>" +
+        (found.level === "pass" ? "Optimum for this wire" : "Optimum for this wire, with a warning") +
+        "</strong> — D " + E.fmt(found.best.D, 2) + " mm, τk " + E.fmt(candidateStress(found.best), 1) + " MPa." +
+        (found.warning ? " " + esc(found.warning) : "") + "</div>";
+    }
+    setupCoilControls(false);
+    revealFoldsForMessages();
   }
 
   function metric(k, v) {
     return "<div class=\"metric\"><div class=\"k\">" + k + "</div><div class=\"v\">" + v + "</div></div>";
   }
 
-  function autoOptimise() {
-    var input = Object.assign(wireInputBase(), { d: state.selectedWire, Rm: num("Rm") });
-    var opt = E.autoOptimise(input, 80);
-    if (!opt.best) return;
-    $("Dslider").value = opt.best.D;
-    updateOptimise(opt.best.D);
+  function fillSelectedMetrics(ev) {
+    var metrics = $("optMetrics");
+    var note = $("optSelectedNote");
+    if (!metrics) return;
+    if (!ev) {
+      metrics.innerHTML = "";
+      if (note) note.textContent = "";
+      return;
+    }
+    if (note) note.textContent = "Selected wire — these figures follow the wire you chose, not only the optimum above.";
+    metrics.innerHTML = [
+      metric("Wire d", E.fmt(ev.d, 2) + " mm"),
+      metric("Mean diameter D", E.fmt(ev.D, 2) + " mm"),
+      metric("Corrected stress τk", E.fmt(candidateStress(ev), 1) + " MPa"),
+      metric("Deflection L1", ev.deflPct1 == null ? "—" : E.fmt(ev.deflPct1, 1) + " %"),
+      metric("Deflection L2", ev.deflPct2 == null ? "—" : E.fmt(ev.deflPct2, 1) + " %"),
+      metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
+    ].join("");
   }
 
 
@@ -437,7 +996,7 @@
       return "<tr><td>" + s.id + (extra ? " <span class=\"hint\">" + extra + "</span>" : "") +
         "</td><td>" + E.fmt(s.L, 2) + " mm</td><td>" + E.fmt(s.F, 1) + " N</td><td>" +
         (s.travelPct == null ? "—" : E.fmt(s.travelPct, 1) + " %") + "</td><td>" +
-        (s.tauK == null ? "—" : E.fmt(s.tauK, 0) + " N/mm²") + "</td></tr>";
+        (s.tauK == null ? "—" : E.fmt(s.tauK, 0) + " MPa") + "</td></tr>";
     }).join("");
   }
 
@@ -455,7 +1014,6 @@
     g = Number(g);
     if (g !== 1 && g !== 2 && g !== 3) g = 2;
     setVal("grade", String(g));
-    setVal("gradeResult", String(g));
     return g;
   }
 
@@ -475,10 +1033,102 @@
     $("tolVerify").textContent = model.verificationNote;
   }
 
+  var FOLD_FIELDS = [
+    { id: "pocket", words: ["pocket"] },
+    { id: "clearance", words: ["diametral clearance", "clearance must", "de max"] },
+    { id: "innerMin", words: ["spring guide", "spring-guide", "guide diameter", "guide limit"] },
+    { id: "innerClearance", words: ["guide clearance"] },
+    { id: "workL1", words: ["relaxed working length", "l1", "reduce the rate", "move the lengths"] },
+    { id: "workL2", words: ["compressed working length", "compressed length", "l2", "solid length", "reduce the rate", "move the lengths"] },
+    { id: "serviceTemp", words: ["service temperature", "temperature"] },
+    { id: "G", words: ["modulus", "rigidity"] },
+    { id: "Rm", words: ["tensile strength"] },
+    { id: "tauFactor", words: ["stress factor", "allowable stress factor", "under the limit"] },
+    { id: "tauAllowDirect", words: ["stress limit", "under the limit"] },
+    { id: "L1", words: ["l1", "reduce the rate", "move the lengths"] },
+    { id: "L2", words: ["l2", "solid length", "reduce the rate", "move the lengths"] },
+    { id: "F2", words: ["f2"] },
+    { id: "Rb", words: ["spring rate", "rate must", "reduce the rate"] }
+  ];
+
+  function syncFold(card) {
+    var summary = card.querySelector("summary");
+    if (summary) summary.setAttribute("aria-expanded", card.open ? "true" : "false");
+  }
+
+  function setFoldOpen(card, open) {
+    if (!card) return;
+    card.open = open;
+    syncFold(card);
+  }
+
+  function collapseStepFolds(step) {
+    var sec = $("step-" + step);
+    if (!sec) return;
+    sec.querySelectorAll("details").forEach(function (card) {
+      setFoldOpen(card, false);
+    });
+  }
+
+  function messageIsShown(el) {
+    if (el.classList.contains("hidden")) return false;
+    var node = el.parentElement;
+    while (node) {
+      if (node.tagName === "DETAILS" && !node.open) return false;
+      node = node.parentElement;
+    }
+    return true;
+  }
+
+  function activeMessages() {
+    var bits = [];
+    document.querySelectorAll(".error.show, .status-banner.warning, .status-banner.fail").forEach(function (el) {
+      if (!messageIsShown(el)) return;
+      bits.push(el.textContent || "");
+    });
+    return bits.join("\n").toLowerCase();
+  }
+
+  function messageMentions(text, word) {
+    var escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp("(^|[^a-z0-9])" + escaped + "([^a-z0-9]|$)").test(text);
+  }
+
+  function revealFoldsForMessages() {
+    var text = activeMessages();
+    if (!text) return;
+    FOLD_FIELDS.forEach(function (field) {
+      var hit = field.words.some(function (word) { return messageMentions(text, word); });
+      if (!hit) return;
+      var el = $(field.id);
+      if (!el || !el.closest) return;
+      var node = el.closest("details");
+      while (node) {
+        setFoldOpen(node, true);
+        node = node.parentElement ? node.parentElement.closest("details") : null;
+      }
+    });
+  }
+
+  function bindResultFolds() {
+    document.querySelectorAll("details").forEach(function (card) {
+      if (card.getAttribute("data-bound") === "1") return;
+      card.setAttribute("data-bound", "1");
+      syncFold(card);
+      card.addEventListener("toggle", function () {
+        syncFold(card);
+        if (!card.open || !state.design) return;
+        if (card.id === "loadFold") C.renderLoadGraph($("graphSvg"), state.design);
+        if (card.id === "springFold") C.renderSpringDiagram($("springSvg"), state.design);
+      });
+    });
+  }
+
   function renderResults() {
     var ev = state.design;
     if (!ev) return;
     ev.wind = val("wind");
+    ev.serviceTemp = geometry().serviceTemp;
     ev.materialName = E.materialById(val("material")).shortName;
     var model = SpringDrawing.build(ev, {
       grade: currentGrade(),
@@ -487,15 +1137,19 @@
     state.drawing = model;
     renderToleranceTable(model);
     var banner = $("resultBanner");
-    banner.className = "status-banner " + ev.status;
-    banner.innerHTML = "<strong>" + ev.status.toUpperCase() + "</strong> — " +
+    var tierText = state.coilChosen ? (state.coilNote || "") : (state.screen && state.screen.level === "warning" ? state.screen.warning : "");
+    var tierWarning = !!tierText;
+    banner.className = "status-banner " + (tierWarning ? "warning" : ev.status);
+    banner.innerHTML = "<strong>" + (tierWarning ? "WARNING" : ev.status.toUpperCase()) + "</strong> — " +
       (ev.pass
         ? "Screening checks are satisfied for static design at the stated allowable stress."
         : ev.reasons.join(" ")) +
+      (tierWarning ? "<br>" + esc(tierText) : "") +
       (ev.warnings.length ? "<br>" + ev.warnings.join(" ") : "");
 
     C.renderLoadGraph($("graphSvg"), ev);
     C.renderSpringDiagram($("springSvg"), ev);
+    bindResultFolds();
     renderGraphLegend(ev);
 
     var body = $("particulars").querySelector("tbody");
@@ -513,10 +1167,10 @@
       row("Free length", "L0", E.fmt(ev.L0, 3) + " mm"),
       row("Length at F1", "L1", ev.L1 != null ? E.fmt(ev.L1, 3) + " mm" : "—"),
       row("Load F1", "F1", ev.F1 != null ? E.fmt(ev.F1, 3) + " N" : "—"),
-      row("Corrected stress at F1", "τk1", ev.tauK1 != null ? E.fmt(ev.tauK1, 1) + " N/mm²" : "—"),
+      row("Corrected stress at F1", "τk1", ev.tauK1 != null ? E.fmt(ev.tauK1, 1) + " MPa" : "—"),
       row("Length at F2", "L2", ev.L2 != null ? E.fmt(ev.L2, 3) + " mm" : "—"),
       row("Load F2", "F2", ev.F2 != null ? E.fmt(ev.F2, 3) + " N" : "—"),
-      row("Corrected stress at F2", "τk2", E.fmt(ev.tauK2, 1) + " N/mm²"),
+      row("Corrected stress at F2", "τk2", E.fmt(ev.tauK2, 1) + " MPa"),
       row("Recommended shortest length", "Ln", E.fmt(ev.Ln, 3) + " mm  (85 % of available travel)"),
       row("Load at Ln", "Fn", E.fmt(ev.Fn, 3) + " N"),
       row("Solid length", "Lc", E.fmt(ev.Lc, 3) + " mm"),
@@ -526,12 +1180,13 @@
       row("Available travel", "L0 − Lc", E.fmt(ev.sc, 3) + " mm"),
       row("Deflection at max. working load", "s", E.fmt(ev.s2, 3) + " mm  (" + E.fmt(ev.deflPct2, 1) + " % of available travel)"),
       row("Bergsträsser factor", "k", E.fmt(ev.k, 4)),
-      row("Uncorrected stress at Fmax", "τ", E.fmt(ev.tau, 1) + " N/mm²"),
-      row("Corrected stress at Fmax", "τk", E.fmt(ev.tauK, 1) + " N/mm²"),
-      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " N/mm²  (" + E.fmt(ev.tauFactor, 2) + " × Rm)"),
+      row("Uncorrected stress at Fmax", "τ", E.fmt(ev.tau, 1) + " MPa"),
+      row("Corrected stress at Fmax", "τk", E.fmt(ev.tauK, 1) + " MPa"),
+      row("Allowable screening stress", "τzul", E.fmt(ev.tauAllow, 1) + " MPa  (" +
+        (ev.stressSource === "direct" ? "entered directly" : E.fmt(ev.tauFactor, 2) + " × Rm") + ")"),
       row("Stress ratio", "τk / τzul", E.fmt(ev.pctAllow, 1) + " %"),
-      row("Tensile strength", "Rm", E.fmt(ev.Rm, 0) + " N/mm²"),
-      row("Modulus of rigidity", "G", E.fmt(ev.G, 0) + " N/mm²"),
+      row("Tensile strength", "Rm", E.fmt(ev.Rm, 0) + " MPa"),
+      row("Modulus of rigidity", "G", E.fmt(ev.G, 0) + " MPa"),
       row("Material", "—", ev.materialName || "—"),
       row("Ends", "—", ev.endsLabel),
       row("Wound direction", "—", windLabel),
@@ -539,33 +1194,7 @@
       row("Approximate mass", "m", ev.mass ? E.fmt(ev.mass * 1000, 2) + " g" : "—"),
       row("Approximate wire length", "—", E.fmt(ev.wireLength, 1) + " mm")
     ].join("");
-  }
-
-  function particularsText() {
-    var ev = state.design;
-    if (!ev) return "";
-    var lines = [
-      "Helical compression spring particulars",
-      "Method: BS EN 13906-1 (screening calculations)",
-      ""
-    ];
-    $("particulars").querySelectorAll("tbody tr").forEach(function (tr) {
-      var tds = tr.querySelectorAll("td");
-      lines.push(tds[0].textContent + "\t" + tds[1].textContent + "\t" + tds[2].textContent);
-    });
-    lines.push("");
-    lines.push("This export is a design aid, not a certified calculation pack.");
-    return lines.join("\n");
-  }
-
-  function download(filename, text, mime) {
-    var blob = new Blob([text], { type: mime || "text/plain" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    revealFoldsForMessages();
   }
 
   function loadExample() {
@@ -577,6 +1206,14 @@
     setVal("F2", 125);
     setVal("pocket", 20);
     setVal("clearance", 1.5);
+    setVal("innerMin", "");
+    setVal("innerClearance", "");
+    setVal("workL1", 50);
+    setVal("workL2", 35);
+    setVal("serviceTemp", "");
+    document.querySelector("input[name=stressMode][value=factor]").checked = true;
+    setVal("tauAllowDirect", "");
+    syncStressMode();
     setVal("ends", "closed_ground");
     setVal("wind", "right");
     setGrade(2);
@@ -594,18 +1231,56 @@
     refreshGeomSummary();
   }
 
+  function loadRateExample() {
+    document.querySelector("input[name=mode][value=B]").checked = true;
+    syncModeUI();
+    setVal("Lb", 44);
+    setVal("Fb", 48);
+    setVal("Rb", 3);
+    setVal("pocket", 25);
+    setVal("clearance", 1);
+    setVal("innerMin", "");
+    setVal("innerClearance", "");
+    setVal("workL1", 48);
+    setVal("workL2", 40);
+    setVal("serviceTemp", "");
+    document.querySelector("input[name=stressMode][value=factor]").checked = true;
+    setVal("tauAllowDirect", "");
+    syncStressMode();
+    setVal("ends", "closed_ground");
+    setVal("wind", "right");
+    setGrade(2);
+    setVal("material", "10270-1-DH");
+    onMaterialChange();
+    setVal("G", 81500);
+    setVal("Rm", 1800);
+    setVal("tauFactor", 0.5);
+    $("useIndicativeRm").checked = false;
+    state.selectedWire = null;
+    state.preferredD = null;
+    state.design = null;
+    state.heatmap = null;
+    markRateLength([]);
+    refreshLoadSummary();
+    refreshGeomSummary();
+  }
+
   function persist() {
     try {
       var data = {
         step: state.step,
+        pageOrder: "r3-01",
         mode: state.mode,
         values: {
           L1: val("L1"), F1: val("F1"), L2: val("L2"), F2: val("F2"),
-          Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"), modeBPoint: val("modeBPoint"),
-          pocket: val("pocket"), clearance: val("clearance"),
+          Lb: val("Lb"), Fb: val("Fb"), Rb: val("Rb"),
+          pocket: val("pocket"), clearance: val("clearance"), innerMin: val("innerMin"),
+          innerClearance: val("innerClearance"),
+          workL1: val("workL1"), workL2: val("workL2"), serviceTemp: val("serviceTemp"),
           ends: val("ends"), wind: val("wind"), grade: val("grade"),
           material: val("material"), G: val("G"), Rm: val("Rm"),
-          tauFactor: val("tauFactor"),
+          tauFactor: val("tauFactor"), tauAllowDirect: val("tauAllowDirect"),
+          stressMode: stressMode(),
           useIndicativeRm: $("useIndicativeRm").checked,
           selectedWire: state.selectedWire,
           preferredD: state.preferredD,
@@ -616,6 +1291,16 @@
     } catch (err) { /* ignore quota / private mode */ }
   }
 
+  function restoredStep(data) {
+    var step = Number(data.step) || 1;
+    if (data.pageOrder === "r3-01") return Math.min(7, Math.max(1, step));
+    if (data.pageOrder === "r2-01") {
+      var map = { 1: 3, 2: 5, 3: 4, 4: 6, 5: 6, 6: 7 };
+      return map[step] || 1;
+    }
+    return 1;
+  }
+
   function restore() {
     try {
       var raw = localStorage.getItem(STORAGE);
@@ -624,12 +1309,20 @@
       var v = data.values || {};
       Object.keys(v).forEach(function (k) {
         if (k === "useIndicativeRm") $("useIndicativeRm").checked = !!v[k];
+        else if (k === "stressMode") {
+          var modeRadio = document.querySelector("input[name=stressMode][value=\"" + v[k] + "\"]");
+          if (modeRadio) modeRadio.checked = true;
+        }
+        else if (k === "Lcomp") setVal("workL2", v[k]);
+        else if (k === "Lrel") setVal("workL1", v[k]);
         else if (k === "selectedWire") state.selectedWire = v[k];
         else if (k === "preferredD") state.preferredD = v[k] == null || v[k] === "" ? null : Number(v[k]);
         else if (k === "D") { /* applied after evaluate */ }
         else if ($(k)) setVal(k, v[k]);
       });
-      if (data.step) state.step = data.step;
+      if (data.step) {
+        state.step = restoredStep(data);
+      }
       if (data.mode) {
         var radio = document.querySelector("input[name=mode][value=\"" + data.mode + "\"]");
         if (radio) radio.checked = true;
@@ -639,6 +1332,7 @@
       if (v.G) setVal("G", v.G);
       if (v.Rm) setVal("Rm", v.Rm);
       syncModeUI();
+      syncStressMode();
       refreshGeomSummary();
       if (v.preferredD != null && v.preferredD !== "") {
         state.preferredD = Number(v.preferredD);
@@ -647,7 +1341,7 @@
       }
       if (v.selectedWire && v.D) {
         state.selectedWire = Number(v.selectedWire);
-        if (state.loads && geometry().DeMax > 0) {
+        if (state.loads && (geometry().DeMax == null || geometry().DeMax > 0)) {
           var ev = E.evaluateDesign(Object.assign(wireInputBase(), {
             d: state.selectedWire, D: Number(v.D), Rm: num("Rm")
           }));
@@ -659,26 +1353,263 @@
     } catch (err) { /* ignore */ }
   }
 
+  function setupSettings() {
+    if (typeof SpringTheme === "undefined") return;
+    var theme = SpringTheme.attach(document, window);
+    var backdrop = $("settingsDialog");
+    var panel = $("settingsPanel");
+    var openBtn = $("btnSettings");
+    var closeBtn = $("btnSettingsClose");
+    if (!backdrop || !panel || !openBtn || !closeBtn) return;
+    var lastFocus = null;
+
+    function syncRadios() {
+      var choice = theme.getChoice();
+      document.querySelectorAll('input[name="themeChoice"]').forEach(function (r) {
+        r.checked = r.value === choice;
+      });
+    }
+
+    function isShown(el) {
+      return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    function focusable() {
+      return Array.prototype.slice.call(panel.querySelectorAll(
+        "button, [href], input, select, textarea"
+      )).filter(function (el) {
+        return !el.disabled && isShown(el);
+      });
+    }
+
+    function setPageInert(on) {
+      document.querySelectorAll(".app-header, .progress, main, .step-nav").forEach(function (n) {
+        if (on) n.setAttribute("inert", "");
+        else n.removeAttribute("inert");
+      });
+    }
+
+    function openSettings() {
+      lastFocus = document.activeElement;
+      backdrop.hidden = false;
+      openBtn.setAttribute("aria-expanded", "true");
+      document.body.classList.add("settings-open");
+      setPageInert(true);
+      syncRadios();
+      var checked = panel.querySelector('input[name="themeChoice"]:checked');
+      var radios = panel.querySelectorAll('input[name="themeChoice"]');
+      (checked || radios[0] || closeBtn).focus();
+    }
+
+    function closeSettings() {
+      if (backdrop.hidden) return;
+      backdrop.hidden = true;
+      openBtn.setAttribute("aria-expanded", "false");
+      var helpOpen = $("helpDialog") && !$("helpDialog").hidden;
+      if (!helpOpen) {
+        document.body.classList.remove("settings-open");
+        setPageInert(false);
+      }
+      if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+      else openBtn.focus();
+    }
+
+    openBtn.addEventListener("click", openSettings);
+    closeBtn.addEventListener("click", closeSettings);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeSettings();
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (backdrop.hidden) return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        closeSettings();
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    });
+    document.querySelectorAll('input[name="themeChoice"]').forEach(function (r) {
+      r.addEventListener("change", function () {
+        if (r.checked) theme.setChoice(r.value);
+      });
+    });
+    syncRadios();
+  }
+
+  function setupHelp() {
+    if (typeof SpringHelp === "undefined") return;
+    var backdrop = $("helpDialog");
+    var panel = $("helpPanel");
+    var closeBtn = $("btnHelpClose");
+    if (!backdrop || !panel || !closeBtn) return;
+    var opener = null;
+
+    function isShown(el) {
+      return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    function focusable() {
+      return Array.prototype.slice.call(panel.querySelectorAll(
+        "button, [href], input, select, textarea"
+      )).filter(function (el) {
+        return !el.disabled && isShown(el);
+      });
+    }
+
+    function setPageInert(on) {
+      document.querySelectorAll(".app-header, .progress, main, .step-nav").forEach(function (n) {
+        if (on) n.setAttribute("inert", "");
+        else n.removeAttribute("inert");
+      });
+    }
+
+    function openHelp(btn) {
+      if ($("settingsDialog") && !$("settingsDialog").hidden) return;
+      var topic = SpringHelp.topic(btn.getAttribute("data-help"));
+      if (!topic) return;
+      if (opener) opener.setAttribute("aria-expanded", "false");
+      opener = btn;
+      $("helpTitle").textContent = topic.title;
+      $("helpBody").innerHTML = topic.body;
+      backdrop.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+      document.body.classList.add("settings-open");
+      setPageInert(true);
+      closeBtn.focus();
+    }
+
+    function closeHelp() {
+      if (backdrop.hidden) return;
+      backdrop.hidden = true;
+      if (opener) opener.setAttribute("aria-expanded", "false");
+      var settingsOpen = $("settingsDialog") && !$("settingsDialog").hidden;
+      if (!settingsOpen) {
+        document.body.classList.remove("settings-open");
+        setPageInert(false);
+      }
+      if (opener && typeof opener.focus === "function") opener.focus();
+    }
+
+    document.querySelectorAll("button[data-help]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openHelp(btn);
+      });
+    });
+    closeBtn.addEventListener("click", closeHelp);
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) closeHelp();
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (backdrop.hidden) return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        closeHelp();
+        return;
+      }
+      if (ev.key !== "Tab") return;
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
   function init() {
+    bindResultFolds();
     populateMaterials();
+    setupSettings();
+    setupHelp();
     document.querySelectorAll("input[name=mode]").forEach(function (r) {
-      r.addEventListener("change", syncModeUI);
+      r.addEventListener("change", function () {
+        syncModeUI();
+        alignLengths();
+        markFeasibilityStale();
+      });
     });
-    ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb", "modeBPoint"].forEach(function (id) {
-      $(id).addEventListener("input", refreshLoadSummary);
-      $(id).addEventListener("change", refreshLoadSummary);
+    ["L1", "F1", "L2", "F2", "Lb", "Fb", "Rb"].forEach(function (id) {
+      $(id).addEventListener("input", function () {
+        if (id === "L1" || id === "L2") syncLengths("duty");
+        refreshLoadSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        if (id === "L1" || id === "L2") syncLengths("duty");
+        refreshLoadSummary();
+        markFeasibilityStale();
+      });
     });
-    ["pocket", "clearance", "ends", "wind", "G", "Rm", "tauFactor"].forEach(function (id) {
-      $(id).addEventListener("input", refreshGeomSummary);
-      $(id).addEventListener("change", refreshGeomSummary);
+    ["workL1", "workL2", "serviceTemp"].forEach(function (id) {
+      $(id).addEventListener("input", function () {
+        if (id === "workL1" || id === "workL2") syncLengths("work");
+        refreshLoadSummary();
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        if (id === "workL1" || id === "workL2") syncLengths("work");
+        refreshLoadSummary();
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+    });
+    ["pocket", "clearance", "innerMin", "innerClearance", "ends", "wind", "G", "Rm", "tauFactor", "tauAllowDirect"].forEach(function (id) {
+      $(id).addEventListener("input", function () {
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
+      $(id).addEventListener("change", function () {
+        refreshGeomSummary();
+        markFeasibilityStale();
+      });
     });
     $("material").addEventListener("change", function () {
       onMaterialChange();
       refreshGeomSummary();
+      markFeasibilityStale();
+    });
+    $("useIndicativeRm").addEventListener("change", markFeasibilityStale);
+    $("btnClearConstraints").addEventListener("click", function () {
+      ["pocket", "clearance", "innerMin", "innerClearance", "workL1", "workL2", "serviceTemp"].forEach(function (id) {
+        setVal(id, "");
+      });
+      syncLengths("work");
+      showErr("errConstraints", []);
+      refreshLoadSummary();
+      refreshGeomSummary();
+      markFeasibilityStale();
     });
     $("btnClearance").addEventListener("click", function () {
-      setVal("clearance", E.suggestedClearance(num("pocket")));
+      var pocket = num("pocket");
+      var guide = num("innerMin");
+      if (!(pocket > 0) && !(guide > 0)) {
+        showErr("errConstraints", ["Enter a pocket or a spring guide diameter before using the suggested clearance."]);
+        return;
+      }
+      showErr("errConstraints", []);
+      if (pocket > 0) setVal("clearance", E.suggestedClearance(pocket));
+      if (guide > 0) setVal("innerClearance", E.suggestedClearance(guide));
       refreshGeomSummary();
+      markFeasibilityStale();
     });
     $("pocket").addEventListener("change", function () {
       if (val("clearance") === "") {
@@ -686,55 +1617,125 @@
       }
       refreshGeomSummary();
     });
-    $("btnExample").addEventListener("click", loadExample);
-    $("passOnly").addEventListener("change", renderWires);
-    $("wireList").addEventListener("click", function (ev) {
-      var btn = ev.target.closest("[data-d]");
-      if (btn) selectWire(btn.getAttribute("data-d"));
+    $("btnExample").addEventListener("click", function () {
+      if (state.mode === "B") loadRateExample();
+      else loadExample();
+      markFeasibilityStale();
     });
-    $("heatmapScroll").addEventListener("click", function (ev) {
-      var btn = ev.target.closest("[data-wire][data-coil]");
-      if (btn) selectHeatmapCell(btn.getAttribute("data-wire"), btn.getAttribute("data-coil"));
+    $("btnCheck").addEventListener("click", runCalculate);
+    $("optWire").addEventListener("change", function () {
+      if (fillingWires) return;
+      renderOptimise();
     });
     $("Dslider").addEventListener("input", function (ev) {
-      updateOptimise(ev.target.value);
+      var clamped = clampCoilD(ev.target.value);
+      if (Math.abs(Number(ev.target.value) - clamped) > 5e-4) ev.target.value = clamped;
+      paintCoil(clamped, true);
     });
-    $("btnOptimise").addEventListener("click", autoOptimise);
+    $("btnOptimise").addEventListener("click", optimiseCoil);
+    $("optCandidates").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-opt-d]");
+      if (!btn || !state.screen) return;
+      var d = Number(btn.getAttribute("data-opt-d"));
+      var D = Number(btn.getAttribute("data-opt-D"));
+      var row = (state.screen.candidates || []).filter(function (item) {
+        return Math.abs(item.d - d) < 1e-9 && Math.abs(item.D - D) < 1e-4;
+      })[0];
+      if (!row) return;
+      applyCandidate(row);
+      renderOptimise();
+    });
+    document.querySelectorAll("input[name=stressMode]").forEach(function (r) {
+      r.addEventListener("change", function () {
+        syncStressMode();
+        markFeasibilityStale();
+      });
+    });
     function onGradeInput(id) {
       setGrade(val(id));
-      if (state.step === 5 && state.design) renderResults();
+      if (state.step === 7 && state.design) renderResults();
       persist();
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
-    $("gradeResult").addEventListener("change", function () { onGradeInput("gradeResult"); });
-    $("btnPrint").addEventListener("click", function () { window.print(); });
+    function refreshExportName() {
+      if (!$("exportFilename") || typeof SpringPdf === "undefined" || typeof SpringEntitlement === "undefined") return;
+      var naming = SpringPdf.exportFilename({
+        requestedName: val("exportName"),
+        entitlement: SpringEntitlement.productionEntitlement()
+      });
+      $("exportFilename").textContent = "This file will be saved as " + naming.filename + ".";
+    }
+    $("exportName").addEventListener("input", refreshExportName);
+    refreshExportName();
     $("btnExportA3").addEventListener("click", function () {
       if (!state.design || typeof SpringPdf === "undefined") return;
       state.design.wind = val("wind");
+      state.design.serviceTemp = geometry().serviceTemp;
       state.design.materialName = E.materialById(val("material")).shortName;
+      var entitlement = (typeof SpringEntitlement !== "undefined")
+        ? SpringEntitlement.productionEntitlement()
+        : undefined;
+      var naming = SpringPdf.exportFilename({
+        requestedName: val("exportName"),
+        entitlement: entitlement
+      });
+      if ($("exportFilename")) {
+        $("exportFilename").textContent = "This file will be saved as " + naming.filename + ".";
+      }
       SpringPdf.save(state.design, {
         grade: currentGrade(),
         clearance: geometry().clearance,
-        filename: "helical-compression-spring-a3.pdf"
+        outerLimit: geometry().pocket != null,
+        innerLimit: geometry().innerMin != null,
+        requestedName: naming.paid ? val("exportName") : "",
+        entitlement: entitlement
       });
-    });
-    $("btnExportTxt").addEventListener("click", function () {
-      download("spring-particulars.txt", particularsText(), "text/plain");
-    });
-    $("btnExportJson").addEventListener("click", function () {
-      download("spring-design.json", JSON.stringify(state.design, null, 2), "application/json");
     });
     $("btnBack").addEventListener("click", function () {
       if (state.step > 1) goTo(state.step - 1);
     });
     $("btnNext").addEventListener("click", function () {
-      if (state.step === 5) {
+      if (dutyForwardBlocked()) {
+        revealDutyBlock();
+        return;
+      }
+      if (state.step === 7) {
         goTo(1);
         return;
       }
       if (!validateStep(state.step)) return;
       goTo(state.step + 1);
     });
+    var stepNav = document.querySelector(".step-nav");
+    if (stepNav) {
+      stepNav.addEventListener("pointerup", function (ev) {
+        if (!dutyForwardBlocked()) return;
+        var btn = $("btnNext");
+        if (!btn) return;
+        var rect = btn.getBoundingClientRect();
+        if (ev.clientX >= rect.left && ev.clientX <= rect.right && ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+          revealDutyBlock();
+        }
+      });
+    }
+    document.querySelectorAll(".progress span").forEach(function (dot, index) {
+      dot.addEventListener("click", function () {
+        var target = index + 1;
+        if (target > state.step && dutyForwardBlocked()) revealDutyBlock();
+      });
+    });
+    var dutySwipe = null;
+    document.addEventListener("touchstart", function (ev) {
+      if (!ev.touches || ev.touches.length !== 1) { dutySwipe = null; return; }
+      dutySwipe = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+    }, { passive: true });
+    document.addEventListener("touchend", function (ev) {
+      if (!dutySwipe || !ev.changedTouches || !ev.changedTouches.length) return;
+      var dx = ev.changedTouches[0].clientX - dutySwipe.x;
+      var dy = ev.changedTouches[0].clientY - dutySwipe.y;
+      dutySwipe = null;
+      if (dx < -70 && Math.abs(dx) > Math.abs(dy) && dutyForwardBlocked()) revealDutyBlock();
+    }, { passive: true });
     syncModeUI();
     restore();
     goTo(state.step || 1);

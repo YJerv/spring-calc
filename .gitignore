@@ -1,2 +1,10 @@
 node_modules/
 package-lock.json
+
+# Android signing material and build output. Never commit a keystore.
+*.keystore
+*.jks
+keystore.properties
+local.properties
+*.aab
+*.apk
