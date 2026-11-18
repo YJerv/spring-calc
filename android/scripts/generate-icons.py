@@ -27,10 +27,12 @@ ROOT = Path(__file__).resolve().parents[2]
 ANDROID = ROOT / "android"
 SVG = ROOT / "icons" / "icon.svg"
 PNG = ROOT / "icons" / "icon-512.png"
-NAVY = (11, 31, 51, 255)
-CREAM = (247, 241, 228, 255)
-GOLD = (196, 163, 90, 255)
-GOLD_SOFT = (232, 215, 168, 255)
+# Concept A background. The spring must sit inside the adaptive-icon safe zone.
+BG = (0x20, 0x26, 0x30, 255)
+CREAM = (220, 226, 234, 255)
+GOLD = (36, 87, 197, 255)
+GOLD_SOFT = (220, 226, 234, 255)
+SAFE = 0.66
 
 # Same destinations and pixel sizes as Bubblewrap's TwaGenerator.
 LAUNCHER = [
@@ -93,19 +95,34 @@ def render_png(size: int, dest: Path, master) -> None:
 
 
 def flatten(path: Path) -> None:
-    """Play and some launchers dislike a transparent margin. The SVG is
-    already a full navy square; this drops any leftover alpha."""
+    """Play and some launchers dislike a transparent margin. Fill any
+    leftover alpha with the Concept A background."""
     Image, _, _ = require_pillow()
     image = Image.open(path).convert("RGBA")
-    base = Image.new("RGBA", image.size, NAVY)
+    base = Image.new("RGBA", image.size, BG)
     base.alpha_composite(image)
     base.convert("RGB").save(path, format="PNG")
+
+
+def write_maskable(size: int, dest: Path) -> None:
+    """Scale the SVG to the 66% safe zone and fill the rest with #202630."""
+    Image, _, _ = require_pillow()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    inner = max(1, int(round(size * SAFE)))
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = Path(tmp) / "raw.png"
+        render_svg(inner, raw)
+        art = Image.open(raw).convert("RGBA")
+    canvas = Image.new("RGBA", (size, size), BG)
+    offset = (size - inner) // 2
+    canvas.alpha_composite(art, (offset, offset))
+    canvas.convert("RGB").save(dest, format="PNG")
 
 
 def write_feature_graphic(icon_path: Path) -> None:
     Image, ImageDraw, ImageFont = require_pillow()
     width, height = 1024, 500
-    canvas = Image.new("RGB", (width, height), NAVY[:3])
+    canvas = Image.new("RGB", (width, height), BG[:3])
     draw = ImageDraw.Draw(canvas)
     icon = Image.open(icon_path).convert("RGBA")
     icon = icon.resize((300, 300), Image.Resampling.LANCZOS)
@@ -152,7 +169,7 @@ def main() -> None:
     else:
         print(f"rendering {SVG.relative_to(ROOT)} with rsvg-convert")
 
-    for rel, size in LAUNCHER + MASKABLE + SPLASH:
+    for rel, size in LAUNCHER + SPLASH:
         dest = ANDROID / rel
         if use_svg:
             render_svg(size, dest)
@@ -160,6 +177,19 @@ def main() -> None:
             render_png(size, dest, master)
         flatten(dest)
         print(f"wrote {dest.relative_to(ROOT)} ({size}px)")
+
+    if not use_svg:
+        sys.exit("rsvg-convert is required so maskable icons are drawn from the SVG.")
+    for rel, size in MASKABLE:
+        write_maskable(size, ANDROID / rel)
+        print(f"wrote {(ANDROID / rel).relative_to(ROOT)} ({size}px, 66% safe zone)")
+    for name, size in (
+        ("icon-maskable-512.png", 512),
+        ("icon-maskable-192.png", 192),
+    ):
+        dest = ROOT / "icons" / name
+        write_maskable(size, dest)
+        print(f"wrote {dest.relative_to(ROOT)} ({size}px, 66% safe zone)")
 
     with tempfile.TemporaryDirectory() as tmp:
         icon512 = Path(tmp) / "icon-512.png"

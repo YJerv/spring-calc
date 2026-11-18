@@ -1,21 +1,32 @@
 /* Helical Spring Designer service worker — cache app shell for offline use */
-const CACHE = "spring-calc-v7";
+const CACHE = "spring-calc-v83";
 const ASSETS = [
   "./",
   "./index.html",
-  "./privacy.html",
   "./css/app.css",
   "./vendor/jspdf.umd.min.js",
+  "./js/theme.js",
+  "./js/help.js",
   "./js/engine.js",
   "./js/en15800.js",
   "./js/charts.js",
   "./js/drawing.js",
+  "./js/entitlement.js",
   "./js/pdf.js",
   "./js/app.js",
   "./manifest.json",
   "./icons/icon.svg",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-192.png",
+  "./icons/icon-maskable-512.png",
+  "./assets/help/help-diameter-limits.png",
+  "./assets/help/help-working-lengths.png",
+  "./assets/help/help-ends-closed-ground.png",
+  "./assets/help/help-ends-closed-not-ground.png",
+  "./assets/help/help-ends-open-ground.png",
+  "./assets/help/help-ends-open-not-ground.png",
+  "./assets/brand/jet-logo.png"
 ];
 
 self.addEventListener("install", function (event) {

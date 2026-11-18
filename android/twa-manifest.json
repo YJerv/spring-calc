@@ -14,7 +14,7 @@
   "enableNotifications": false,
   "startUrl": "/spring-calc/",
   "iconUrl": "https://yjerv.github.io/spring-calc/icons/icon-512.png",
-  "maskableIconUrl": "https://yjerv.github.io/spring-calc/icons/icon-512.png",
+  "maskableIconUrl": "https://yjerv.github.io/spring-calc/icons/icon-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
