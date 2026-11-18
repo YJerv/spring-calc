@@ -300,6 +300,22 @@ legend.with-info { width: 100%; padding-right: 0; }
   color: var(--ink);
 }
 .help-svg:not(.duty-graph) text { fill: currentColor; font-size: 12px; font-family: "Source Sans 3", "Segoe UI", sans-serif; }
+.mode-chart { color: var(--ink); }
+.mode-chart .mode-axis { stroke: var(--ink); stroke-width: 1.25; fill: none; }
+.mode-chart .mode-nom { stroke: var(--ink); stroke-width: 2.25; fill: none; }
+.mode-chart .mode-max { stroke: #8a4b08; stroke-width: 2.25; fill: none; }
+.mode-chart .mode-min { stroke: #1b4f72; stroke-width: 2.25; fill: none; stroke-dasharray: 7 4; }
+.mode-chart .mode-band { fill: rgba(138, 75, 8, 0.14); stroke: none; }
+.mode-chart .mode-guide { stroke: var(--muted); stroke-width: 1.15; fill: none; stroke-dasharray: 3 3; }
+.mode-chart .mode-bar { stroke: var(--ink); stroke-width: 3; fill: none; }
+.mode-chart .mode-leader { stroke: var(--ink); stroke-width: 1; fill: none; }
+.mode-chart .mode-point { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+.mode-chart .mode-tick { font-size: 11px; }
+.mode-chart .mode-axis-title { font-size: 12px; font-weight: 650; }
+.mode-chart .mode-label, .mode-chart .mode-key-label { font-size: 12px; font-weight: 650; }
+html[data-resolved="dark"] .mode-chart .mode-max { stroke: #e2b56a; }
+html[data-resolved="dark"] .mode-chart .mode-min { stroke: #8ec4ef; }
+html[data-resolved="dark"] .mode-chart .mode-band { fill: rgba(226, 181, 106, 0.22); }
 .help-svg.duty-graph { max-width: 100%; overflow: hidden; }
 .help-axis, .help-mark, .help-wire { fill: none; stroke: var(--info); stroke-width: 2; }
 .help-solid { fill: none; stroke: var(--ink); stroke-width: 3; }
@@ -320,13 +336,24 @@ legend.with-info { width: 100%; padding-right: 0; }
   gap: 8px;
   margin-bottom: 14px;
 }
+.mode-card { position: relative; min-width: 0; }
 .mode-toggle label {
   border: 1.5px solid var(--line);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 10px 40px 10px 12px;
   background: var(--surface);
   cursor: pointer;
   display: block;
+  height: 100%;
+}
+.mode-card .mode-info {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  font-size: 0.95rem;
 }
 .mode-toggle input { accent-color: var(--navy); margin-right: 6px; }
 .mode-toggle label.selected {

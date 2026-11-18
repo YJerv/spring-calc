@@ -80,6 +80,109 @@
       "<tbody>" + rows + "</tbody></table></div>";
   }
 
+  /* Example duty shared by the two design-mode charts. Rates for point-and-rate fan about (s2, F2). */
+  var MODE_EXAMPLE = { R: 5, s1: 10, F1: 50, s2: 25, F2: 125, dF: 18, Rhi: 6.2, Rlo: 3.8 };
+
+  function modeChart(kind) {
+    var ex = MODE_EXAMPLE;
+    var W = 360;
+    var H = 340;
+    var plot = { l: 58, r: 344, t: 54, b: 292 };
+    var sMin = -6;
+    var sMax = 34;
+    var fMin = -70;
+    var fMax = 200;
+    function X(s) { return plot.l + (s - sMin) / (sMax - sMin) * (plot.r - plot.l); }
+    function Y(f) { return plot.t + (fMax - f) / (fMax - fMin) * (plot.b - plot.t); }
+    function n(v) { return Math.round(v * 10) / 10; }
+    function span(intercept, slope) {
+      var sAtLo = (fMin - intercept) / slope;
+      var sAtHi = (fMax - intercept) / slope;
+      var lo = Math.max(sMin, Math.min(sAtLo, sAtHi));
+      var hi = Math.min(sMax, Math.max(sAtLo, sAtHi));
+      return [lo, hi];
+    }
+    function line(cls, intercept, slope, extra) {
+      var ends = span(intercept, slope);
+      return '<line class="' + cls + '" x1="' + n(X(ends[0])) + '" y1="' + n(Y(intercept + slope * ends[0])) +
+        '" x2="' + n(X(ends[1])) + '" y2="' + n(Y(intercept + slope * ends[1])) + '"' + (extra || "") + '/>';
+    }
+    function band(a1, b1, a2, b2) {
+      var s1 = span(a1, b1);
+      var s2 = span(a2, b2);
+      var lo = Math.max(s1[0], s2[0]);
+      var hi = Math.min(s1[1], s2[1]);
+      var steps = 28;
+      var fwd = [];
+      var back = [];
+      var i;
+      var s;
+      for (i = 0; i <= steps; i++) {
+        s = lo + (hi - lo) * i / steps;
+        fwd.push(n(X(s)) + "," + n(Y(a1 + b1 * s)));
+        back.push(n(X(s)) + "," + n(Y(a2 + b2 * s)));
+      }
+      back.reverse();
+      return '<path class="mode-band" d="M' + fwd.join(" L") + " L" + back.join(" L") + ' Z"/>';
+    }
+    var two = kind === "two";
+    var maxI = two ? ex.dF : ex.F2 - ex.Rhi * ex.s2;
+    var maxS = two ? ex.R : ex.Rhi;
+    var minI = two ? -ex.dF : ex.F2 - ex.Rlo * ex.s2;
+    var minS = two ? ex.R : ex.Rlo;
+    var parts = [];
+    parts.push('<svg class="help-svg mode-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-hidden="true">');
+    parts.push(band(maxI, maxS, minI, minS));
+    parts.push('<line class="mode-axis" x1="' + n(plot.l) + '" y1="' + n(Y(0)) + '" x2="' + n(plot.r) + '" y2="' + n(Y(0)) + '"/>');
+    parts.push('<line class="mode-axis" x1="' + n(X(0)) + '" y1="' + n(plot.t) + '" x2="' + n(X(0)) + '" y2="' + n(plot.b) + '"/>');
+    [-50, 0, 50, 100, 150, 200].forEach(function (f) {
+      parts.push('<text class="mode-tick" x="' + n(plot.l - 6) + '" y="' + n(Y(f) + 4) + '" text-anchor="end">' + f + "</text>");
+    });
+    [-5, 0, 10, 20, 30].forEach(function (s) {
+      parts.push('<text class="mode-tick" x="' + n(X(s)) + '" y="' + n(plot.b + 16) + '" text-anchor="middle">' + s + "</text>");
+    });
+    parts.push('<text class="mode-axis-title" x="16" y="' + n((plot.t + plot.b) / 2) + '" transform="rotate(-90 16 ' + n((plot.t + plot.b) / 2) + ')" text-anchor="middle">Force F (N)</text>');
+    parts.push('<text class="mode-axis-title" x="' + n((plot.l + plot.r) / 2) + '" y="' + n(H - 10) + '" text-anchor="middle">Deflection s (mm)</text>');
+    if (two) {
+      parts.push('<line class="mode-guide" x1="' + n(X(0)) + '" y1="' + n(Y(ex.F1)) + '" x2="' + n(X(ex.s1)) + '" y2="' + n(Y(ex.F1)) + '"/>');
+      parts.push('<line class="mode-guide" x1="' + n(X(ex.s1)) + '" y1="' + n(Y(0)) + '" x2="' + n(X(ex.s1)) + '" y2="' + n(Y(ex.F1)) + '"/>');
+      parts.push('<line class="mode-guide" x1="' + n(X(0)) + '" y1="' + n(Y(ex.F2)) + '" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2)) + '"/>');
+      parts.push('<line class="mode-guide" x1="' + n(X(ex.s2)) + '" y1="' + n(Y(0)) + '" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2)) + '"/>');
+      parts.push('<line class="mode-bar" x1="' + n(X(ex.s1)) + '" y1="' + n(Y(ex.F1 - ex.dF)) + '" x2="' + n(X(ex.s1)) + '" y2="' + n(Y(ex.F1 + ex.dF)) + '"/>');
+      parts.push('<line class="mode-bar" x1="' + n(X(ex.s2)) + '" y1="' + n(Y(ex.F2 - ex.dF)) + '" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2 + ex.dF)) + '"/>');
+    } else {
+      parts.push('<line class="mode-guide" x1="' + n(X(0)) + '" y1="' + n(Y(ex.F2)) + '" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2)) + '"/>');
+      parts.push('<line class="mode-guide" x1="' + n(X(ex.s2)) + '" y1="' + n(Y(0)) + '" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2)) + '"/>');
+    }
+    parts.push(line("mode-max", maxI, maxS));
+    parts.push(line("mode-nom", 0, ex.R));
+    parts.push(line("mode-min", minI, minS));
+    var markS = two ? [ex.s1, ex.s2] : [ex.s2];
+    var markF = two ? [ex.F1, ex.F2] : [ex.F2];
+    markS.forEach(function (s, i) {
+      parts.push('<circle class="mode-point" cx="' + n(X(s)) + '" cy="' + n(Y(markF[i])) + '" r="3.5"/>');
+    });
+    parts.push('<line class="mode-key mode-max" x1="62" y1="22" x2="86" y2="22"/>');
+    parts.push('<text class="mode-key-label" x="90" y="26">Max</text>');
+    parts.push('<line class="mode-key mode-nom" x1="148" y1="22" x2="172" y2="22"/>');
+    parts.push('<text class="mode-key-label" x="176" y="26">Nominal</text>');
+    parts.push('<line class="mode-key mode-min" x1="250" y1="22" x2="274" y2="22"/>');
+    parts.push('<text class="mode-key-label" x="278" y="26">Min</text>');
+    if (two) {
+      parts.push('<text class="mode-label" data-label="f1" x="112" y="100">F1, s1</text>');
+      parts.push('<line class="mode-leader" x1="162" y1="108" x2="176" y2="158"/>');
+      parts.push('<text class="mode-label" data-label="df" x="168" y="78">±ΔF</text>');
+      parts.push('<line class="mode-leader" x1="185" y1="86" x2="176" y2="150"/>');
+      parts.push('<text class="mode-label" data-label="f2" x="196" y="100">F2, s2</text>');
+      parts.push('<line class="mode-leader" x1="250" y1="98" x2="274" y2="104"/>');
+    } else {
+      parts.push('<text class="mode-label" data-label="point" x="292" y="64">s2, F2</text>');
+      parts.push('<line class="mode-leader" x1="300" y1="72" x2="286" y2="112"/>');
+    }
+    parts.push("</svg>");
+    return parts.join("");
+  }
+
   var TOPICS = {
     duty: {
       title: "Working loads and lengths",
@@ -163,6 +266,20 @@
     nomenclature: {
       title: "Nomenclature",
       body: nomenclatureTable
+    },
+    modeA: {
+      title: "Two points",
+      body: function () {
+        return modeChart("two") +
+          "<p>A spring constrained by two load–length points. The nominal line passes through the origin. Max and Min are parallel to it and show the allowable force band. Max meets the deflection axis at a negative deflection; Min meets it at a positive deflection. The vertical bars at s1 and s2 are the force tolerance ±ΔF.</p>";
+      }
+    },
+    modeB: {
+      title: "Point and rate",
+      body: function () {
+        return modeChart("point") +
+          "<p>A spring constrained by one load–length point and the rate. Only that point (s2, F2) is shown. The nominal line passes through the origin and through this point. Max is the largest rate and Min is the smallest, both pivoted about (s2, F2), so the lines fan about it.</p>";
+      }
     }
   };
 

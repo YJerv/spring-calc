@@ -71,16 +71,22 @@
         <h2>2. Design mode</h2>
         <p class="lead">Choose how the duty is entered.</p>
         <div class="mode-toggle" role="radiogroup" aria-label="Input mode">
-          <label id="modeALabel">
-            <input type="radio" name="mode" value="A" checked>
-            <strong>Two points</strong>
-            <small>Two loads and two lengths</small>
-          </label>
-          <label id="modeBLabel">
-            <input type="radio" name="mode" value="B">
-            <strong>Point and rate</strong>
-            <small>One load, one length and the rate</small>
-          </label>
+          <div class="mode-card">
+            <label id="modeALabel">
+              <input type="radio" name="mode" value="A" checked>
+              <strong>Two points</strong>
+              <small>Two loads and two lengths</small>
+            </label>
+            <button type="button" class="info-btn mode-info no-print" data-help="modeA" aria-label="Information: two points" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          </div>
+          <div class="mode-card">
+            <label id="modeBLabel">
+              <input type="radio" name="mode" value="B">
+              <strong>Point and rate</strong>
+              <small>One load, one length and the rate</small>
+            </label>
+            <button type="button" class="info-btn mode-info no-print" data-help="modeB" aria-label="Information: point and rate" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
+          </div>
         </div>
       </div>
     </section>

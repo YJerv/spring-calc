@@ -36,13 +36,13 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
 const helpSrc = fs.readFileSync(path.join(root, "js/help.js"), "utf8");
 
-const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export", "nomenclature"];
+const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export", "nomenclature", "modeA", "modeB"];
 assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the agreed subjects");
 
 console.log("\nButtons sit on the agreed questions only\n");
 
 const buttons = html.match(/class="info-btn[^"]*"/g) || [];
-assert(buttons.length === 10, "There are ten circled information buttons", String(buttons.length));
+assert(buttons.length === 12, "There are twelve circled information buttons", String(buttons.length));
 expected.forEach(function (id) {
   assert(html.indexOf('data-help="' + id + '"') >= 0, "A button opens " + id);
   const topic = Help.topic(id);
@@ -179,6 +179,96 @@ const stress = Help.topic("stress").body;
 ["Bergsträsser", "correction", "Allowable stress factor", "0.5", "0.2", "0.8", "not a certified", "inside"].forEach(function (phrase) {
   assert(stress.indexOf(phrase) >= 0, "Stress help includes: " + phrase);
 });
+
+console.log("\nDesign-mode charts\n");
+
+const modeSection = section(html, "step-2");
+assert(modeSection.indexOf('data-help="modeA"') >= 0 && modeSection.indexOf('data-help="modeB"') >= 0, "Each design mode has an information button");
+assert(modeSection.indexOf('class="mode-card"') >= 0, "Each mode is its own card");
+function modeCard(id) {
+  const at = modeSection.indexOf('id="' + id + '"');
+  return modeSection.slice(modeSection.lastIndexOf('<div class="mode-card">', at), modeSection.indexOf("</div>", at));
+}
+["modeALabel", "modeBLabel"].forEach(function (id) {
+  const card = modeCard(id);
+  const labelEnd = card.indexOf("</label>");
+  assert(card.indexOf("info-btn") > labelEnd, id + " information button is outside the mode label");
+});
+assert(app.indexOf("ev.stopPropagation()") >= 0 && app.indexOf("ev.preventDefault()") >= 0, "An information button does not activate the control under it");
+const twoCaption = "A spring constrained by two load–length points. The nominal line passes through the origin. Max and Min are parallel to it and show the allowable force band. Max meets the deflection axis at a negative deflection; Min meets it at a positive deflection. The vertical bars at s1 and s2 are the force tolerance ±ΔF.";
+const pointCaption = "A spring constrained by one load–length point and the rate. Only that point (s2, F2) is shown. The nominal line passes through the origin and through this point. Max is the largest rate and Min is the smallest, both pivoted about (s2, F2), so the lines fan about it.";
+assert(Help.topic("modeA").body.indexOf(twoCaption) >= 0, "Two points uses Yuan's caption");
+assert(Help.topic("modeB").body.indexOf(pointCaption) >= 0, "Point and rate uses Yuan's caption");
+function chartLines(svg, cls) {
+  const re = new RegExp('<line class="' + cls + '" x1="([-0-9.]+)" y1="([-0-9.]+)" x2="([-0-9.]+)" y2="([-0-9.]+)"', "g");
+  const out = [];
+  let m;
+  while ((m = re.exec(svg))) out.push({ x1: +m[1], y1: +m[2], x2: +m[3], y2: +m[4], cls: cls });
+  return out;
+}
+function chartLabels(svg) {
+  const widths = { "F1, s1": 48, "F2, s2": 48, "±ΔF": 34, "s2, F2": 48 };
+  const re = /<text class="mode-label"[^>]* x="([-0-9.]+)" y="([-0-9.]+)">(.*?)<\/text>/g;
+  const out = [];
+  let m;
+  while ((m = re.exec(svg))) {
+    const w = widths[m[3]];
+    const x = +m[1];
+    const y = +m[2];
+    out.push({ t: m[3], l: x, r: x + w, top: y - 12, b: y + 3 });
+  }
+  return out;
+}
+function gapToSegment(box, seg) {
+  let best = 1e9;
+  for (let i = 0; i <= 48; i++) {
+    const x = seg.x1 + (seg.x2 - seg.x1) * i / 48;
+    const y = seg.y1 + (seg.y2 - seg.y1) * i / 48;
+    const cx = Math.max(box.l, Math.min(box.r, x));
+    const cy = Math.max(box.top, Math.min(box.b, y));
+    best = Math.min(best, Math.hypot(x - cx, y - cy));
+  }
+  return best;
+}
+["modeA", "modeB"].forEach(function (id) {
+  const body = Help.topic(id).body;
+  const svg = body.slice(body.indexOf("<svg"), body.indexOf("</svg>") + 6);
+  const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+  const W = +vb[1];
+  const H = +vb[2];
+  assert(svg.indexOf("Force F (N)") >= 0 && svg.indexOf("Deflection s (mm)") >= 0, id + " names both axes");
+  assert(svg.indexOf(">Max<") >= 0 && svg.indexOf(">Nominal<") >= 0 && svg.indexOf(">Min<") >= 0, id + " has the legend");
+  assert(svg.indexOf('y="26"') >= 0 && svg.indexOf('y1="22"') >= 0, id + " keeps the legend in the top margin");
+  const axes = chartLines(svg, "mode-axis");
+  const originX = axes[1].x1;
+  const maxCross = (function (line) {
+    const t = (axes[0].y1 - line.y1) / (line.y2 - line.y1);
+    return line.x1 + t * (line.x2 - line.x1);
+  })(chartLines(svg, "mode-max")[0]);
+  const minCross = (function (line) {
+    const t = (axes[0].y1 - line.y1) / (line.y2 - line.y1);
+    return line.x1 + t * (line.x2 - line.x1);
+  })(chartLines(svg, "mode-min")[0]);
+  if (id === "modeA") {
+    assert(maxCross < originX && minCross > originX, "Max crosses left of the origin and Min crosses to the right");
+    assert((svg.match(/mode-bar/g) || []).length === 2, "Two points draws both tolerance bars");
+    assert(svg.indexOf(">F1, s1<") >= 0 && svg.indexOf(">F2, s2<") >= 0 && svg.indexOf(">±ΔF<") >= 0, "Two points labels the points and the tolerance");
+  } else {
+    assert((svg.match(/mode-point/g) || []).length === 1, "Point and rate shows one point");
+    assert((svg.match(/mode-bar/g) || []).length === 0, "Point and rate has no second tolerance bar");
+    assert(svg.indexOf(">s2, F2<") >= 0 && svg.indexOf(">F1, s1<") === -1, "Point and rate labels only s2, F2");
+  }
+  const segs = ["mode-max", "mode-nom", "mode-min", "mode-guide", "mode-bar", "mode-axis", "mode-leader"].reduce(function (all, cls) {
+    return all.concat(chartLines(svg, cls));
+  }, []);
+  chartLabels(svg).forEach(function (box) {
+    assert(box.l >= 2 && box.r <= W - 2 && box.top >= 2 && box.b <= H - 2, id + " label " + box.t + " stays inside the chart");
+    segs.forEach(function (seg) {
+      assert(gapToSegment(box, seg) >= 3, id + " label " + box.t + " stays off the " + seg.cls + " line");
+    });
+  });
+});
+assert(css.indexOf(".mode-chart .mode-max") >= 0 && css.indexOf('html[data-resolved="dark"] .mode-chart .mode-max') >= 0, "Mode charts have light and dark strokes");
 
 console.log("\nBoundaries\n");
 
