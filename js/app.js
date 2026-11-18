@@ -192,13 +192,10 @@
 
   function refreshGeomSummary() {
     var g = geometry();
-    var box = $("geomSummary");
     var note = $("constraintNote");
     var conflict = E.constraintConflict(g.pocket, E.springGuideLimit(g));
     if (note) note.textContent = conflict || "";
     var active = activeStressText(g);
-    box.innerHTML =
-      "<dt>Active stress limit</dt><dd>" + (active || "—") + "</dd>";
     var line = $("stressActive");
     if (line) line.textContent = active ? "Active limit: " + active + "." : "No stress limit is active yet.";
   }
