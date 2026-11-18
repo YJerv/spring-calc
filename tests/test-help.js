@@ -283,6 +283,18 @@ function gapToSegment(box, seg) {
   if (id === "modeA") {
     assert(maxCross < originX && minCross > originX, "Max crosses left of the origin and Min crosses to the right");
     assert((svg.match(/mode-bar/g) || []).length === 2, "Two points draws both tolerance bars");
+    const leaders = chartLines(svg, "mode-leader");
+    const bars = chartLines(svg, "mode-bar");
+    assert(leaders.length === 2 && (svg.match(/marker-end="url\(#mode-arrow\)"/g) || []).length === 2, "Each tolerance bar has an arrowhead leader");
+    leaders.forEach(function (leader) {
+      const touches = bars.some(function (bar) {
+        const onX = Math.abs(leader.x2 - bar.x1) < 0.2 && Math.abs(bar.x1 - bar.x2) < 0.2;
+        const yLo = Math.min(bar.y1, bar.y2);
+        const yHi = Math.max(bar.y1, bar.y2);
+        return onX && leader.y2 >= yLo - 0.2 && leader.y2 <= yHi + 0.2;
+      });
+      assert(touches, "An arrowhead touches a vertical tolerance bar");
+    });
     assert(svg.indexOf(">F1<") >= 0 && svg.indexOf(">F2<") >= 0 && svg.indexOf(">L1<") >= 0 && svg.indexOf(">L2<") >= 0 && svg.indexOf(">±ΔF<") >= 0, "Two points labels F1 and F2 on the load axis and L1 and L2 on the deflection axis");
   } else {
     assert((svg.match(/mode-point/g) || []).length === 1, "Point and rate shows one point");

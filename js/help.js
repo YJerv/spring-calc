@@ -132,6 +132,7 @@
     var minS = two ? ex.R : ex.Rlo;
     var parts = [];
     parts.push('<svg class="help-svg mode-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-hidden="true">');
+    parts.push('<defs><marker id="mode-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse"><path class="mode-arrow" d="M0 0 L8 4 L0 8 Z"/></marker></defs>');
     parts.push(band(maxI, maxS, minI, minS));
     parts.push('<line class="mode-axis" x1="' + n(plot.l) + '" y1="' + n(Y(0)) + '" x2="' + n(plot.r) + '" y2="' + n(Y(0)) + '"/>');
     parts.push('<line class="mode-axis" x1="' + n(X(0)) + '" y1="' + n(plot.t) + '" x2="' + n(X(0)) + '" y2="' + n(plot.b) + '"/>');
@@ -177,7 +178,8 @@
       axisName("L1", X(ex.s1), Y(0) + 16, "middle");
       axisName("L2", X(ex.s2), Y(0) + 16, "middle");
       parts.push('<text class="mode-label" data-label="df" x="188" y="72" text-anchor="start">±ΔF</text>');
-      parts.push('<line class="mode-leader" x1="205" y1="80" x2="176" y2="150"/>');
+      parts.push('<line class="mode-leader" x1="205" y1="82" x2="' + n(X(ex.s1)) + '" y2="' + n(Y(ex.F1)) + '" marker-end="url(#mode-arrow)"/>');
+      parts.push('<line class="mode-leader" x1="205" y1="82" x2="' + n(X(ex.s2)) + '" y2="' + n(Y(ex.F2)) + '" marker-end="url(#mode-arrow)"/>');
     } else {
       axisName("F", X(0) - 8, Y(ex.F2) - 8, "end");
       axisName("L", X(ex.s2), Y(0) + 16, "middle");

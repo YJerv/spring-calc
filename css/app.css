@@ -308,6 +308,7 @@ legend.with-info { width: 100%; padding-right: 0; }
 .mode-chart .mode-guide { stroke: var(--muted); stroke-width: 1.15; fill: none; stroke-dasharray: 3 3; }
 .mode-chart .mode-bar { stroke: var(--ink); stroke-width: 3; fill: none; }
 .mode-chart .mode-leader { stroke: var(--ink); stroke-width: 1; fill: none; }
+.mode-chart .mode-arrow { fill: currentColor; }
 .mode-chart .mode-point { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
 .mode-chart .mode-tick { font-size: 11px; }
 .mode-chart .mode-axis-title { font-size: 12px; font-weight: 650; }
