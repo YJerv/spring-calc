@@ -274,7 +274,7 @@ function gapToSegment(box, seg) {
   } else {
     assert((svg.match(/mode-point/g) || []).length === 1, "Point and rate shows one point");
     assert((svg.match(/mode-bar/g) || []).length === 0, "Point and rate has no second tolerance bar");
-    assert(svg.indexOf(">s2, F2<") >= 0 && svg.indexOf(">F1, s1<") === -1, "Point and rate labels only s2, F2");
+    assert(svg.indexOf(">F<") >= 0 && svg.indexOf(">L<") >= 0 && svg.indexOf(">s2, F2<") === -1 && svg.indexOf(">F1<") === -1, "Point and rate labels F on the load axis and L on the deflection axis");
   }
   const segs = ["mode-max", "mode-nom", "mode-min", "mode-guide", "mode-bar", "mode-axis", "mode-leader"].reduce(function (all, cls) {
     return all.concat(chartLines(svg, cls));

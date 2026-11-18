@@ -179,8 +179,8 @@
       parts.push('<text class="mode-label" data-label="df" x="188" y="72" text-anchor="start">±ΔF</text>');
       parts.push('<line class="mode-leader" x1="205" y1="80" x2="176" y2="150"/>');
     } else {
-      parts.push('<text class="mode-label" data-label="point" x="292" y="64" text-anchor="start">s2, F2</text>');
-      parts.push('<line class="mode-leader" x1="300" y1="72" x2="286" y2="112"/>');
+      axisName("F", X(0) - 8, Y(ex.F2) - 8, "end");
+      axisName("L", X(ex.s2), Y(0) + 16, "middle");
     }
     parts.push("</svg>");
     return parts.join("");
