@@ -33,6 +33,7 @@ const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const appJs = fs.readFileSync(path.join(__dirname, "..", "js", "app.js"), "utf8");
 const helpJs = fs.readFileSync(path.join(__dirname, "..", "js", "help.js"), "utf8");
 const swJs = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
+const css = fs.readFileSync(path.join(__dirname, "..", "css", "app.css"), "utf8");
 const pages = [1, 2, 3, 4, 5, 6, 7].map(function (n) { return section(html, "step-" + n); });
 
 console.log("Seven-page order\n");
@@ -115,6 +116,8 @@ assert(pages[6].indexOf(">Drawing export<") >= 0, "The export card is named Draw
 assert(pages[6].indexOf('id="exportFold"') < pages[6].indexOf('id="springFold"'), "The scaled side view sits below the drawing export");
 assert(pages[6].indexOf(">Scaled side view at free length<") >= 0, "The side view keeps its own heading at the bottom");
 assert(appJs.indexOf('summary.setAttribute("aria-expanded"') >= 0, "Result cards expose aria-expanded");
+assert(css.indexOf("details > summary") >= 0 && css.indexOf("font-size: 18px") >= 0 && css.indexOf("font-weight: 600") >= 0, "Section titles are 18 px and semibold");
+assert(css.indexOf("width: 32px") >= 0 && css.indexOf("height: 32px") >= 0 && css.indexOf("details[open] > summary::after { transform: rotate(180deg); }") >= 0, "The section chevron is a 32 px control that rotates when open");
 assert(appJs.indexOf('card.id === "loadFold"') >= 0 && appJs.indexOf("renderLoadGraph($(\"graphSvg\")") >= 0, "Opening the load card redraws the graph");
 assert(pages[6].indexOf('id="gradeResult"') === -1, "The results page has no tolerance grade menu");
 assert(html.indexOf("If your phone is set to dark mode, some screens may not display correctly.") >= 0, "Settings uses the short dark-mode line");
