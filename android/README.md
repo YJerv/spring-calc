@@ -8,7 +8,7 @@ Chrome draws it without the browser bar once Digital Asset Links check out. The 
 
 The project matches the current [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) template (Android Gradle Plugin 8.9.1, `compileSdk` / `targetSdk` 36, `androidbrowserhelper` 2.7.4). From 31 August 2026 Google Play requires new apps to target Android 16, API 36. That is already set.
 
-There is **no Play Billing code**. £4.99 is a paid download, configured in Play Console. The owner installs it without paying by being a licence tester.
+Play Billing for the one-off drawing unlock is in the web app (`js/entitlement.js`) and **defaults off**. Until that flag is turned on, the calculator stays free and the A3 PDF stays the unpaid preview. The product id `spring_calc_drawing_unlock_PLACEHOLDER` is not a live Play Console product. Real purchase, restore and acknowledgement need Play Console and a licence tester. The owner can still be a licence tester so an internal-test purchase is not charged.
 
 Nothing in this folder is a Play Console password, a keystore, or a signing password. Do not add those.
 
