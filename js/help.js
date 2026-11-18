@@ -251,12 +251,12 @@
         "<p>k = (w + 0.5) / (w − 0.75), where w is the spring index D/d.</p>" +
         "<p>It matters because skipping it understates the inside stress, and a spring can then look acceptable when it is not. The factor grows as the coil gets tighter. At the index limits this app already uses, it is about 1.38 at index 4 and about 1.08 at index 16. The expression is not used at index 0.75 or below. This correction is not a fatigue life, not a temperature derating, and not a certified allowable stress.</p>" +
         "<h3>Allowable stress factor</h3>" +
-        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. Optimization uses the same active limit.</p>" +
+        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. Optimisation uses the same active limit.</p>" +
         "<p>Entered stress limit bypasses Rm. When that choice is active, every stress check uses the number in MPa and the page states that the limit was entered directly. The factor × Rm path stays in use until that choice is selected.</p>"
     },
     wire: {
       title: "Standard wire diameters",
-      body: "<p>Optimization tries the standard wire sizes at several mean coil diameters inside the pocket, the spring guide and the index limits. The objective is the lowest corrected stress, with working deflection between 30% and 70%. If that finds nothing, the page widens the deflection band to 20–80% and says so. If that still finds nothing, it allows a stress limit 20% higher and says so.</p>" +
+      body: "<p>Optimisation tries the standard wire sizes at several mean coil diameters inside the pocket, the spring guide and the index limits. The objective is the lowest corrected stress, with working deflection between 30% and 70%. If that finds nothing, the page widens the deflection band to 20–80% and says so. If that still finds nothing, it allows a stress limit 20% higher and says so.</p>" +
         "<p>The wire menu lists standard sizes around the optimum. Pick a row to use that mean diameter and wire. As the spring compresses, the coil diameter increases by the EN 13906-1 expression ΔDe = 0.1(s² − 0.8sd − 0.2d²)/D. The page flags a pocket or guide clearance that is no longer met.</p>"
     },
     graph: {

@@ -78,7 +78,8 @@ assert(helpJs.indexOf("used as the most compressed condition") >= 0, "The info w
 assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<") === -1, "Calculate has been renamed");
 assert(pages[4].indexOf('id="loadSummary"') === -1, "Rate, free length and maximum load are not repeated under Check");
 assert(pages[4].indexOf('data-help="check"') >= 0, "The Check explanation is an information window");
-assert(pages[5].indexOf(">6. Optimization<") >= 0 && pages[5].indexOf('id="optWire"') >= 0 && pages[5].indexOf('id="optCandidates"') >= 0, "Page 6 is Optimization with a wire picker and candidates");
+assert(pages[5].indexOf(">6. Optimisation<") >= 0 && pages[5].indexOf('id="optWire"') >= 0 && pages[5].indexOf('id="optCandidates"') >= 0, "Page 6 is Optimisation with a wire picker and candidates");
+assert(html.indexOf("Optimization") === -1 && helpJs.indexOf("Optimization") === -1, "The page and the help use the British spelling Optimisation");
 assert(pages[5].indexOf("heatmap") === -1 && html.indexOf('id="heatmapScroll"') === -1, "The heat map is gone");
 assert(pages[5].indexOf('id="optCandidates"') < pages[5].indexOf('id="btnOptimise"'), "Optimise sits below the wire list");
 assert(pages[5].indexOf(">Optimise<") >= 0 && pages[5].indexOf('id="Dslider"') >= 0 && pages[5].indexOf('id="tradeoffSvg"') >= 0, "The diameter slider and stress graph are on Optimization");
