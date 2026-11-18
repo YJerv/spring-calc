@@ -170,6 +170,8 @@ const ends = Help.topic("ends").body;
   assert(ends.indexOf("assets/help/" + file) >= 0, "End help shows " + file);
 });
 assert((ends.match(/<img/g) || []).length === 4, "End help has four pictures");
+assert((ends.match(/<figcaption>/g) || []).length === 4, "Each end diagram has one title");
+assert((ends.match(/<h3/g) || []).length === 0, "End diagrams do not add a second heading");
 assert(ends.indexOf("<svg") === -1, "End help uses Yuan's photographs");
 assert(ends.indexOf("The diagrams show the four end types.") >= 0, "End help leaves the explanation to the diagrams");
 assert(ends.indexOf('class="help-zoom"') >= 0 && diameters.indexOf('class="help-zoom"') >= 0,
@@ -182,6 +184,7 @@ const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css/app.css"), "utf8");
 assert(css.indexOf(".help-diagram") >= 0 && css.indexOf("max-width: 100%") >= 0 && css.indexOf("height: auto") >= 0,
   "Help images scale to the window width");
+assert(css.indexOf(".end-grid .help-diagram { width: 65%") >= 0, "End diagrams are about two thirds of the previous size");
 assert(css.indexOf(".help-nomenclature th") >= 0 && css.indexOf("position: sticky") >= 0 && css.indexOf(".help-table-scroll") >= 0,
   "The nomenclature table keeps a sticky header and scrolls");
 const materials = Help.topic("materials").body;

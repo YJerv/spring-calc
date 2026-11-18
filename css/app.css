@@ -320,9 +320,10 @@ html[data-resolved="dark"] .mode-chart .mode-band { fill: rgba(226, 181, 106, 0.
 .help-solid { fill: none; stroke: var(--ink); stroke-width: 3; }
 .help-pocket { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; }
 .help-rod { fill: var(--gold-soft); stroke: var(--gold); stroke-width: 2; }
-.end-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.end-grid figure { margin: 0; }
-.end-grid figcaption { font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; }
+.end-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.end-grid figure { margin: 0; text-align: center; }
+.end-grid figcaption { font-size: 0.95rem; font-weight: 650; margin: 0 0 6px; text-align: center; }
+.end-grid .help-diagram { width: 65%; max-width: 65%; margin: 0 auto; }
 .lead {
   margin: 0 0 14px;
   color: var(--muted);
