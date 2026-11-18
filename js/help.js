@@ -13,6 +13,7 @@
 
   /* Root-relative so the raw.githack preview and the installed page load the same file. */
   var HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png";
+  var HELP_LENGTHS_IMAGE = "assets/help/help-working-lengths.png";
 
   function dutyGraph() {
     var charts = typeof SpringCharts !== "undefined" ? SpringCharts : require("./charts.js");
@@ -273,7 +274,7 @@
     lengths: {
       title: "Working lengths",
       body: function () {
-        return dutyGraph() +
+        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths and the loads at those lengths") +
           "<p>L1 is the most relaxed working length, the longest length in service. L2 is the most compressed working length, the shortest length in service. The two lengths are the working-length range.</p>" +
           "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>";
       }
