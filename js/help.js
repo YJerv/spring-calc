@@ -163,12 +163,19 @@
     markS.forEach(function (s, i) {
       parts.push('<circle class="mode-point" cx="' + n(X(s)) + '" cy="' + n(Y(markF[i])) + '" r="3.5"/>');
     });
-    parts.push('<line class="mode-key mode-max" x1="62" y1="22" x2="86" y2="22"/>');
-    parts.push('<text class="mode-key-label" x="90" y="26">Max</text>');
-    parts.push('<line class="mode-key mode-nom" x1="148" y1="22" x2="172" y2="22"/>');
-    parts.push('<text class="mode-key-label" x="176" y="26">Nominal</text>');
-    parts.push('<line class="mode-key mode-min" x1="250" y1="22" x2="274" y2="22"/>');
-    parts.push('<text class="mode-key-label" x="278" y="26">Min</text>');
+    function keyItem(cls, name, x) {
+      parts.push('<line class="mode-key ' + cls + '" x1="' + x + '" y1="22" x2="' + (x + 24) + '" y2="22"/>');
+      parts.push('<text class="mode-key-label" x="' + (x + 28) + '" y="26">' + name + "</text>");
+    }
+    if (two) {
+      keyItem("mode-max", "Max", 62);
+      keyItem("mode-nom", "Nominal", 148);
+      keyItem("mode-min", "Min", 250);
+    } else {
+      keyItem("mode-max", "Max rate", 8);
+      keyItem("mode-nom", "Nominal", 118);
+      keyItem("mode-min", "Min rate", 214);
+    }
     function axisName(text, x, y, anchor) {
       parts.push('<text class="mode-label" data-label="' + text + '" x="' + n(x) + '" y="' + n(y) + '" text-anchor="' + anchor + '">' + text + "</text>");
     }

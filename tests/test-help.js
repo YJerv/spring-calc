@@ -268,7 +268,13 @@ function gapToSegment(box, seg) {
   const W = +vb[1];
   const H = +vb[2];
   assert(svg.indexOf("Force F (N)") >= 0 && svg.indexOf("Deflection s (mm)") >= 0, id + " names both axes");
-  assert(svg.indexOf(">Max<") >= 0 && svg.indexOf(">Nominal<") >= 0 && svg.indexOf(">Min<") >= 0, id + " has the legend");
+  assert(svg.indexOf(">Nominal<") >= 0, id + " has the nominal legend");
+  if (id === "modeA") {
+    assert(svg.indexOf(">Max<") >= 0 && svg.indexOf(">Min<") >= 0, "Two points names the force band Max and Min");
+  } else {
+    assert(svg.indexOf(">Max rate<") >= 0 && svg.indexOf(">Min rate<") >= 0, "Point and rate names Max rate and Min rate");
+    assert(svg.indexOf(">Max<") === -1 && svg.indexOf(">Min<") === -1, "Point and rate does not shorten those names");
+  }
   assert(svg.indexOf('y="26"') >= 0 && svg.indexOf('y1="22"') >= 0, id + " keeps the legend in the top margin");
   const axes = chartLines(svg, "mode-axis");
   const originX = axes[1].x1;
