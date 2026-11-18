@@ -370,6 +370,11 @@ html[data-resolved="dark"] .mode-chart .mode-band { fill: rgba(226, 181, 106, 0.
   gap: 10px;
 }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.field.is-inactive { opacity: 0.45; }
+.field.is-inactive input {
+  background: var(--surface-2);
+  color: var(--muted);
+}
 .field.full { grid-column: 1 / -1; }
 .field label, .field .lbl {
   font-size: 0.78rem;

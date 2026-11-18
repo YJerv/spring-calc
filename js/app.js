@@ -204,6 +204,8 @@
     var direct = stressMode() === "direct";
     $("tauAllowDirect").disabled = !direct;
     $("tauFactor").disabled = direct;
+    $("tauFactor").closest(".field").classList.toggle("is-inactive", direct);
+    $("tauAllowDirect").closest(".field").classList.toggle("is-inactive", !direct);
     refreshGeomSummary();
   }
 

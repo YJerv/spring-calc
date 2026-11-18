@@ -67,6 +67,9 @@ assert(pages[3].indexOf('data-help="materials"') < pages[3].indexOf('id="materia
 assert(pages[3].indexOf('id="materialFold"') < pages[3].indexOf('id="material"') && pages[3].indexOf('id="material"') < pages[3].indexOf("</details>", pages[3].indexOf('id="material"')), "The material fields sit in the material section");
 assert(pages[3].indexOf('id="material"') >= 0 && pages[3].indexOf('name="stressMode"') >= 0 && pages[3].indexOf('id="tauAllowDirect"') >= 0, "Material and the stress limit moved here");
 assert(pages[3].indexOf('id="geomSummary"') === -1 && appJs.indexOf('id="geomSummary"') === -1 && appJs.indexOf("geomSummary") === -1, "Design options no longer shows the active-stress box");
+assert(pages[3].indexOf('class="field is-inactive"') < pages[3].indexOf('id="tauAllowDirect"') && pages[3].indexOf('id="tauAllowDirect"') < pages[3].indexOf("disabled"), "The entered stress limit starts greyed out and disabled");
+assert(appJs.indexOf('classList.toggle("is-inactive", direct)') >= 0 && appJs.indexOf('classList.toggle("is-inactive", !direct)') >= 0, "The unused stress input is greyed and the active one is not");
+assert(css.indexOf(".field.is-inactive") >= 0, "An unused stress input is drawn grey");
 assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");
 assert(pages[4].indexOf('id="modeBPoint"') === -1, "Point and rate does not ask which condition the point is");
 assert(pages[4].indexOf('id="Lb"') >= 0 && pages[4].indexOf('id="Fb"') >= 0 && pages[4].indexOf('id="Rb"') >= 0, "Point and rate enters one length, one force and the rate");

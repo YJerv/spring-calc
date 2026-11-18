@@ -196,6 +196,12 @@ assert(direct.reasons.some(function (r) { return r.indexOf("700 MPa") >= 0; }) =
 const factorStill = E.evaluateDesign(example);
 assert(factorStill.stressSource === "factor" && Math.abs(factorStill.tauAllow - 900) < 1e-6,
   "Without the direct choice the allowable stays 0.5 × Rm");
+const ignoredDirect = E.evaluateDesign(Object.assign({}, example, { useDirectStress: false, tauAllowDirect: 100 }));
+assert(ignoredDirect.stressSource === "factor" && Math.abs(ignoredDirect.tauAllow - 900) < 1e-6,
+  "A filled stress-limit box is ignored while the factor is selected");
+const ignoredFactor = E.evaluateDesign(Object.assign({}, example, { useDirectStress: true, tauAllowDirect: 700, tauFactor: 0.2 }));
+assert(ignoredFactor.stressSource === "direct" && Math.abs(ignoredFactor.tauAllow - 700) < 1e-6,
+  "The factor is ignored while the entered stress limit is selected");
 
 const ranged = E.deriveModeB(125, 40, 5, "F2", { Lcomp: 30, Lrel: 48 });
 assert(ranged.ok && Math.abs(ranged.L2 - 30) < 1e-9 && Math.abs(ranged.L1 - 48) < 1e-9,
