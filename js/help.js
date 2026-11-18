@@ -15,11 +15,6 @@
   var HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png";
   var HELP_LENGTHS_IMAGE = "assets/help/help-working-lengths.png";
 
-  function dutyGraph() {
-    var charts = typeof SpringCharts !== "undefined" ? SpringCharts : require("./charts.js");
-    return charts.dutyIllustration();
-  }
-
   function helpImage(src, alt, id) {
     var idAttr = id ? ' id="' + id + '"' : "";
     return '<a class="help-zoom" href="' + src + '" target="_blank" rel="noopener">' +
@@ -195,7 +190,7 @@
     duty: {
       title: "Working loads and lengths",
       body: function () {
-        return dutyGraph() +
+        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths and the loads at those lengths") +
         "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>" +
         "<h3>What the letters mean</h3>" +
         "<p>L0: Free length (zero load).</p>" +

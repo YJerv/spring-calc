@@ -124,12 +124,13 @@ console.log("\nAgreed content, in original words\n");
 
 const duty = Help.topic("duty").body;
 ["L0: Free length (zero load)", "L1: Most relaxed working length", "L2: Most compressed working length",
-  "Lc: Closed (solid) length", "not necessarily a dead weight",
-  ">F1<", ">F2<",
+  "Lc: Closed (solid) length", "not necessarily a dead weight", "What the letters mean",
+  "assets/help/help-working-lengths.png",
   "Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln."].forEach(function (phrase) {
   assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
 });
-assert(duty.indexOf("L1 / F1") === -1, "Duty help no longer puts an L callout on the graph");
+assert(duty.indexOf("L1 / F1") === -1 && duty.indexOf("L2 / F2") === -1, "Duty help has no length callouts on the plot");
+assert(duty.indexOf("<svg") === -1, "Duty help uses Yuan's diagram");
 const check = Help.topic("check").body;
 ["Green", "30%", "70%", "Orange", "20%", "80%", "Red", "solid length",
   "bring the forces closer together", "widen the gap between them to increase the rate",
@@ -138,7 +139,7 @@ const check = Help.topic("check").body;
   assert(check.indexOf(phrase) >= 0, "Check help includes: " + phrase);
 });
 assert(check.indexOf("bring the loads closer to cut the rate") === -1, "The old breach advice is gone");
-assert(duty.indexOf("help-svg duty-graph") >= 0, "Duty help draws the load graph");
+assert(duty.indexOf("help-svg duty-graph") === -1, "Duty help does not draw the generated springs");
 const diameters = Help.topic("diameters").body;
 ["Pocket", "Clearance", "spring guide", "Leave a box blank for no limit",
   "assets/help/help-diameter-limits.png", "id=\"diameterDiagram\""].forEach(function (phrase) {
