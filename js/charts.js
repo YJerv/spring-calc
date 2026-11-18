@@ -74,7 +74,7 @@
   function renderLoadGraph(svg, design) {
     var W = 390;
     var H = 360;
-    var pad = { l: 58, r: 14, t: 26, b: 102 };
+    var pad = { l: 58, r: 96, t: 26, b: 102 };
     var L0 = design.L0;
     var Lc = design.Lc;
     var span = Math.max(L0 - Lc, 1);
@@ -101,14 +101,23 @@
       x1: pad.l, y1: pad.t, x2: pad.l, y2: H - pad.b,
       stroke: "var(--chart-ink)", "stroke-width": 1.2
     }));
+    var stressAxisX = W - pad.r;
     parts.push(empty("line", {
-      x1: pad.l, y1: H - pad.b, x2: W - pad.r, y2: H - pad.b,
+      x1: pad.l, y1: H - pad.b, x2: stressAxisX, y2: H - pad.b,
       stroke: "var(--chart-ink)", "stroke-width": 1.2
+    }));
+    parts.push(empty("line", {
+      x1: stressAxisX, y1: pad.t, x2: stressAxisX, y2: H - pad.b,
+      stroke: "var(--chart-ink)", "stroke-width": 1.2, "data-axis": "stress"
     }));
     parts.push(el("text", {
       x: 12, y: 16, fill: "var(--chart-ink)", "font-size": 12,
       "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
     }, ["Load F (N)"]));
+    parts.push(el("text", {
+      x: stressAxisX + 4, y: 16, fill: "var(--chart-ink)", "font-size": 12,
+      "font-family": "ui-sans-serif, system-ui, sans-serif", "font-weight": 600
+    }, ["τk (MPa)"]));
     parts.push(el("text", {
       x: pad.l + (W - pad.l - pad.r) / 2, y: H - 14, fill: "var(--chart-ink)", "font-size": 12,
       "text-anchor": "middle",
@@ -187,7 +196,7 @@
     }
     var titleBox = labelBox("Load F (N)", 12, 16, labelFont, "start");
     function blocked(b, placed) {
-      if (b.x < pad.l + 2 || b.y < 2 || b.x + b.w > W - 2 || b.y + b.h > axisY - 2) return true;
+      if (b.x < pad.l + 2 || b.y < 2 || b.x + b.w > stressAxisX - 4 || b.y + b.h > axisY - 2) return true;
       if (hitsSpring(b) || boxesHit(b, titleBox, 2)) return true;
       var i;
       for (i = 0; i < placed.length; i++) {
@@ -267,8 +276,42 @@
       }
       return specs.length ? specs : null;
     }
-    var dualSpecs = tryRow(true, true) || trySplit() || tryRow(true, false) || tryRow(false, false) || [];
+    function tryPercentOnly() {
+      var placed = [];
+      var specs = [];
+      var ordered = loaded.slice().sort(function (a, b) { return b.F - a.F; });
+      var i;
+      for (i = 0; i < ordered.length; i++) {
+        var s = ordered[i];
+        var texts = stationTexts(s);
+        var x = xOf(s.L);
+        var y = yOf(s.F);
+        var pctBox = findBox(texts.pct, y - labelGap - labelH, (pad.l + x) / 2, placed)
+          || findBox(texts.pct, Math.max(pad.t, y - labelGap - labelH - 8), (pad.l + x) / 2, placed);
+        if (!pctBox) return null;
+        placed.push(pctBox);
+        specs.push({ s: s, y: y, pct: pctBox, layout: "split" });
+      }
+      return specs.length ? specs : null;
+    }
+    var dualSpecs = tryRow(true, true) || trySplit() || tryRow(true, false) || tryRow(false, false) || tryPercentOnly() || [];
     function r1(n) { return Math.round(n * 10) / 10; }
+    var rightTaken = [];
+    dualSpecs.slice().sort(function (a, b) { return a.y - b.y; }).forEach(function (spec) {
+      var text = stationTexts(spec.s).tau;
+      var top = spec.y - labelH / 2;
+      var box = dualBox(text, stressAxisX + 6, top);
+      var guard = 0;
+      while (guard < 24 && rightTaken.some(function (prev) { return boxesHit(box, prev, 2); })) {
+        top += 2;
+        box = dualBox(text, stressAxisX + 6, top);
+        guard += 1;
+      }
+      if (box.y < pad.t) box = dualBox(text, stressAxisX + 6, pad.t);
+      if (box.y + box.h > axisY - 2) box = dualBox(text, stressAxisX + 6, axisY - 2 - labelH);
+      spec.tauRight = box;
+      rightTaken.push(box);
+    });
     dualSpecs.forEach(function (spec) {
       function paint(part, box, weight) {
         parts.push(labelText({
@@ -280,7 +323,7 @@
         }, [txt(box.text)]));
       }
       paint("pct", spec.pct, 700);
-      paint("tau", spec.tau, 650);
+      paint("tau", spec.tauRight, 650);
     });
 
     var markerGeom = [];

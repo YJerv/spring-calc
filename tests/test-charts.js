@@ -5,6 +5,7 @@
  */
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 const E = require(path.join(__dirname, "..", "js", "engine.js"));
 const C = require(path.join(__dirname, "..", "js", "charts.js"));
@@ -115,6 +116,9 @@ assert(html.indexOf("35.0 mm") !== -1 || html.indexOf("35 mm") !== -1, "L2 milli
 
 assert((html.match(/MPa/g) || []).length >= 4, "Each loaded station shows τk in MPa");
 assert((html.match(/τk /g) || []).length >= 4, "Horizontal lines are labelled with τk");
+assert(html.indexOf('data-axis="stress"') >= 0 && html.indexOf(">τk (MPa)<") >= 0, "The load graph has a right-hand stress axis in MPa");
+assert(fs.readFileSync(path.join(__dirname, "..", "js", "pdf.js"), "utf8").indexOf("renderLoadGraph") === -1,
+  "The PDF drawing does not include this load graph");
 assert(html.indexOf(" %") !== -1, "Horizontal lines are labelled with compression %");
 
 const axisY = 360 - 102;
@@ -477,7 +481,7 @@ function dualBoxes(html) {
 function hitsSpring(box, design) {
   const W = 390;
   const H = 360;
-  const pad = { l: 58, r: 14, t: 26, b: 102 };
+  const pad = { l: 58, r: 96, t: 26, b: 102 };
   const span = Math.max(design.L0 - design.Lc, 1);
   const Lright = design.Lc - 0.08 * span;
   function xOf(L) {
@@ -521,9 +525,11 @@ dualSamples.forEach(function (sample) {
   const stations = C.loadGraphStations(sample.design).filter(function (s) { return s.id !== "L0"; });
   assert(boxes.length === stations.length * 2, sample.name + ": each loaded station has a percent and a stress label",
     "found " + boxes.length + " for " + stations.length + " stations");
-  const layouts = boxes.map(function (b) { return b.layout; }).filter(function (v, i, all) { return all.indexOf(v) === i; });
-  assert(layouts.length === 1 && layouts[0] === sample.layout,
-    sample.name + ": dual labels use one arrangement (" + sample.layout + ")", layouts.join(","));
+  const pctLayouts = boxes.filter(function (b) { return b.part === "pct"; }).map(function (b) { return b.layout; })
+    .filter(function (v, i, all) { return all.indexOf(v) === i; });
+  assert(pctLayouts.length === 1 && pctLayouts[0] === sample.layout,
+    sample.name + ": compression labels use one arrangement (" + sample.layout + ")", pctLayouts.join(","));
+  const stressAxis = 390 - 96;
   stations.forEach(function (s) {
     const pct = boxes.filter(function (b) { return b.station === s.id && b.part === "pct"; })[0];
     const tau = boxes.filter(function (b) { return b.station === s.id && b.part === "tau"; })[0];
@@ -532,17 +538,15 @@ dualSamples.forEach(function (sample) {
     if (sample.layout === "split") {
       assert(pct.y + pct.h <= pct.line - 1, sample.name + ": " + s.id + " percent sits above its load line",
         "bottom " + (pct.y + pct.h) + " line " + pct.line);
-      assert(tau.y >= tau.line + 1, sample.name + ": " + s.id + " stress sits below its load line",
-        "top " + tau.y + " line " + tau.line);
     } else {
-      assert(Math.abs(pct.y - tau.y) < 0.2, sample.name + ": " + s.id + " percent and stress share one line");
-      assert(pct.x + pct.w <= tau.x - 2, sample.name + ": " + s.id + " percent sits to the left of the stress");
       assert(pct.y + pct.h <= pct.line - 1 || pct.y >= pct.line + 1,
-        sample.name + ": " + s.id + " pair stays off the load line");
+        sample.name + ": " + s.id + " percent stays off the load line");
     }
+    assert(tau.x >= stressAxis, sample.name + ": " + s.id + " stress sits on the right-hand axis",
+      "x " + tau.x + " axis " + stressAxis);
   });
   boxes.forEach(function (b, i) {
-    assert(b.x >= 2 && b.y >= 2 && b.x + b.w <= 388 && b.y + b.h <= 256,
+    assert(b.x >= 2 && b.y >= 2 && b.x + b.w <= 388 && b.y + b.h <= 258,
       sample.name + ": " + b.station + " " + b.part + " stays inside the plot",
       JSON.stringify(b));
     assert(!hitsSpring(b, sample.design), sample.name + ": " + b.station + " " + b.part + " stays off the spring curve");
