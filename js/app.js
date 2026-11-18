@@ -183,11 +183,13 @@
   }
 
   function activeStressText(g) {
-    var direct = g.useDirectStress && g.tauAllowDirect > 0;
-    var tauAllow = direct ? g.tauAllowDirect : (g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null);
+    if (g.useDirectStress) {
+      if (!(g.tauAllowDirect > 0)) return null;
+      return E.fmt(g.tauAllowDirect, 0) + " MPa (entered directly)";
+    }
+    var tauAllow = g.Rm > 0 && g.tauFactor > 0 ? g.tauFactor * g.Rm : null;
     if (!(tauAllow > 0)) return null;
-    var how = direct ? "entered directly" : E.fmt(g.tauFactor, 2) + " × Rm";
-    return E.fmt(tauAllow, 0) + " MPa (" + how + ")";
+    return E.fmt(tauAllow, 0) + " MPa (" + E.fmt(g.tauFactor, 2) + " × Rm)";
   }
 
   function refreshGeomSummary() {
@@ -711,6 +713,7 @@
       state.design = null;
       if (status) status.innerHTML = "<div class=\"status-banner fail\"><strong>No options available</strong> — " + esc(screen.message || E.NO_OPTIONS) + "</div>";
       if (metrics) metrics.innerHTML = "";
+      fillSelectedMetrics(null);
       if (list) list.innerHTML = "";
       if (note) note.textContent = "";
       if ($("optWire")) $("optWire").innerHTML = "";
@@ -755,17 +758,8 @@
         " mm, τk " + E.fmt(candidateStress(best), 1) + " MPa." +
         (screen.warning ? " " + esc(screen.warning) : "") + "</div>";
     }
-    if (metrics) {
-      metrics.innerHTML = [
-        metric("Wire d", E.fmt(best.d, 2) + " mm"),
-        metric("Mean diameter D", E.fmt(best.D, 2) + " mm"),
-        metric("Corrected stress τk", E.fmt(candidateStress(best), 1) + " MPa"),
-        metric("Deflection L1", best.deflPct1 == null ? "—" : E.fmt(best.deflPct1, 1) + " %"),
-        metric("Deflection L2", best.deflPct2 == null ? "—" : E.fmt(best.deflPct2, 1) + " %"),
-        metric("Outside Ø De", E.fmt(best.De, 2) + " mm")
-      ].join("");
-    }
-    var growth = best.growth;
+    fillSelectedMetrics(state.design || best);
+    var growth = (state.design || best).growth;
     if (note) {
       if (growth && growth.flags && growth.flags.length) note.textContent = growth.flags.join(" ");
       else if (growth && growth.delta != null) note.textContent = "At the most compressed length the outside diameter changes by " + E.fmt(growth.delta, 2) + " mm.";
@@ -891,6 +885,7 @@
       state.coilNote = bandNote(ev);
     }
     if ($("Dlabel")) $("Dlabel").textContent = E.fmt(ev.D, 3);
+    fillSelectedMetrics(ev);
     if ($("tradeoffSvg")) C.renderTradeoff($("tradeoffSvg"), state.coilScan ? state.coilScan.rows : [], ev.D);
     if ($("coilMetrics")) {
       $("coilMetrics").innerHTML = [
@@ -936,6 +931,26 @@
 
   function metric(k, v) {
     return "<div class=\"metric\"><div class=\"k\">" + k + "</div><div class=\"v\">" + v + "</div></div>";
+  }
+
+  function fillSelectedMetrics(ev) {
+    var metrics = $("optMetrics");
+    var note = $("optSelectedNote");
+    if (!metrics) return;
+    if (!ev) {
+      metrics.innerHTML = "";
+      if (note) note.textContent = "";
+      return;
+    }
+    if (note) note.textContent = "Selected wire — these figures follow the wire you chose, not only the optimum above.";
+    metrics.innerHTML = [
+      metric("Wire d", E.fmt(ev.d, 2) + " mm"),
+      metric("Mean diameter D", E.fmt(ev.D, 2) + " mm"),
+      metric("Corrected stress τk", E.fmt(candidateStress(ev), 1) + " MPa"),
+      metric("Deflection L1", ev.deflPct1 == null ? "—" : E.fmt(ev.deflPct1, 1) + " %"),
+      metric("Deflection L2", ev.deflPct2 == null ? "—" : E.fmt(ev.deflPct2, 1) + " %"),
+      metric("Outside Ø De", E.fmt(ev.De, 2) + " mm")
+    ].join("");
   }
 
 
