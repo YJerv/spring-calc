@@ -148,7 +148,9 @@ assert(diameters.indexOf("<svg") === -1, "Diameter help uses Yuan's diagram");
 assert(helpSrc.indexOf('HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png"') >= 0,
   "HELP_DIAMETER_IMAGE points at Yuan's diameter diagram");
 const lengthsHelp = Help.topic("lengths").body;
-assert(lengthsHelp.indexOf("assets/help/help-working-lengths.png") >= 0, "Working-length help reuses the length diagram");
+assert(lengthsHelp.indexOf("help-svg duty-graph") >= 0, "Working-length help uses the same graph as Duty");
+assert(lengthsHelp.indexOf(">F1<") >= 0 && lengthsHelp.indexOf(">F2<") >= 0, "Working-length help puts F1 and F2 on the load axis");
+assert(lengthsHelp.indexOf("L1 / F1") === -1 && lengthsHelp.indexOf("L2 / F2") === -1, "Working-length help has no length callouts on the plot");
 assert(lengthsHelp.indexOf("most relaxed working length") >= 0 && lengthsHelp.indexOf("most compressed working length") >= 0, "Working-length help explains L1 and L2");
 assert(lengthsHelp.indexOf("working-length range") >= 0, "Working-length help explains the range");
 assert(lengthsHelp.indexOf("Ln (permissible length) = Lc + 15% of available travel") >= 0, "Working-length help keeps the Ln rule");

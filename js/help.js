@@ -13,7 +13,11 @@
 
   /* Root-relative so the raw.githack preview and the installed page load the same file. */
   var HELP_DIAMETER_IMAGE = "assets/help/help-diameter-limits.png";
-  var HELP_LENGTHS_IMAGE = "assets/help/help-working-lengths.png";
+
+  function dutyGraph() {
+    var charts = typeof SpringCharts !== "undefined" ? SpringCharts : require("./charts.js");
+    return charts.dutyIllustration();
+  }
 
   function helpImage(src, alt, id) {
     var idAttr = id ? ' id="' + id + '"' : "";
@@ -190,8 +194,7 @@
     duty: {
       title: "Working loads and lengths",
       body: function () {
-        var charts = typeof SpringCharts !== "undefined" ? SpringCharts : require("./charts.js");
-        return charts.dutyIllustration() +
+        return dutyGraph() +
         "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>" +
         "<h3>What the letters mean</h3>" +
         "<p>L0: Free length (zero load).</p>" +
@@ -270,7 +273,7 @@
     lengths: {
       title: "Working lengths",
       body: function () {
-        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths L0, L1, L2 and Lc") +
+        return dutyGraph() +
           "<p>L1 is the most relaxed working length, the longest length in service. L2 is the most compressed working length, the shortest length in service. The two lengths are the working-length range.</p>" +
           "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>";
       }
