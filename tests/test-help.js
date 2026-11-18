@@ -131,9 +131,13 @@ const duty = Help.topic("duty").body;
 });
 assert(duty.indexOf("L1 / F1") === -1, "Duty help no longer puts an L callout on the graph");
 const check = Help.topic("check").body;
-["Green", "30%", "70%", "Orange", "20%", "80%", "Red", "solid length"].forEach(function (phrase) {
+["Green", "30%", "70%", "Orange", "20%", "80%", "Red", "solid length",
+  "bring the forces closer together", "widen the gap between them to increase the rate",
+  "reducing the guide diameter", "increasing the pocket diameter",
+  "revisit the working lengths", "alternative material"].forEach(function (phrase) {
   assert(check.indexOf(phrase) >= 0, "Check help includes: " + phrase);
 });
+assert(check.indexOf("bring the loads closer to cut the rate") === -1, "The old breach advice is gone");
 assert(duty.indexOf("help-svg duty-graph") >= 0, "Duty help draws the load graph");
 const diameters = Help.topic("diameters").body;
 ["Pocket", "Clearance", "spring guide", "Leave a box blank for no limit",
