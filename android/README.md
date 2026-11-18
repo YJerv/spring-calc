@@ -35,7 +35,7 @@ The same id is in `twa-manifest.json`, `app/build.gradle`, `AndroidManifest.xml`
 2. Install JDK 17, Bubblewrap and the Android SDK.
 3. Create a signing key and keep it off git.
 4. Build the release App Bundle (`.aab`).
-5. Publish `assetlinks.json` on the **user** GitHub Pages site, not only in this repo.
+5. Publish `assetlinks.json` on the **user** GitHub Pages site, not only in this repo. The exact URL, why `/spring-calc/` is the wrong place, and where the Play App Signing SHA-256 comes from are in [DIGITAL_ASSET_LINKS.md](DIGITAL_ASSET_LINKS.md).
 6. Create the app as **Paid**, price the United Kingdom at **£4.99**, and declare the developer account **non-trader** (individual hobby developer). The public listing shows an email and a country. It does not show a home address.
 7. Add yourself as a licence tester and install from an internal test track.
 
