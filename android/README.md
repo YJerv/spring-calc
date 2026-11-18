@@ -8,7 +8,7 @@ Chrome draws it without the browser bar once Digital Asset Links check out. The 
 
 The project matches the current [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) template (Android Gradle Plugin 8.9.1, `compileSdk` / `targetSdk` 36, `androidbrowserhelper` 2.7.4). From 31 August 2026 Google Play requires new apps to target Android 16, API 36. That is already set.
 
-There is **no Play Billing code**. £4.99 is a paid download, configured in Play Console. The owner installs it without paying by being a licence tester.
+Play Billing for the one-off drawing unlock is in the web app (`js/entitlement.js`) and **defaults off**. Until that flag is turned on, the calculator stays free and the A3 PDF stays the unpaid preview. The product id `spring_calc_drawing_unlock_PLACEHOLDER` is not a live Play Console product. Real purchase, restore and acknowledgement need Play Console and a licence tester. The owner can still be a licence tester so an internal-test purchase is not charged.
 
 Nothing in this folder is a Play Console password, a keystore, or a signing password. Do not add those.
 
@@ -35,7 +35,7 @@ The same id is in `twa-manifest.json`, `app/build.gradle`, `AndroidManifest.xml`
 2. Install JDK 17, Bubblewrap and the Android SDK.
 3. Create a signing key and keep it off git.
 4. Build the release App Bundle (`.aab`).
-5. Publish `assetlinks.json` on the **user** GitHub Pages site, not only in this repo.
+5. Publish `assetlinks.json` on the **user** GitHub Pages site, not only in this repo. The exact URL, why `/spring-calc/` is the wrong place, and where the Play App Signing SHA-256 comes from are in [DIGITAL_ASSET_LINKS.md](DIGITAL_ASSET_LINKS.md).
 6. Create the app as **Paid**, price the United Kingdom at **£4.99**, and declare the developer account **non-trader** (individual hobby developer). The public listing shows an email and a country. It does not show a home address.
 7. Add yourself as a licence tester and install from an internal test track.
 
@@ -165,7 +165,7 @@ bubblewrap update --skipVersionUpgrade
 
 ### Version numbers for a later upload
 
-`appVersion` (`1.4.0`) is the version users see. `appVersionCode` (`1`) is an integer Play requires to increase on every upload. Edit both in `twa-manifest.json`, then:
+`appVersion` (`1.4.1`) is the version users see. `appVersionCode` (`3`) is an integer Play requires to increase on every upload. Internal testing already has versionCode 2, so the next upload is 3. Edit both in `twa-manifest.json`, then:
 
 ```bash
 bubblewrap update --skipVersionUpgrade
@@ -336,4 +336,4 @@ The Gradle files here follow that template, with one deliberate change: `jcenter
 - Notifications are off. The calculator does not post any. `POST_NOTIFICATIONS` is not requested.
 - Fallback if the device has no TWA browser: a Custom Tab, not a bundled WebView. Custom Tabs do not need an `INTERNET` permission on this app. Chrome does the networking.
 - Minimum SDK 24 (Android 7.0). `androidbrowserhelper` 2.7.4 will not merge into a lower `minSdk`. Play’s target is 36.
-- Version name `1.4.0`, version code `1`, matching the PWA’s 1.4 release for the first upload.
+- Version name `1.4.1`, version code `3`. Internal testing already has versionCode 2 (`1.4.0`).

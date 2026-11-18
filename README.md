@@ -138,7 +138,7 @@ Phone-sized captures (390 × 844 logical pixels, 2× pixel density) live in `scr
 
 ## Google Play
 
-`android/` is a Trusted Web Activity that opens https://yjerv.github.io/spring-calc/. Packaging steps, the upload key and Digital Asset Links are described in [android/README.md](android/README.md). Store text is in [android/store/listing.md](android/store/listing.md). This review branch does not sign or upload a build.
+`android/` is a Trusted Web Activity that opens https://yjerv.github.io/spring-calc/. Packaging steps, the upload key and Digital Asset Links are described in [android/README.md](android/README.md). Store text is in [android/store/listing.md](android/store/listing.md). This branch does not sign a release or upload a build.
 
 ## Limitations
 

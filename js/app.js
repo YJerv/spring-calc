@@ -1657,11 +1657,18 @@
       persist();
     }
     $("grade").addEventListener("change", function () { onGradeInput("grade"); });
+    function currentExportEntitlement() {
+      if (typeof SpringEntitlement.playBillingEnabled === "function" &&
+          SpringEntitlement.playBillingEnabled() && state.playEntitlement) {
+        return state.playEntitlement;
+      }
+      return SpringEntitlement.productionEntitlement();
+    }
     function refreshExportName() {
       if (!$("exportFilename") || typeof SpringPdf === "undefined" || typeof SpringEntitlement === "undefined") return;
       var naming = SpringPdf.exportFilename({
         requestedName: val("exportName"),
-        entitlement: SpringEntitlement.productionEntitlement()
+        entitlement: currentExportEntitlement()
       });
       $("exportFilename").textContent = "This file will be saved as " + naming.filename + ".";
     }
@@ -1673,7 +1680,7 @@
       state.design.serviceTemp = geometry().serviceTemp;
       state.design.materialName = E.materialById(val("material")).shortName;
       var entitlement = (typeof SpringEntitlement !== "undefined")
-        ? SpringEntitlement.productionEntitlement()
+        ? currentExportEntitlement()
         : undefined;
       var naming = SpringPdf.exportFilename({
         requestedName: val("exportName"),
@@ -1742,6 +1749,16 @@
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch(function () { /* offline later */ });
+    }
+    if (typeof SpringEntitlement.playBillingEnabled === "function" &&
+        SpringEntitlement.playBillingEnabled() &&
+        typeof window.getDigitalGoodsService === "function") {
+      window.getDigitalGoodsService(SpringEntitlement.PLAY_BILLING_METHOD).then(function (service) {
+        return SpringEntitlement.restorePurchases(service, true);
+      }).then(function (restored) {
+        state.playEntitlement = restored.entitlement;
+        refreshExportName();
+      }).catch(function () { /* stay unpaid when Play Billing cannot be reached */ });
     }
   }
 
