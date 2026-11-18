@@ -223,14 +223,15 @@
         "<p>Grade 3 – widest tolerances, lowest cost.</p>"
     },
     ends: {
-      title: "End geometry",
+      title: "Ends and wind",
       body: '<div class="end-grid">' +
         endPhoto("Closed and ground", "help-ends-closed-ground.png") +
         endPhoto("Closed, not ground", "help-ends-closed-not-ground.png") +
         endPhoto("Open and ground", "help-ends-open-ground.png") +
         endPhoto("Open, not ground", "help-ends-open-not-ground.png") +
         "</div>" +
-        "<p>The diagrams show the four end types. Ends change the solid length.</p>"
+        "<p>The diagrams show the four end types. Ends change the solid length.</p>" +
+        "<p>A right-hand wound spring is normally expected, unless a nested spring set is being designed. In that case one spring should be left-hand wound so the coils do not pinch or interlock between the springs.</p>"
     },
     materials: {
       title: "Materials",

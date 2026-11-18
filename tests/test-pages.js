@@ -59,9 +59,10 @@ assert(appJs.indexOf("suggestedClearance(pocket)") >= 0 && appJs.indexOf("sugges
 assert(appJs.indexOf("Continue without those limits?") >= 0, "An empty constraints page warns before continuing");
 assert(pages[3].indexOf(">4. Design options<") >= 0, "Page 4 is design options");
 assert(pages[3].indexOf('id="ends"') >= 0 && pages[3].indexOf('id="grade"') >= 0 && pages[3].indexOf('id="wind"') >= 0, "Ends, grade and wind are design options");
-assert(/<details class="fold" id="optionsFold">\s*<summary aria-expanded="false"><span class="fold-title">Ends, grade and wind<\/span>/.test(pages[3]), "Ends, grade and wind start collapsed");
-assert(pages[3].indexOf('data-help="ends"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('data-help="grades"') < pages[3].indexOf('id="grade"'), "Ends and grade information sits on that section title");
-assert(pages[3].indexOf('id="optionsFold"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('id="wind"') < pages[3].indexOf('id="materialFold"'), "Those three fields sit in the design-options section");
+assert(/<details class="fold" id="optionsFold">\s*<summary aria-expanded="false"><span class="fold-title">Ends and wind<\/span><button[^>]*data-help="ends"/.test(pages[3]), "Ends and wind starts collapsed with one information button");
+assert((pages[3].match(/data-help="ends"/g) || []).length === 1 && pages[3].indexOf("Ends, grade and wind") === -1, "Ends and wind does not keep a second information button");
+assert(/<details class="fold" id="gradeFold">\s*<summary aria-expanded="false"><span class="fold-title">Grade<\/span><button[^>]*data-help="grades"/.test(pages[3]), "Grade is its own collapsed section");
+assert(pages[3].indexOf('id="optionsFold"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('id="wind"') < pages[3].indexOf('id="gradeFold"') && pages[3].indexOf('id="grade"') < pages[3].indexOf('id="materialFold"'), "Grade sits between Ends and wind and Material");
 assert(/<details class="fold" id="materialFold">\s*<summary aria-expanded="false"><span class="fold-title">Material<\/span>/.test(pages[3]), "Material starts collapsed");
 assert(pages[3].indexOf('data-help="materials"') < pages[3].indexOf('id="material"'), "Material information sits on that section title");
 assert(pages[3].indexOf('id="materialFold"') < pages[3].indexOf('id="material"') && pages[3].indexOf('id="material"') < pages[3].indexOf("</details>", pages[3].indexOf('id="material"')), "The material fields sit in the material section");

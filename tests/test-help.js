@@ -185,6 +185,8 @@ assert((ends.match(/<figcaption>/g) || []).length === 4, "Each end diagram has o
 assert((ends.match(/<h3/g) || []).length === 0, "End diagrams do not add a second heading");
 assert(ends.indexOf("<svg") === -1, "End help uses Yuan's photographs");
 assert(ends.indexOf("The diagrams show the four end types.") >= 0, "End help leaves the explanation to the diagrams");
+assert(Help.topic("ends").title === "Ends and wind", "The ends window is titled Ends and wind");
+assert(ends.indexOf("right-hand wound spring is normally expected") >= 0 && ends.indexOf("nested spring set") >= 0 && ends.indexOf("left-hand wound") >= 0 && ends.indexOf("do not pinch or interlock") >= 0, "Ends and wind explains the usual hand and a nested set");
 assert(ends.indexOf('class="help-zoom"') >= 0 && diameters.indexOf('class="help-zoom"') >= 0,
   "A tap opens the full diagram");
 const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
