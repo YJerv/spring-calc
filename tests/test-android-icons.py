@@ -137,6 +137,11 @@ check('android:roundIcon="@mipmap/ic_launcher_round"' in manifest, "The manifest
 gradle = (ROOT / "android/app/build.gradle").read_text(encoding="utf-8")
 check("https://yjerv.github.io/spring-calc/" in gradle and "uk.co.yjerv.springcalc" in gradle,
       "The debug project points at the live site with the existing package name")
+check('versionCode 3' in gradle and 'versionName "1.4.1"' in gradle,
+      "The wrapper is versionCode 3, versionName 1.4.1")
+twa = (ROOT / "android/twa-manifest.json").read_text(encoding="utf-8")
+check('"appVersion": "1.4.1"' in twa and '"appVersionCode": 3' in twa,
+      "twa-manifest.json matches versionCode 3 and versionName 1.4.1")
 
 feature = ROOT / "android/store/feature-graphic.png"
 check(png_size(feature) == (1024, 500), "Feature graphic is 1024x500")

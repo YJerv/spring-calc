@@ -165,7 +165,7 @@ bubblewrap update --skipVersionUpgrade
 
 ### Version numbers for a later upload
 
-`appVersion` (`1.4.0`) is the version users see. `appVersionCode` (`1`) is an integer Play requires to increase on every upload. Edit both in `twa-manifest.json`, then:
+`appVersion` (`1.4.1`) is the version users see. `appVersionCode` (`3`) is an integer Play requires to increase on every upload. Internal testing already has versionCode 2, so the next upload is 3. Edit both in `twa-manifest.json`, then:
 
 ```bash
 bubblewrap update --skipVersionUpgrade
@@ -336,4 +336,4 @@ The Gradle files here follow that template, with one deliberate change: `jcenter
 - Notifications are off. The calculator does not post any. `POST_NOTIFICATIONS` is not requested.
 - Fallback if the device has no TWA browser: a Custom Tab, not a bundled WebView. Custom Tabs do not need an `INTERNET` permission on this app. Chrome does the networking.
 - Minimum SDK 24 (Android 7.0). `androidbrowserhelper` 2.7.4 will not merge into a lower `minSdk`. Play’s target is 36.
-- Version name `1.4.0`, version code `1`, matching the PWA’s 1.4 release for the first upload.
+- Version name `1.4.1`, version code `3`. Internal testing already has versionCode 2 (`1.4.0`).
