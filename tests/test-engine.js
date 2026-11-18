@@ -90,6 +90,29 @@ assertClose(modeB.L0, 60, "Mode B L0 = L + F/R");
 assertClose(modeB.F2, 125, "Mode B treats the point as F2 by default");
 assert(modeB.F1 == null, "Mode B leaves F1 unset");
 
+const rateRange = { Lcomp: 40, Lrel: 48 };
+const rateInside = E.deriveModeB(48, 44, 3, null, rateRange);
+assert(rateInside.ok, "A point inside the working range is accepted");
+assertClose(rateInside.L1, 48, "The relaxed working length stays L1");
+assertClose(rateInside.L2, 40, "The compressed working length stays L2");
+assert(E.deriveModeB(48, 40, 3, null, rateRange).ok && E.deriveModeB(36, 48, 3, null, rateRange).ok,
+  "Either end of the working range is accepted");
+const rateOutside = E.deriveModeB(20, 55, 3, null, rateRange);
+assert(!rateOutside.ok && rateOutside.errors.some(function (msg) { return msg.indexOf("within the working range") >= 0 && msg.indexOf("40 mm") >= 0 && msg.indexOf("48 mm") >= 0; }),
+  "A length outside the working range is rejected", rateOutside.errors && rateOutside.errors.join(" "));
+assert(E.deriveModeB(125, 10, 5).ok, "With no working range the point length is not limited");
+const rateExample = Object.assign({
+  G: 81500, Rm: 1800, tauFactor: 0.5, DeMax: 24, pocket: 25, clearance: 1, ends: "closed_ground"
+}, rateInside);
+const rateFound = E.searchOptimisation(rateExample);
+assert(rateFound.level === "pass" && rateFound.best, "The point-and-rate worked example meets the strict limits", rateFound.level + " " + (rateFound.message || ""));
+assert(rateFound.best.deflPct1 >= 20 && rateFound.best.deflPct1 <= 80 && rateFound.best.deflPct2 >= 20 && rateFound.best.deflPct2 <= 80,
+  "Both working deflections sit between 20% and 80%");
+assert(rateFound.best.pctAllow <= 100 + 1e-6, "Corrected stress stays within the active limit");
+assert(rateFound.best.De <= 24 + 1e-6 && rateFound.best.Lc < rateFound.best.L2, "The outside diameter and the solid length stay inside their limits");
+const rateGrowth = E.compressedClearance(rateFound.best, rateExample);
+assert(rateGrowth.flags.length === 0, "Compressed diameter still clears the pocket", rateGrowth.flags.join(" "));
+
 console.log("\nWorked example (full design)");
 /*
   L1 = 50 mm at F1 = 50 N

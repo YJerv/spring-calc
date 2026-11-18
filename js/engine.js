@@ -280,6 +280,9 @@
     if (ranged && !(Lrel > Lcomp)) {
       errors.push("The most relaxed working length must be longer than the most compressed length.");
     }
+    if (ranged && Lrel > Lcomp && L > 0 && (L < Lcomp - 1e-9 || L > Lrel + 1e-9)) {
+      errors.push("The length must be within the working range, from " + plainMm(Lcomp) + " mm to " + plainMm(Lrel) + " mm.");
+    }
     if (errors.length) return { ok: false, errors: errors };
     /* F(x) = F + R·(L − x). L0 stays on the anchor. asPoint is ignored: older saves chose F1 or F2. */
     var L0 = L + F / R;
@@ -1488,6 +1491,11 @@
       }
     }
     return out;
+  }
+
+  function plainMm(n) {
+    var s = (Math.round(Number(n) * 1000) / 1000).toFixed(3);
+    return s.replace(/\.?0+$/, "");
   }
 
   function fmt(x, digits) {

@@ -130,9 +130,35 @@
     return modeB;
   }
 
+  function plainMm(n) {
+    var s = E.fmt(n, 3);
+    if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+
+  function refreshRateLengthHint() {
+    var hint = $("rateLengthHint");
+    if (!hint) return;
+    var range = serviceRange();
+    var complete = range && range.Lcomp != null && range.Lrel != null && range.Lrel > range.Lcomp;
+    hint.textContent = complete
+      ? "Working lengths: L2 " + plainMm(range.Lcomp) + " mm to L1 " + plainMm(range.Lrel) + " mm. Use one of these, or a length between them."
+      : "No working-length range is set.";
+  }
+
+  function markRateLength(errors) {
+    var input = $("Lb");
+    if (!input) return;
+    var bad = (errors || []).some(function (msg) { return msg.indexOf("working range") >= 0; });
+    input.classList.toggle("is-invalid", bad);
+    if (bad) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+  }
+
   function refreshLoadSummary() {
     var out = currentLoads();
     state.loads = out.ok ? out : null;
+    refreshRateLengthHint();
     var box = $("loadSummary");
     if (!box) return;
     if (!out.ok) {
@@ -282,6 +308,7 @@
   function runCalculate() {
     var out = currentLoads();
     showErr("err1", out.ok ? [] : out.errors);
+    markRateLength(out.ok ? [] : out.errors);
     if (!out.ok) {
       state.feasibility = null;
       renderFeasibility(null, out.errors.join(" "));
@@ -376,6 +403,7 @@
     if (step === 5) {
       var out = currentLoads();
       showErr("err1", out.ok ? [] : out.errors);
+      markRateLength(out.ok ? [] : out.errors);
       if (!out.ok) return false;
       var conflict = E.constraintConflict(geometry().pocket, E.springGuideLimit(geometry()));
       if (conflict) {
@@ -1203,6 +1231,40 @@
     refreshGeomSummary();
   }
 
+  function loadRateExample() {
+    document.querySelector("input[name=mode][value=B]").checked = true;
+    syncModeUI();
+    setVal("Lb", 44);
+    setVal("Fb", 48);
+    setVal("Rb", 3);
+    setVal("pocket", 25);
+    setVal("clearance", 1);
+    setVal("innerMin", "");
+    setVal("innerClearance", "");
+    setVal("workL1", 48);
+    setVal("workL2", 40);
+    setVal("serviceTemp", "");
+    document.querySelector("input[name=stressMode][value=factor]").checked = true;
+    setVal("tauAllowDirect", "");
+    syncStressMode();
+    setVal("ends", "closed_ground");
+    setVal("wind", "right");
+    setGrade(2);
+    setVal("material", "10270-1-DH");
+    onMaterialChange();
+    setVal("G", 81500);
+    setVal("Rm", 1800);
+    setVal("tauFactor", 0.5);
+    $("useIndicativeRm").checked = false;
+    state.selectedWire = null;
+    state.preferredD = null;
+    state.design = null;
+    state.heatmap = null;
+    markRateLength([]);
+    refreshLoadSummary();
+    refreshGeomSummary();
+  }
+
   function persist() {
     try {
       var data = {
@@ -1556,7 +1618,8 @@
       refreshGeomSummary();
     });
     $("btnExample").addEventListener("click", function () {
-      loadExample();
+      if (state.mode === "B") loadRateExample();
+      else loadExample();
       markFeasibilityStale();
     });
     $("btnCheck").addEventListener("click", runCalculate);

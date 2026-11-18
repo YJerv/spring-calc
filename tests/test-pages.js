@@ -73,6 +73,13 @@ assert(css.indexOf(".field.is-inactive") >= 0, "An unused stress input is drawn 
 assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");
 assert(pages[4].indexOf('id="modeBPoint"') === -1, "Point and rate does not ask which condition the point is");
 assert(pages[4].indexOf('id="Lb"') >= 0 && pages[4].indexOf('id="Fb"') >= 0 && pages[4].indexOf('id="Rb"') >= 0, "Point and rate enters one length, one force and the rate");
+assert(pages[4].indexOf('id="rateLengthHint"') > pages[4].indexOf('id="Lb"') && pages[4].indexOf('id="rateLengthHint"') < pages[4].indexOf('id="Fb"'), "The working-length reminder sits with the point length");
+assert(appJs.indexOf("Working lengths: L2 ") >= 0 && appJs.indexOf("or a length between them.") >= 0, "The reminder names L2 and L1 and allows a length between them");
+assert(appJs.indexOf("No working-length range is set.") >= 0, "A blank working range is stated rather than invented");
+assert(appJs.indexOf('state.mode === "B"') >= 0 && appJs.indexOf("loadRateExample()") >= 0 && appJs.indexOf("function loadRateExample") >= 0, "Point and rate keeps its own worked example");
+assert(appJs.indexOf('input[name=mode][value=B]') >= 0 && appJs.indexOf('setVal("Lb", 44)') >= 0, "The point-and-rate example stays in point and rate");
+assert(appJs.indexOf('input[name=mode][value=A]') >= 0 && appJs.indexOf('setVal("L1", 50)') >= 0 && appJs.indexOf('setVal("F2", 125)') >= 0, "The two-points worked example is unchanged");
+assert(appJs.indexOf("working range") >= 0 && appJs.indexOf('aria-invalid') >= 0, "A length outside the range is flagged and blocks the usual way");
 assert(pages[4].indexOf('id="modeBNote"') === -1 && pages[4].indexOf("most compressed condition") === -1 && pages[4].indexOf("This point is") === -1, "Point and rate shows only the length, force and rate");
 assert(helpJs.indexOf("used as the most compressed condition") >= 0, "The info window explains a missing working-length range");
 assert(pages[4].indexOf("btnCalculate") === -1 && pages[4].indexOf(">Calculate<") === -1, "Calculate has been renamed");

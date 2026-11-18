@@ -126,6 +126,7 @@ const duty = Help.topic("duty").body;
 ["L0: Free length (zero load)", "L1: Most relaxed working length", "L2: Most compressed working length",
   "Lc: Closed (solid) length", "not necessarily a dead weight", "What the letters mean",
   "assets/help/help-working-lengths.png",
+  "the point length must lie within that range, including either end",
   "Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln."].forEach(function (phrase) {
   assert(duty.indexOf(phrase) >= 0, "Duty help includes: " + phrase);
 });
