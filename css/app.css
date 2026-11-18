@@ -258,6 +258,38 @@ legend.with-info { width: 100%; padding-right: 0; }
   height: auto;
 }
 .help-zoom { display: block; }
+.help-table-scroll {
+  max-height: min(62vh, 28rem);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.help-nomenclature {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.help-nomenclature th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  background: var(--navy);
+  color: var(--on-navy);
+  padding: 8px 10px;
+  font-weight: 600;
+}
+.help-nomenclature td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  background: var(--surface);
+}
+.help-nomenclature tr:nth-child(even) td { background: var(--zebra); }
+.help-nomenclature td:first-child { white-space: nowrap; font-weight: 650; }
+.help-nomenclature td:last-child { white-space: nowrap; }
 .help-svg {
   width: 100%;
   height: auto;

@@ -32,6 +32,54 @@
       helpImage(src, title) + '</figure>';
   }
 
+  /* Symbols the results and the drawing actually name. Descriptions follow that wording. */
+  var NOMENCLATURE = [
+    ["L0", "Free length (zero load)", "mm"],
+    ["L1", "Most relaxed working length", "mm"],
+    ["L2", "Most compressed working length", "mm"],
+    ["Ln", "Recommended shortest length (Lc + 15% of available travel)", "mm"],
+    ["Lc", "Closed (solid) length", "mm"],
+    ["F1", "Load at L1", "N"],
+    ["F2", "Load at L2", "N"],
+    ["Fn", "Load at Ln", "N"],
+    ["Fc", "Theoretical solid load", "N"],
+    ["R", "Spring rate", "N/mm"],
+    ["s1", "Deflection at F1", "mm"],
+    ["s2", "Deflection at F2 (maximum working load)", "mm"],
+    ["L0 − Lc", "Available travel", "mm"],
+    ["Sa", "Sum of minimum gaps (0.15 × available travel)", "mm"],
+    ["d", "Wire diameter", "mm"],
+    ["D", "Mean coil diameter", "mm"],
+    ["De", "Outside diameter", "mm"],
+    ["Di", "Inside diameter", "mm"],
+    ["w", "Spring index, D/d", "—"],
+    ["n", "Active coils", "—"],
+    ["nt", "Total coils", "—"],
+    ["p", "Active pitch", "mm"],
+    ["k", "Bergsträsser stress correction factor", "—"],
+    ["τ", "Uncorrected shear stress at Fmax", "MPa"],
+    ["τk", "Corrected stress at Fmax", "MPa"],
+    ["τk1", "Corrected stress at F1", "MPa"],
+    ["τk2", "Corrected stress at F2", "MPa"],
+    ["τkn", "Corrected stress at Ln", "MPa"],
+    ["τkc", "Corrected stress at Lc", "MPa"],
+    ["τzul", "Allowable screening stress", "MPa"],
+    ["Rm", "Tensile strength", "MPa"],
+    ["G", "Modulus of rigidity", "MPa"],
+    ["e1", "Squareness", "mm"],
+    ["e2", "Parallelism", "mm"],
+    ["m", "Approximate mass", "g"]
+  ];
+
+  function nomenclatureTable() {
+    var rows = NOMENCLATURE.map(function (row) {
+      return "<tr><td>" + row[0] + "</td><td>" + row[1] + "</td><td>" + row[2] + "</td></tr>";
+    }).join("");
+    return '<div class="help-table-scroll"><table class="help-nomenclature">' +
+      "<thead><tr><th>Symbol</th><th>Description</th><th>Units</th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table></div>";
+  }
+
   var TOPICS = {
     duty: {
       title: "Working loads and lengths",
@@ -111,6 +159,10 @@
     export: {
       title: "A3 drawing export",
       body: "<p>The only export is an A3 PDF drawing. There are no adverts. A one-off permanent Pro unlock for complete drawings is agreed, but the price, Play Billing product and verification server are not configured, so this page cannot unlock one. The file from this button is the unpaid preview: every table value is left out of the PDF, and the sheet carries the line “Upgrade to release drawing table”. The results on this page stay complete.</p>"
+    },
+    nomenclature: {
+      title: "Nomenclature",
+      body: nomenclatureTable
     }
   };
 

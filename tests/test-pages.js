@@ -40,6 +40,7 @@ console.log("Seven-page order\n");
 assert(pages[0].indexOf(">1. Overview<") >= 0, "Page 1 is the overview");
 assert(pages[0].indexOf('class="brand-logo"') >= 0 && pages[0].indexOf('alt="JET – Jervis Engineering Tools"') >= 0 && pages[0].indexOf("assets/brand/jet-logo.png") >= 0, "The Overview shows the JET logo");
 assert(pages[0].indexOf('class="brand-logo"') < pages[0].indexOf(">1. Overview<"), "The logo sits above the Overview heading");
+assert(pages[0].indexOf('id="btnNomenclature"') > pages[0].indexOf(">1. Overview<") && pages[0].indexOf(">Nomenclature<") >= 0, "Overview has a Nomenclature button under the introduction");
 assert(swJs.indexOf("./assets/brand/jet-logo.png") >= 0, "The service worker precaches the JET logo");
 assert(pages[1].indexOf(">2. Design mode<") >= 0 && pages[1].indexOf('name="mode"') >= 0, "Page 2 chooses two points or point and rate");
 assert(pages[2].indexOf(">3. Application constraints<") >= 0, "Page 3 is application constraints");

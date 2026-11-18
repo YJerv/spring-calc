@@ -1425,8 +1425,12 @@
       if (opener && typeof opener.focus === "function") opener.focus();
     }
 
-    document.querySelectorAll(".info-btn[data-help]").forEach(function (btn) {
-      btn.addEventListener("click", function () { openHelp(btn); });
+    document.querySelectorAll("button[data-help]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openHelp(btn);
+      });
     });
     closeBtn.addEventListener("click", closeHelp);
     backdrop.addEventListener("click", function (ev) {

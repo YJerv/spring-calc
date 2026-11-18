@@ -36,7 +36,7 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
 const helpSrc = fs.readFileSync(path.join(root, "js/help.js"), "utf8");
 
-const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export"];
+const expected = ["duty", "check", "diameters", "grades", "ends", "materials", "stress", "wire", "graph", "export", "nomenclature"];
 assert(JSON.stringify(Help.ids()) === JSON.stringify(expected), "Help topics are the agreed subjects");
 
 console.log("\nButtons sit on the agreed questions only\n");
@@ -64,6 +64,56 @@ assert(html.indexOf("More info") === -1, "Help is not a More info link");
 assert(html.indexOf('id="helpDialog"') >= 0 && html.indexOf('id="btnHelpClose"') >= 0, "The help window has a Close control");
 assert(html.indexOf('id="helpDialog" class="settings-backdrop" hidden') >= 0, "The help window starts closed");
 assert(html.indexOf("does not change what you have typed") >= 0, "The window says typed values stay");
+const nomenclature = Help.topic("nomenclature");
+assert(nomenclature && nomenclature.title === "Nomenclature", "Nomenclature has its own window");
+assert(section(html, "step-1").indexOf('data-help="nomenclature"') >= 0 && section(html, "step-1").indexOf(">Nomenclature<") >= 0, "Overview opens Nomenclature");
+assert(section(html, "step-1").indexOf("drawing export.</p>") < section(html, "step-1").indexOf('id="btnNomenclature"'), "Nomenclature sits under the Overview introduction");
+assert(section(html, "step-1").indexOf('class="btn secondary" id="btnNomenclature"') >= 0, "Nomenclature is a secondary button");
+["Symbol", "Description", "Units", "help-table-scroll", "help-nomenclature"].forEach(function (phrase) {
+  assert(nomenclature.body.indexOf(phrase) >= 0, "Nomenclature table includes " + phrase);
+});
+const nomenRows = [
+  ["L0", "Free length (zero load)", "mm"],
+  ["L1", "Most relaxed working length", "mm"],
+  ["L2", "Most compressed working length", "mm"],
+  ["Ln", "Recommended shortest length (Lc + 15% of available travel)", "mm"],
+  ["Lc", "Closed (solid) length", "mm"],
+  ["F1", "Load at L1", "N"],
+  ["F2", "Load at L2", "N"],
+  ["Fn", "Load at Ln", "N"],
+  ["Fc", "Theoretical solid load", "N"],
+  ["R", "Spring rate", "N/mm"],
+  ["s1", "Deflection at F1", "mm"],
+  ["s2", "Deflection at F2 (maximum working load)", "mm"],
+  ["L0 − Lc", "Available travel", "mm"],
+  ["Sa", "Sum of minimum gaps (0.15 × available travel)", "mm"],
+  ["d", "Wire diameter", "mm"],
+  ["D", "Mean coil diameter", "mm"],
+  ["De", "Outside diameter", "mm"],
+  ["Di", "Inside diameter", "mm"],
+  ["w", "Spring index, D/d", "—"],
+  ["n", "Active coils", "—"],
+  ["nt", "Total coils", "—"],
+  ["p", "Active pitch", "mm"],
+  ["k", "Bergsträsser stress correction factor", "—"],
+  ["τ", "Uncorrected shear stress at Fmax", "MPa"],
+  ["τk", "Corrected stress at Fmax", "MPa"],
+  ["τk1", "Corrected stress at F1", "MPa"],
+  ["τk2", "Corrected stress at F2", "MPa"],
+  ["τkn", "Corrected stress at Ln", "MPa"],
+  ["τkc", "Corrected stress at Lc", "MPa"],
+  ["τzul", "Allowable screening stress", "MPa"],
+  ["Rm", "Tensile strength", "MPa"],
+  ["G", "Modulus of rigidity", "MPa"],
+  ["e1", "Squareness", "mm"],
+  ["e2", "Parallelism", "mm"],
+  ["m", "Approximate mass", "g"]
+];
+nomenRows.forEach(function (row) {
+  assert(nomenclature.body.indexOf("<td>" + row[0] + "</td><td>" + row[1] + "</td><td>" + row[2] + "</td>") >= 0,
+    "Nomenclature row " + row[0]);
+});
+assert((nomenclature.body.match(/<tr>/g) || []).length === nomenRows.length + 1, "Nomenclature has one header and one row per symbol");
 
 console.log("\nAgreed content, in original words\n");
 
@@ -119,6 +169,8 @@ const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css/app.css"), "utf8");
 assert(css.indexOf(".help-diagram") >= 0 && css.indexOf("max-width: 100%") >= 0 && css.indexOf("height: auto") >= 0,
   "Help images scale to the window width");
+assert(css.indexOf(".help-nomenclature th") >= 0 && css.indexOf("position: sticky") >= 0 && css.indexOf(".help-table-scroll") >= 0,
+  "The nomenclature table keeps a sticky header and scrolls");
 const materials = Help.topic("materials").body;
 ["EN 10270-1 DH", "EN 10270-1 SH", "EN 10270-1 SM", "VDSiCr", "1.4310", "Custom", "certificate", "rusts"].forEach(function (phrase) {
   assert(materials.indexOf(phrase) >= 0, "Material help includes: " + phrase);
