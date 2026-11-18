@@ -188,7 +188,8 @@ assert(duty.indexOf("help-svg duty-graph") >= 0, "Duty illustration uses the cha
 assert(duty.indexOf("var(--chart-paper)") >= 0 && duty.indexOf("var(--chart-ink)") >= 0, "Duty illustration uses chart colours");
 assert(duty.indexOf(">Load, F<") >= 0, "Duty illustration labels the y axis Load, F");
 assert(duty.indexOf(">Deflection, S<") >= 0, "Duty illustration labels the x axis Deflection, S");
-assert(duty.indexOf("L1 / F1") >= 0 && duty.indexOf("L2 / F2") >= 0, "Duty illustration marks L1/F1 and L2/F2");
+assert(duty.indexOf(">F1<") >= 0 && duty.indexOf(">F2<") >= 0, "Duty illustration marks F1 and F2 on the load axis");
+assert(duty.indexOf("L1 / F1") === -1 && duty.indexOf("L2 / F2") === -1, "Duty illustration no longer puts L callouts on the graph");
 assert(duty.toLowerCase().indexOf("compression") === -1, "Duty illustration does not say compression");
 assert(duty.toLowerCase().indexOf("shorter") === -1, "Duty illustration does not label the axis shorter");
 assert(duty.indexOf("data-spring=\"Lc\"") === -1 && !/>Lc</.test(duty), "Duty illustration has no solid-length spring");

@@ -190,7 +190,8 @@
     duty: {
       title: "Working loads and lengths",
       body: function () {
-        return helpImage(HELP_LENGTHS_IMAGE, "Working lengths L0, L1, L2 and Lc") +
+        var charts = typeof SpringCharts !== "undefined" ? SpringCharts : require("./charts.js");
+        return charts.dutyIllustration() +
         "<p>Ln (permissible length) = Lc + 15% of available travel; keep L2 at or above Ln.</p>" +
         "<h3>What the letters mean</h3>" +
         "<p>L0: Free length (zero load).</p>" +

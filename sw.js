@@ -1,5 +1,5 @@
 /* Helical Spring Designer service worker — cache app shell for offline use */
-const CACHE = "spring-calc-v69";
+const CACHE = "spring-calc-v70";
 const ASSETS = [
   "./",
   "./index.html",

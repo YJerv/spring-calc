@@ -646,8 +646,8 @@
       "L0": 20,
       "L1": 20,
       "L2": 20,
-      "L1 / F1": 48,
-      "L2 / F2": 48
+      "F1": 18,
+      "F2": 18
     };
     var ascent = 10;
     var descent = 3;
@@ -727,9 +727,8 @@
       cx: r1(x2), cy: r1(y2), r: 4.2, fill: "var(--series-l2)",
       stroke: "var(--chart-paper)", "stroke-width": 1.4
     }));
-    addLabel("L0", ox - gap - 1, oy - gap - descent - 1, "end", "var(--series-l0)");
-    addLabel("L1 / F1", x1 - gap - 5, y1 - gap - descent - 1, "end", "var(--series-l1)");
-    addLabel("L2 / F2", x2 - gap - 5, y2 - gap - descent - 1, "end", "var(--series-l2)");
+    addLabel("F1", ox - 8, y1 - 2, "end", "var(--series-l1)");
+    addLabel("F2", ox - 8, y2 - 2, "end", "var(--series-l2)");
 
     function addHelix(id, x0, cy, colour) {
       var steps = turns * 36;
