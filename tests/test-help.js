@@ -63,7 +63,12 @@ assert(windField.indexOf("info-btn") === -1, "The wind control has no informatio
 assert(html.indexOf("More info") === -1, "Help is not a More info link");
 assert(html.indexOf('id="helpDialog"') >= 0 && html.indexOf('id="btnHelpClose"') >= 0, "The help window has a Close control");
 assert(html.indexOf('id="helpDialog" class="settings-backdrop" hidden') >= 0, "The help window starts closed");
-assert(html.indexOf("does not change what you have typed") >= 0, "The window says typed values stay");
+["Opening or closing this window does not change what you have typed", "Warnings on the page stay on the page", "does not change what you have typed", "stay on the page", "not replaced by this window"].forEach(function (phrase) {
+  assert(html.indexOf(phrase) === -1, "The help window no longer says: " + phrase);
+  Help.ids().forEach(function (id) {
+    assert(Help.topic(id).body.indexOf(phrase) === -1, id + " no longer says: " + phrase);
+  });
+});
 const nomenclature = Help.topic("nomenclature");
 assert(nomenclature && nomenclature.title === "Nomenclature", "Nomenclature has its own window");
 assert(section(html, "step-1").indexOf('data-help="nomenclature"') >= 0 && section(html, "step-1").indexOf(">Nomenclature<") >= 0, "Overview opens Nomenclature");

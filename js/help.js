@@ -247,7 +247,7 @@
         "<p>k = (w + 0.5) / (w − 0.75), where w is the spring index D/d.</p>" +
         "<p>It matters because skipping it understates the inside stress, and a spring can then look acceptable when it is not. The factor grows as the coil gets tighter. At the index limits this app already uses, it is about 1.38 at index 4 and about 1.08 at index 16. The expression is not used at index 0.75 or below. This correction is not a fatigue life, not a temperature derating, and not a certified allowable stress.</p>" +
         "<h3>Allowable stress factor</h3>" +
-        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. The fail or warning text stays on the page; it is not replaced by this window. Optimization uses the same active limit.</p>" +
+        "<p>The box sets a screening ceiling: allowable corrected stress = this factor × Rm. The page starts at 0.5, so a candidate fails when the corrected stress is above half the tensile strength. The box accepts 0.2 to 0.8. That range belongs to this control. It is not a certified material limit. Optimization uses the same active limit.</p>" +
         "<p>Entered stress limit bypasses Rm. When that choice is active, every stress check uses the number in MPa and the page states that the limit was entered directly. The factor × Rm path stays in use until that choice is selected.</p>"
     },
     wire: {
