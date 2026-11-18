@@ -59,9 +59,11 @@ assert(appJs.indexOf("suggestedClearance(pocket)") >= 0 && appJs.indexOf("sugges
 assert(appJs.indexOf("Continue without those limits?") >= 0, "An empty constraints page warns before continuing");
 assert(pages[3].indexOf(">4. Design options<") >= 0, "Page 4 is design options");
 assert(pages[3].indexOf('id="ends"') >= 0 && pages[3].indexOf('id="grade"') >= 0 && pages[3].indexOf('id="wind"') >= 0, "Ends, grade and wind are design options");
-assert(/<details class="fold" id="optionsFold">\s*<summary aria-expanded="false">Ends, grade and wind<\/summary>/.test(pages[3]), "Ends, grade and wind start collapsed");
+assert(/<details class="fold" id="optionsFold">\s*<summary aria-expanded="false"><span class="fold-title">Ends, grade and wind<\/span>/.test(pages[3]), "Ends, grade and wind start collapsed");
+assert(pages[3].indexOf('data-help="ends"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('data-help="grades"') < pages[3].indexOf('id="grade"'), "Ends and grade information sits on that section title");
 assert(pages[3].indexOf('id="optionsFold"') < pages[3].indexOf('id="ends"') && pages[3].indexOf('id="wind"') < pages[3].indexOf('id="materialFold"'), "Those three fields sit in the design-options section");
-assert(/<details class="fold" id="materialFold">\s*<summary aria-expanded="false">Material<\/summary>/.test(pages[3]), "Material starts collapsed");
+assert(/<details class="fold" id="materialFold">\s*<summary aria-expanded="false"><span class="fold-title">Material<\/span>/.test(pages[3]), "Material starts collapsed");
+assert(pages[3].indexOf('data-help="materials"') < pages[3].indexOf('id="material"'), "Material information sits on that section title");
 assert(pages[3].indexOf('id="materialFold"') < pages[3].indexOf('id="material"') && pages[3].indexOf('id="material"') < pages[3].indexOf("</details>", pages[3].indexOf('id="material"')), "The material fields sit in the material section");
 assert(pages[3].indexOf('id="material"') >= 0 && pages[3].indexOf('name="stressMode"') >= 0 && pages[3].indexOf('id="tauAllowDirect"') >= 0, "Material and the stress limit moved here");
 assert(pages[4].indexOf(">5. Duty<") >= 0 && pages[4].indexOf('id="btnCheck"') >= 0 && pages[4].indexOf(">Check<") >= 0, "Page 5 is the duty and the Check button");

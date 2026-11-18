@@ -93,16 +93,13 @@
 
     <section id="step-3" class="step" data-step="3">
       <div class="card">
-        <div class="with-info">
-          <h2>3. Application constraints</h2>
-          <button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
+        <h2>3. Application constraints</h2>
         <p class="hint lead">Leave a box blank for no limit.</p>
         <div class="btn-row no-print">
           <button type="button" class="btn secondary" id="btnClearConstraints">Clear all</button>
         </div>
         <details class="notes constraint-fold" id="pocketFold">
-          <summary aria-expanded="false">Pocket and guide diameters</summary>
+          <summary aria-expanded="false"><span class="fold-title">Pocket and guide diameters</span><button type="button" class="info-btn no-print" data-help="diameters" aria-label="Information: diameter limits" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></summary>
           <div class="grid-2">
             <div class="field">
               <label for="pocket">Spring pocket, maximum diameter</label>
@@ -163,12 +160,9 @@
         <h2>4. Design options</h2>
         <p class="lead">Ends, grade, winding, material and the stress limit used for the search.</p>
         <details class="fold" id="optionsFold">
-          <summary aria-expanded="false">Ends, grade and wind</summary>
+          <summary aria-expanded="false"><span class="fold-title">Ends, grade and wind</span><button type="button" class="info-btn no-print" data-help="ends" aria-label="Information: end geometry" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button><button type="button" class="info-btn no-print" data-help="grades" aria-label="Information: quality grades" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></summary>
         <div class="field">
-          <div class="with-info">
-            <label for="ends">Ends</label>
-            <button type="button" class="info-btn no-print" data-help="ends" aria-label="Information: end geometry" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-          </div>
+          <label for="ends">Ends</label>
           <select id="ends">
             <option value="closed_ground" selected>Closed and ground</option>
             <option value="closed">Closed, not ground</option>
@@ -177,10 +171,7 @@
           </select>
         </div>
         <div class="field">
-          <div class="with-info">
-            <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
-            <button type="button" class="info-btn no-print" data-help="grades" aria-label="Information: quality grades" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-          </div>
+          <label for="grade">Manufacturing quality grade (BS EN 15800)</label>
           <select id="grade">
             <option value="1">Grade 1</option>
             <option value="2" selected>Grade 2</option>
@@ -196,11 +187,7 @@
         </div>
         </details>
         <details class="fold" id="materialFold">
-          <summary aria-expanded="false">Material</summary>
-        <div class="with-info">
-          <h3>Material</h3>
-          <button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
+          <summary aria-expanded="false"><span class="fold-title">Material</span><button type="button" class="info-btn no-print" data-help="materials" aria-label="Information: materials" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></summary>
         <dl class="summary" id="geomSummary"></dl>
         <div class="field">
           <label for="material">Material</label>
@@ -340,15 +327,12 @@
 
     <section id="step-7" class="step" data-step="7">
       <div class="card">
-        <div class="with-info">
-          <h2>7. Results</h2>
-          <button type="button" class="info-btn no-print" data-help="graph" aria-label="Information: load graph" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
-        </div>
+        <h2>7. Results</h2>
         <div id="resultBanner"></div>
       </div>
       <div class="card">
         <details class="notes result-fold" id="loadFold">
-          <summary aria-expanded="false">Load–length characteristic</summary>
+          <summary aria-expanded="false"><span class="fold-title">Load–length characteristic</span><button type="button" class="info-btn no-print" data-help="graph" aria-label="Information: load graph" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></summary>
           <div class="chart-wrap">
             <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
           </div>
@@ -393,7 +377,7 @@
       </div>
       <div class="card">
         <details class="notes result-fold" id="exportFold">
-          <summary aria-expanded="false">Drawing export</summary>
+          <summary aria-expanded="false"><span class="fold-title">Drawing export</span><button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button></summary>
           <p class="lead hint no-print" id="exportFilename">This file will be saved as helical-compression-spring-a3.pdf.</p>
           <div class="field no-print">
             <label for="exportName">PDF filename</label>
@@ -402,7 +386,6 @@
           </div>
           <div class="btn-row no-print">
             <button type="button" class="btn" id="btnExportA3">Export A3 drawing (PDF)</button>
-            <button type="button" class="info-btn no-print" data-help="export" aria-label="Information: A3 drawing export" aria-haspopup="dialog" aria-controls="helpDialog" aria-expanded="false"><span aria-hidden="true">i</span></button>
           </div>
           <details class="notes">
             <summary aria-expanded="false">Method, formulae and limitations</summary>
