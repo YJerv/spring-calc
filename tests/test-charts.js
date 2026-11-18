@@ -138,8 +138,16 @@ assert((html.match(/<text [^>]*fill="var\(--series-/g) || []).length >= 8,
   "Station labels still use the theme series colours");
 assert(html.indexOf(E.fmt(byId.L1.travelPct, 1) + " %") !== -1, "L1 compression % is written on its line");
 assert(html.indexOf(E.fmt(byId.L2.travelPct, 1) + " %") !== -1, "L2 compression % is written on its line");
-assert(html.indexOf(E.fmt(byId.Ln.travelPct, 1) + " %") !== -1, "Ln compression % is written on its line");
-assert(html.indexOf("100.0 %") !== -1 || html.indexOf("100 %") !== -1, "Lc compression % is written on its line");
+function percentStations(markup) {
+  return markup.split("<text").filter(function (part) {
+    return part.indexOf('data-part="pct"') >= 0;
+  }).map(function (part) {
+    return part.match(/data-station="([^"]+)"/)[1];
+  });
+}
+const labelled = percentStations(html);
+assert(labelled.indexOf("L1") >= 0 && labelled.indexOf("L2") >= 0 && labelled.length === 2, "Only L1 and L2 keep a deflection percent", labelled.join(","));
+assert(labelled.indexOf("Ln") === -1 && labelled.indexOf("Lc") === -1 && labelled.indexOf("L0") === -1, "Ln, Lc and L0 have no deflection percent");
 
 const modeB = E.evaluateDesign(Object.assign({}, example, {
   L1: null, F1: null, L2: 35, F2: 125
@@ -513,7 +521,7 @@ const titleBox = { x: 12, y: 16 - 12 * 0.85, w: "Load F (N)".length * 12 * 0.6, 
 const dualSamples = [
   { name: "worked example", design: ev, layout: "split" },
   { name: "close loads", design: E.evaluateDesign(Object.assign({}, example, { L1: 48, F1: 60, L2: 46, F2: 70 })), layout: "split" },
-  { name: "near solid", design: E.evaluateDesign(Object.assign({}, example, { L1: 28, F1: 160, L2: 22, F2: 190, Fmax: 190, LmaxLoad: 22 })), layout: "split" },
+  { name: "near solid", design: E.evaluateDesign(Object.assign({}, example, { L1: 28, F1: 160, L2: 22, F2: 190, Fmax: 190, LmaxLoad: 22 })), layout: "row" },
   { name: "long spring", design: E.evaluateDesign({ d: 1.2, D: 10, G: 81500, Rm: 1800, tauFactor: 0.5, R: 2, L0: 80, L1: 70, F1: 20, L2: 40, F2: 80, Fmax: 80, LmaxLoad: 40, ends: "closed_ground" }), layout: "split" },
   { name: "mode B", design: modeB, layout: "row" },
   { name: "short travel", design: E.evaluateDesign(Object.assign({}, example, { L0: 40, L1: 38, F1: 20, L2: 30, F2: 100, Fmax: 100, LmaxLoad: 30, R: 10 })), layout: "row" }
@@ -523,8 +531,12 @@ dualSamples.forEach(function (sample) {
   C.renderLoadGraph(pic, sample.design);
   const boxes = dualBoxes(pic.innerHTML);
   const stations = C.loadGraphStations(sample.design).filter(function (s) { return s.id !== "L0"; });
-  assert(boxes.length === stations.length * 2, sample.name + ": each loaded station has a percent and a stress label",
-    "found " + boxes.length + " for " + stations.length + " stations");
+  const working = stations.filter(function (s) { return s.id === "L1" || s.id === "L2"; });
+  assert(boxes.filter(function (b) { return b.part === "pct"; }).length === working.length,
+    sample.name + ": only L1 and L2 have a deflection percent",
+    "found " + boxes.filter(function (b) { return b.part === "pct"; }).length);
+  assert(boxes.filter(function (b) { return b.part === "tau"; }).length === stations.length,
+    sample.name + ": every loaded station keeps a stress label on the right-hand axis");
   const pctLayouts = boxes.filter(function (b) { return b.part === "pct"; }).map(function (b) { return b.layout; })
     .filter(function (v, i, all) { return all.indexOf(v) === i; });
   assert(pctLayouts.length === 1 && pctLayouts[0] === sample.layout,
@@ -533,12 +545,13 @@ dualSamples.forEach(function (sample) {
   stations.forEach(function (s) {
     const pct = boxes.filter(function (b) { return b.station === s.id && b.part === "pct"; })[0];
     const tau = boxes.filter(function (b) { return b.station === s.id && b.part === "tau"; })[0];
-    assert(!!pct && !!tau, sample.name + ": " + s.id + " shows both values");
-    if (!pct || !tau) return;
-    if (sample.layout === "split") {
+    const wantsPct = s.id === "L1" || s.id === "L2";
+    assert(!!tau && !!pct === wantsPct, sample.name + ": " + s.id + (wantsPct ? " shows the percent and the stress" : " shows only the stress"));
+    if (!tau) return;
+    if (pct && sample.layout === "split") {
       assert(pct.y + pct.h <= pct.line - 1, sample.name + ": " + s.id + " percent sits above its load line",
         "bottom " + (pct.y + pct.h) + " line " + pct.line);
-    } else {
+    } else if (pct) {
       assert(pct.y + pct.h <= pct.line - 1 || pct.y >= pct.line + 1,
         sample.name + ": " + s.id + " percent stays off the load line");
     }

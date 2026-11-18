@@ -270,7 +270,7 @@
     },
     graph: {
       title: "Load graph",
-      body: "<p>Length stations are labelled under the axis. A horizontal line from each load back to the F axis shows the compression (deflection as a percentage of available travel, L0 − Lc) and the corrected stress τk. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>"
+      body: "<p>Length stations are labelled under the axis. Only L1 and L2 are labelled with the deflection as a percentage of available travel (L0 − Lc). The corrected stress τk stays on the right-hand axis. Each vertical dotted marker runs from the x-axis up to the spring line, where it meets that horizontal load line. Ln is the length at 85 % of available travel, a workshop recommendation rather than a verbatim clause of the standard.</p>"
     },
     export: {
       title: "A3 drawing export",

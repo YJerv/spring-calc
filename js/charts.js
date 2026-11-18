@@ -222,6 +222,9 @@
         tau: s.tauK == null ? "" : "τk " + E.fmt(s.tauK, 0) + " MPa"
       };
     }
+    function showPercent(s) {
+      return s.id === "L1" || s.id === "L2";
+    }
     function trySplit() {
       var placed = [];
       var specs = [];
@@ -233,14 +236,17 @@
         if (!texts.tau) return null;
         var x = xOf(s.L);
         var y = yOf(s.F);
-        var tauW = texts.tau.length * labelFont * 0.6;
-        var pctW = texts.pct.length * labelFont * 0.6;
-        var tauBox = findBox(texts.tau, y + labelGap, x + 6 + tauW / 2, placed);
-        var pctBox = tauBox && findBox(texts.pct, y - labelGap - labelH,
-          Math.min((pad.l + x) / 2, x - 6 - pctW / 2), placed.concat([tauBox]));
-        if (!tauBox || !pctBox) return null;
-        placed.push(tauBox, pctBox);
-        specs.push({ s: s, y: y, pct: pctBox, tau: tauBox, layout: "split" });
+        var pctBox = null;
+        if (showPercent(s)) {
+          var tauW = texts.tau.length * labelFont * 0.6;
+          var pctW = texts.pct.length * labelFont * 0.6;
+          var tauBox = findBox(texts.tau, y + labelGap, x + 6 + tauW / 2, placed);
+          pctBox = tauBox && findBox(texts.pct, y - labelGap - labelH,
+            Math.min((pad.l + x) / 2, x - 6 - pctW / 2), placed.concat([tauBox]));
+          if (!tauBox || !pctBox) return null;
+          placed.push(tauBox, pctBox);
+        }
+        specs.push({ s: s, y: y, pct: pctBox, layout: "split" });
       }
       return specs.length ? specs : null;
     }
@@ -256,23 +262,27 @@
         if (!texts.tau) return null;
         var x = xOf(s.L);
         var y = yOf(s.F);
-        var pctW = texts.pct.length * labelFont * 0.6;
-        var tauW = texts.tau.length * labelFont * 0.6;
-        var pairW = pctW + inner + tauW;
-        var top = above ? y - labelGap - labelH : y + labelGap;
-        var best = null;
-        var leftMax = onSegment ? Math.min(W - 2 - pairW, x - 4 - pairW) : W - 2 - pairW;
-        var left;
-        for (left = pad.l + 2; left <= leftMax; left += 2) {
-          var pctBox = dualBox(texts.pct, left, top);
-          var tauBox = dualBox(texts.tau, left + pctW + inner, top);
-          if (blocked(pctBox, placed) || blocked(tauBox, placed.concat([pctBox]))) continue;
-          var dist = Math.abs(left + pairW / 2 - (pad.l + x) / 2);
-          if (!best || dist < best.dist) best = { pct: pctBox, tau: tauBox, dist: dist };
+        var pctBox = null;
+        if (showPercent(s)) {
+          var pctW = texts.pct.length * labelFont * 0.6;
+          var tauW = texts.tau.length * labelFont * 0.6;
+          var pairW = pctW + inner + tauW;
+          var top = above ? y - labelGap - labelH : y + labelGap;
+          var best = null;
+          var leftMax = onSegment ? Math.min(W - 2 - pairW, x - 4 - pairW) : W - 2 - pairW;
+          var left;
+          for (left = pad.l + 2; left <= leftMax; left += 2) {
+            var candidate = dualBox(texts.pct, left, top);
+            var tauBox = dualBox(texts.tau, left + pctW + inner, top);
+            if (blocked(candidate, placed) || blocked(tauBox, placed.concat([candidate]))) continue;
+            var dist = Math.abs(left + pairW / 2 - (pad.l + x) / 2);
+            if (!best || dist < best.dist) best = { pct: candidate, tau: tauBox, dist: dist };
+          }
+          if (!best) return null;
+          pctBox = best.pct;
+          placed.push(best.pct, best.tau);
         }
-        if (!best) return null;
-        placed.push(best.pct, best.tau);
-        specs.push({ s: s, y: y, pct: best.pct, tau: best.tau, layout: "row" });
+        specs.push({ s: s, y: y, pct: pctBox, layout: "row" });
       }
       return specs.length ? specs : null;
     }
@@ -286,10 +296,13 @@
         var texts = stationTexts(s);
         var x = xOf(s.L);
         var y = yOf(s.F);
-        var pctBox = findBox(texts.pct, y - labelGap - labelH, (pad.l + x) / 2, placed)
-          || findBox(texts.pct, Math.max(pad.t, y - labelGap - labelH - 8), (pad.l + x) / 2, placed);
-        if (!pctBox) return null;
-        placed.push(pctBox);
+        var pctBox = null;
+        if (showPercent(s)) {
+          pctBox = findBox(texts.pct, y - labelGap - labelH, (pad.l + x) / 2, placed)
+            || findBox(texts.pct, Math.max(pad.t, y - labelGap - labelH - 8), (pad.l + x) / 2, placed);
+          if (!pctBox) return null;
+          placed.push(pctBox);
+        }
         specs.push({ s: s, y: y, pct: pctBox, layout: "split" });
       }
       return specs.length ? specs : null;
@@ -322,7 +335,7 @@
           "data-box": [r1(box.x), r1(box.y), r1(box.w), r1(box.h)].join(",")
         }, [txt(box.text)]));
       }
-      paint("pct", spec.pct, 700);
+      if (spec.pct) paint("pct", spec.pct, 700);
       paint("tau", spec.tauRight, 650);
     });
 
