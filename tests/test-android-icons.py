@@ -93,6 +93,51 @@ for rel, size in maskables:
     check(bad == 0, rel + " stays #202630 outside the 66% safe zone", str(bad) + " pixels")
     check(blue > 0, rel + " still shows the blue spring inside the safe zone", str(blue))
 
+print("\nAdaptive foreground, round and monochrome\n")
+foreground = [
+    ("android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png", 108),
+    ("android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png", 162),
+    ("android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png", 216),
+    ("android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png", 324),
+    ("android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png", 432),
+]
+for rel, size in foreground:
+    path = ROOT / rel
+    check(path.is_file() and png_size(path) == (size, size), rel + " is " + str(size) + " px")
+    with Image.open(path) as im:
+        check(im.mode == "RGBA" and im.getpixel((0, 0))[3] == 0, rel + " background is transparent")
+        blues = 0
+        rgb = im.convert("RGBA")
+        for y in range(0, size, max(1, size // 24)):
+            for x in range(0, size, max(1, size // 24)):
+                px = rgb.getpixel((x, y))
+                if px[3] > 200 and px[:3] == BLUE:
+                    blues += 1
+        check(blues > 0, rel + " keeps the blue spring")
+for rel, size in [
+    ("android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png", 48),
+    ("android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png", 72),
+    ("android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png", 96),
+    ("android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png", 144),
+    ("android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png", 192),
+]:
+    path = ROOT / rel
+    check(path.is_file() and png_size(path) == (size, size), rel + " is " + str(size) + " px")
+    with Image.open(path) as im:
+        check(im.convert("RGBA").getpixel((0, 0))[3] == 0, rel + " is cropped to a circle")
+        check(im.convert("RGB").getpixel((size // 2, size // 5)) == BG, rel + " keeps the #202630 field")
+for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
+    text = (ROOT / "android/app/src/main/res/mipmap-anydpi-v26" / name).read_text(encoding="utf-8")
+    check("@color/icon_background" in text and "@mipmap/ic_launcher_foreground" in text and "@drawable/ic_launcher_monochrome" in text,
+          name + " has background, foreground and monochrome")
+mono = (ROOT / "android/app/src/main/res/drawable/ic_launcher_monochrome.xml").read_text(encoding="utf-8")
+check("ic_launcher_monochrome" not in "" and "#FFFFFF" in mono, "Monochrome spring is a single white colour")
+manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+check('android:roundIcon="@mipmap/ic_launcher_round"' in manifest, "The manifest names the round icon")
+gradle = (ROOT / "android/app/build.gradle").read_text(encoding="utf-8")
+check("https://yjerv.github.io/spring-calc/" in gradle and "uk.co.yjerv.springcalc" in gradle,
+      "The debug project points at the live site with the existing package name")
+
 feature = ROOT / "android/store/feature-graphic.png"
 check(png_size(feature) == (1024, 500), "Feature graphic is 1024x500")
 check(corner(feature) == BG, "Feature graphic background is #202630", str(corner(feature)))

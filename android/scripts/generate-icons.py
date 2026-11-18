@@ -50,6 +50,21 @@ MASKABLE = [
     ("app/src/main/res/mipmap-xxhdpi/ic_maskable.png", 246),
     ("app/src/main/res/mipmap-xxxhdpi/ic_maskable.png", 328),
 ]
+# Adaptive foreground is 108 dp. The spring is drawn inside the 66 dp safe zone.
+FOREGROUND = [
+    ("app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png", 108),
+    ("app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png", 162),
+    ("app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png", 216),
+    ("app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png", 324),
+    ("app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png", 432),
+]
+ROUND = [
+    ("app/src/main/res/mipmap-mdpi/ic_launcher_round.png", 48),
+    ("app/src/main/res/mipmap-hdpi/ic_launcher_round.png", 72),
+    ("app/src/main/res/mipmap-xhdpi/ic_launcher_round.png", 96),
+    ("app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png", 144),
+    ("app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png", 192),
+]
 SPLASH = [
     ("app/src/main/res/drawable-mdpi/splash.png", 300),
     ("app/src/main/res/drawable-hdpi/splash.png", 450),
@@ -102,6 +117,60 @@ def flatten(path: Path) -> None:
     base = Image.new("RGBA", image.size, BG)
     base.alpha_composite(image)
     base.convert("RGB").save(path, format="PNG")
+
+
+def spring_svg(monochrome: bool) -> str:
+    text = SVG.read_text(encoding="utf-8")
+    text = text.replace('<rect width="108" height="108" fill="#202630"/>', "")
+    if monochrome:
+        text = text.replace("#DCE2EA", "#FFFFFF").replace("#2457C5", "#FFFFFF")
+        text = text.replace('stroke-opacity=".55"', 'stroke-opacity="1"')
+    return text
+
+
+def render_spring(size: int, dest: Path, monochrome: bool = False) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "spring.svg"
+        src.write_text(spring_svg(monochrome), encoding="utf-8")
+        subprocess.check_call(
+            [
+                "rsvg-convert",
+                "--width",
+                str(size),
+                "--height",
+                str(size),
+                "--output",
+                str(dest),
+                str(src),
+            ]
+        )
+
+
+def write_foreground(size: int, dest: Path) -> None:
+    """Transparent foreground. The spring sits inside the adaptive safe zone."""
+    Image, _, _ = require_pillow()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    inner = max(1, int(round(size * 66 / 108)))
+    with tempfile.TemporaryDirectory() as tmp:
+        raw = Path(tmp) / "spring.png"
+        render_spring(inner, raw, False)
+        art = Image.open(raw).convert("RGBA")
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    offset = (size - inner) // 2
+    canvas.alpha_composite(art, (offset, offset))
+    canvas.save(dest, format="PNG")
+
+
+def write_round(size: int, source: Path, dest: Path) -> None:
+    Image, ImageDraw, _ = require_pillow()
+    icon = Image.open(source).convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size - 1, size - 1), fill=255)
+    icon.putalpha(mask)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    icon.save(dest, format="PNG")
 
 
 def write_maskable(size: int, dest: Path) -> None:
@@ -183,6 +252,16 @@ def main() -> None:
     for rel, size in MASKABLE:
         write_maskable(size, ANDROID / rel)
         print(f"wrote {(ANDROID / rel).relative_to(ROOT)} ({size}px, 66% safe zone)")
+    for rel, size in FOREGROUND:
+        dest = ANDROID / rel
+        write_foreground(size, dest)
+        print(f"wrote {dest.relative_to(ROOT)} ({size}px foreground)")
+    by_size = {size: ANDROID / rel for rel, size in LAUNCHER}
+    for rel, size in ROUND:
+        source = by_size[size]
+        dest = ANDROID / rel
+        write_round(size, source, dest)
+        print(f"wrote {dest.relative_to(ROOT)} ({size}px round)")
     for name, size in (
         ("icon-maskable-512.png", 512),
         ("icon-maskable-192.png", 192),
