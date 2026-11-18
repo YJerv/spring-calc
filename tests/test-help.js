@@ -223,15 +223,17 @@ function chartLines(svg, cls) {
   return out;
 }
 function chartLabels(svg) {
-  const widths = { "F1, s1": 48, "F2, s2": 48, "±ΔF": 34, "s2, F2": 48 };
-  const re = /<text class="mode-label"[^>]* x="([-0-9.]+)" y="([-0-9.]+)">(.*?)<\/text>/g;
+  const widths = { "F1": 16, "F2": 16, "L1": 16, "L2": 16, "F": 10, "L": 10, "±ΔF": 34, "s2, F2": 48 };
+  const re = /<text class="mode-label"[^>]* x="([-0-9.]+)" y="([-0-9.]+)"(?: text-anchor="([^"]*)")?>(.*?)<\/text>/g;
   const out = [];
   let m;
   while ((m = re.exec(svg))) {
-    const w = widths[m[3]];
+    const w = widths[m[4]] || 20;
     const x = +m[1];
     const y = +m[2];
-    out.push({ t: m[3], l: x, r: x + w, top: y - 12, b: y + 3 });
+    const anchor = m[3] || "start";
+    const left = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
+    out.push({ t: m[4], l: left, r: left + w, top: y - 12, b: y + 3 });
   }
   return out;
 }
@@ -268,7 +270,7 @@ function gapToSegment(box, seg) {
   if (id === "modeA") {
     assert(maxCross < originX && minCross > originX, "Max crosses left of the origin and Min crosses to the right");
     assert((svg.match(/mode-bar/g) || []).length === 2, "Two points draws both tolerance bars");
-    assert(svg.indexOf(">F1, s1<") >= 0 && svg.indexOf(">F2, s2<") >= 0 && svg.indexOf(">±ΔF<") >= 0, "Two points labels the points and the tolerance");
+    assert(svg.indexOf(">F1<") >= 0 && svg.indexOf(">F2<") >= 0 && svg.indexOf(">L1<") >= 0 && svg.indexOf(">L2<") >= 0 && svg.indexOf(">±ΔF<") >= 0, "Two points labels F1 and F2 on the load axis and L1 and L2 on the deflection axis");
   } else {
     assert((svg.match(/mode-point/g) || []).length === 1, "Point and rate shows one point");
     assert((svg.match(/mode-bar/g) || []).length === 0, "Point and rate has no second tolerance bar");
@@ -285,6 +287,7 @@ function gapToSegment(box, seg) {
   });
 });
 assert(css.indexOf(".mode-chart .mode-max") >= 0 && css.indexOf('html[data-resolved="dark"] .mode-chart .mode-max') >= 0, "Mode charts have light and dark strokes");
+assert(css.indexOf(".mode-chart .mode-max { stroke: #8a4b08; stroke-width: 2.25; fill: none; stroke-dasharray: 7 4; }") >= 0, "The two-points maximum line is dashed");
 
 console.log("\nBoundaries\n");
 

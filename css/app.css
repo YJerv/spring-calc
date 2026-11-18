@@ -302,7 +302,7 @@ legend.with-info { width: 100%; padding-right: 0; }
 .mode-chart { color: var(--ink); }
 .mode-chart .mode-axis { stroke: var(--ink); stroke-width: 1.25; fill: none; }
 .mode-chart .mode-nom { stroke: var(--ink); stroke-width: 2.25; fill: none; }
-.mode-chart .mode-max { stroke: #8a4b08; stroke-width: 2.25; fill: none; }
+.mode-chart .mode-max { stroke: #8a4b08; stroke-width: 2.25; fill: none; stroke-dasharray: 7 4; }
 .mode-chart .mode-min { stroke: #1b4f72; stroke-width: 2.25; fill: none; stroke-dasharray: 7 4; }
 .mode-chart .mode-band { fill: rgba(138, 75, 8, 0.14); stroke: none; }
 .mode-chart .mode-guide { stroke: var(--muted); stroke-width: 1.15; fill: none; stroke-dasharray: 3 3; }

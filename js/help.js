@@ -168,15 +168,18 @@
     parts.push('<text class="mode-key-label" x="176" y="26">Nominal</text>');
     parts.push('<line class="mode-key mode-min" x1="250" y1="22" x2="274" y2="22"/>');
     parts.push('<text class="mode-key-label" x="278" y="26">Min</text>');
+    function axisName(text, x, y, anchor) {
+      parts.push('<text class="mode-label" data-label="' + text + '" x="' + n(x) + '" y="' + n(y) + '" text-anchor="' + anchor + '">' + text + "</text>");
+    }
     if (two) {
-      parts.push('<text class="mode-label" data-label="f1" x="112" y="100">F1, s1</text>');
-      parts.push('<line class="mode-leader" x1="162" y1="108" x2="176" y2="158"/>');
-      parts.push('<text class="mode-label" data-label="df" x="168" y="78">±ΔF</text>');
-      parts.push('<line class="mode-leader" x1="185" y1="86" x2="176" y2="150"/>');
-      parts.push('<text class="mode-label" data-label="f2" x="196" y="100">F2, s2</text>');
-      parts.push('<line class="mode-leader" x1="250" y1="98" x2="274" y2="104"/>');
+      axisName("F1", X(0) - 8, Y(ex.F1) - 8, "end");
+      axisName("F2", X(0) - 8, Y(ex.F2) - 8, "end");
+      axisName("L1", X(ex.s1), Y(0) + 16, "middle");
+      axisName("L2", X(ex.s2), Y(0) + 16, "middle");
+      parts.push('<text class="mode-label" data-label="df" x="188" y="72" text-anchor="start">±ΔF</text>');
+      parts.push('<line class="mode-leader" x1="205" y1="80" x2="176" y2="150"/>');
     } else {
-      parts.push('<text class="mode-label" data-label="point" x="292" y="64">s2, F2</text>');
+      parts.push('<text class="mode-label" data-label="point" x="292" y="64" text-anchor="start">s2, F2</text>');
       parts.push('<line class="mode-leader" x1="300" y1="72" x2="286" y2="112"/>');
     }
     parts.push("</svg>");
